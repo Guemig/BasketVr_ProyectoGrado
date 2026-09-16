@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 public class BackToMenuButton : MonoBehaviour
 {
     [Header("Escena")]
-    [SerializeField] private string menuSceneName = "Menu";
+    [SerializeField] private string menuSceneName = "MenuPrincipal";
 
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
