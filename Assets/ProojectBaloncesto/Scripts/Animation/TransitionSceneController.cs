@@ -18,7 +18,7 @@ public class TransitionSceneController : MonoBehaviour
 
     public IEnumerator LoadSceneAfterTransition(string sceneName)
     {
-        animator.SetTrigger("Transition");
+        PlayTransition();
 
         yield return new WaitForSeconds(transitionDuration);
 
@@ -27,6 +27,6 @@ public class TransitionSceneController : MonoBehaviour
 
     public void PlayTransition()
     {
-        animator.SetTrigger("Transition");
+        animator.SetTrigger("IsChangeScene");
     }
 }
