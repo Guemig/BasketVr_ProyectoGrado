@@ -6,11 +6,14 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/EjercicioLuces/Luces.unity
+    path: Assets/ProojectBaloncesto/Ejercicios/EjercicioLuces/Luces.unity
     guid: 1ec51c4d65507054e9c0f16680c782cc
   - enabled: 1
-    path: Assets/MenuPrincipal.unity
+    path: Assets/ProojectBaloncesto/Scenes/MenuPrincipal.unity
     guid: ac40281ed4c6aff43b175b88926ba62c
+  - enabled: 1
+    path: Assets/ProojectBaloncesto/Scenes/Casilleros.unity
+    guid: 16665dc74f1aa724fb2576465d0b11b1
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: b6f2c0c3500ce2142a2397e672274a1f, type: 2}
