@@ -24,9 +24,7 @@ public class MovementReactionGameUI : MonoBehaviour
             return;
 
 
-        // ==========================================
-        // SI TERMINÓ EL EJERCICIO
-        // ==========================================
+  
 
         if (gameManager.GameFinished)
         {
@@ -36,17 +34,12 @@ public class MovementReactionGameUI : MonoBehaviour
         }
 
 
-        // ==========================================
-        // ANTES Y DURANTE EL EJERCICIO
-        // ==========================================
 
         ShowTitle();
     }
 
 
-    // ==============================================
-    // MOSTRAR SOLO TÍTULO
-    // ==============================================
+   
 
     private void ShowTitle()
     {
@@ -55,9 +48,7 @@ public class MovementReactionGameUI : MonoBehaviour
     }
 
 
-    // ==============================================
-    // MOSTRAR RESULTADOS
-    // ==============================================
+
 
     private void ShowResults()
     {
