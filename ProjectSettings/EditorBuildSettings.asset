@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/ReactionPass/ReactionPass.unity
+    guid: 463bd8452d0574f4499415b8b356e10e
+  - enabled: 1
     path: Assets/ProjectBaloncesto/Scenes/MenuPrincipal.unity
     guid: ac40281ed4c6aff43b175b88926ba62c
   - enabled: 1
