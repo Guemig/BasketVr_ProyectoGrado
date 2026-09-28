@@ -14,6 +14,8 @@ public class ReactionExerciseController : MonoBehaviour
 
     [SerializeField] private ReactionLevelController levelController;
 
+    [SerializeField] private ReactionTransition transition;
+
     [SerializeField] private ReactionInteraction interaction;
 
     [SerializeField] private ReactionHandInteractable leftHandInteractable;
@@ -24,8 +26,6 @@ public class ReactionExerciseController : MonoBehaviour
 
 
     [Header("Exercise Settings")]
-    [SerializeField] private int reactionsPerHand = 2;
-
     [SerializeField] private float timeBetweenReactions = 1f;
 
 
@@ -37,7 +37,6 @@ public class ReactionExerciseController : MonoBehaviour
     private void Awake()
     {
         SetupInteractables();
-        StartExercise();
     }
 
 
@@ -51,19 +50,33 @@ public class ReactionExerciseController : MonoBehaviour
 
         DisableAllInteractables();
 
-        sequence.CreateSequence(
-            reactionsPerHand
+        StartCurrentLevel();
+    }
+
+
+    private void StartCurrentLevel()
+    {
+        Debug.Log(
+            $"[EXERCISE] Starting {levelController.CurrentLevel}"
         );
+
+
+        sequence.CreateSequence();
 
         ExecuteNextReaction();
     }
 
 
+    // =====================================================
+    // NEXT REACTION
+    // =====================================================
+
     private void ExecuteNextReaction()
     {
         if (!sequence.HasNext())
         {
-            CompleteExercise();
+            CompleteCurrentLevel();
+
             return;
         }
 
@@ -149,7 +162,6 @@ public class ReactionExerciseController : MonoBehaviour
             return;
 
 
-
         interaction.ResolveTimeout();
 
 
@@ -207,7 +219,65 @@ public class ReactionExerciseController : MonoBehaviour
 
 
     // =====================================================
-    // COMPLETE
+    // LEVEL COMPLETE
+    // =====================================================
+
+    private void CompleteCurrentLevel()
+    {
+        reactionInProgress = false;
+
+        DisableAllInteractables();
+
+
+        Debug.Log(
+            $"[LEVEL] Completed: " +
+            $"{levelController.CurrentLevel}"
+        );
+
+
+        // ¿Hay otro nivel?
+        if (levelController.HasNextLevel())
+        {
+            StartLevelTransition();
+
+            return;
+        }
+
+
+        // No hay más niveles.
+        CompleteExercise();
+    }
+
+
+    // =====================================================
+    // LEVEL TRANSITION
+    // =====================================================
+
+    private void StartLevelTransition()
+    {
+        Debug.Log(
+            "[EXERCISE] Preparing next level."
+        );
+
+
+        levelController.TryAdvanceLevel();
+
+
+        if (transition != null)
+        {
+            transition.PlayTransition(
+                StartCurrentLevel
+            );
+        }
+        else
+        {
+            StartCurrentLevel();
+        }
+    }
+
+
+    // =====================================================
+    // EXERCISE COMPLETE
     // =====================================================
 
     private void CompleteExercise()

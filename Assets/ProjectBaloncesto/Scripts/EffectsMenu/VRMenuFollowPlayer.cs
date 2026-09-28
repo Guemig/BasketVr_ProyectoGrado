@@ -39,8 +39,41 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
 
         // Dejar de escuchar al Player.
         playerTracker.UnregisterObserver(this);
+
+        SetInitialPosition();
     }
 
+    private void SetInitialPosition()
+    {
+        Transform playerCamera =
+            playerTracker.PlayerCamera;
+
+        if (playerCamera == null)
+            return;
+
+        Vector3 forward =
+            playerCamera.forward;
+
+        forward.y = 0f;
+
+        if (forward.sqrMagnitude < 0.001f)
+            return;
+
+        forward.Normalize();
+
+        Vector3 targetPosition =
+            playerCamera.position +
+            forward * radius;
+
+        targetPosition.y += heightOffset;
+
+        transform.position =
+            targetPosition;
+
+        LookAtPlayer(
+            playerCamera.position
+        );
+    }
     public void OnPlayerRotation()
     {
 

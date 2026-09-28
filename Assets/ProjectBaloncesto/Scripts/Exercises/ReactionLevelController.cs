@@ -21,8 +21,13 @@ public class ReactionLevelController : MonoBehaviour
         ReactionLevel.Level1;
 
 
-    public ReactionLevel CurrentLevel => currentLevel;
+    public ReactionLevel CurrentLevel =>
+        currentLevel;
 
+
+    // =====================================================
+    // LEVEL
+    // =====================================================
 
     public void SetLevel(ReactionLevel level)
     {
@@ -33,6 +38,39 @@ public class ReactionLevelController : MonoBehaviour
         );
     }
 
+
+    public bool HasNextLevel()
+    {
+        return currentLevel != ReactionLevel.Level3;
+    }
+
+
+    public bool TryAdvanceLevel()
+    {
+        if (!HasNextLevel())
+        {
+            Debug.Log(
+                "[LEVEL] No more levels."
+            );
+
+            return false;
+        }
+
+
+        currentLevel++;
+
+
+        Debug.Log(
+            $"[LEVEL] Advanced to {currentLevel}"
+        );
+
+        return true;
+    }
+
+
+    // =====================================================
+    // REACTION
+    // =====================================================
 
     public void ExecuteReaction(
         ReactionExerciseController.Hand hand,
@@ -49,6 +87,7 @@ public class ReactionLevelController : MonoBehaviour
 
                 break;
 
+
             case ReactionLevel.Level2:
 
                 ExecuteLevel2(
@@ -57,6 +96,7 @@ public class ReactionLevelController : MonoBehaviour
                 );
 
                 break;
+
 
             case ReactionLevel.Level3:
 
@@ -70,6 +110,10 @@ public class ReactionLevelController : MonoBehaviour
     }
 
 
+    // =====================================================
+    // LEVEL 1
+    // =====================================================
+
     private void ExecuteLevel1(
         ReactionExerciseController.Hand hand,
         Action onActivated)
@@ -81,11 +125,17 @@ public class ReactionLevelController : MonoBehaviour
     }
 
 
+    // =====================================================
+    // LEVEL 2
+    // =====================================================
+
     private void ExecuteLevel2(
         ReactionExerciseController.Hand hand,
         Action onActivated)
     {
-        bool useHigh = UnityEngine.Random.value > 0.5f;
+        bool useHigh =
+            UnityEngine.Random.value > 0.5f;
+
 
         if (useHigh)
         {
@@ -104,11 +154,17 @@ public class ReactionLevelController : MonoBehaviour
     }
 
 
+    // =====================================================
+    // LEVEL 3
+    // =====================================================
+
     private void ExecuteLevel3(
         ReactionExerciseController.Hand hand,
         Action onActivated)
     {
-        int randomHeight = UnityEngine.Random.Range(0, 3);
+        int randomHeight =
+            UnityEngine.Random.Range(0, 3);
+
 
         switch (randomHeight)
         {
@@ -121,6 +177,7 @@ public class ReactionLevelController : MonoBehaviour
 
                 break;
 
+
             case 1:
 
                 MoveHandHigh(
@@ -129,6 +186,7 @@ public class ReactionLevelController : MonoBehaviour
                 );
 
                 break;
+
 
             case 2:
 
@@ -141,6 +199,10 @@ public class ReactionLevelController : MonoBehaviour
         }
     }
 
+
+    // =====================================================
+    // MOVEMENT
+    // =====================================================
 
     private void MoveHandMiddle(
         ReactionExerciseController.Hand hand,
@@ -155,6 +217,7 @@ public class ReactionLevelController : MonoBehaviour
                 );
 
                 break;
+
 
             case ReactionExerciseController.Hand.Right:
 
@@ -181,6 +244,7 @@ public class ReactionLevelController : MonoBehaviour
 
                 break;
 
+
             case ReactionExerciseController.Hand.Right:
 
                 characterIK.MoveRightHandHigh(
@@ -205,6 +269,7 @@ public class ReactionLevelController : MonoBehaviour
                 );
 
                 break;
+
 
             case ReactionExerciseController.Hand.Right:
 
