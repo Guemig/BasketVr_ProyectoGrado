@@ -39,7 +39,10 @@ public class ReactionExerciseController : MonoBehaviour
 
     private Hand currentHand;
 
-    private bool waitingForReaction;
+    private bool reactionInProgress;
+    private bool reactionActive;
+    private bool reactionResolved;
+    private bool returnScheduled;
 
 
     private void Reset()
@@ -50,9 +53,10 @@ public class ReactionExerciseController : MonoBehaviour
 
     private void Awake()
     {
+        SetupInteractables();
+
         StartExercise();
     }
-
 
     public void StartExercise()
     {
@@ -130,16 +134,20 @@ public class ReactionExerciseController : MonoBehaviour
             Debug.Log("Reaction exercise completed.");
             return;
         }
-
         currentHand = reactionSequence[currentReaction];
 
-        // Todavía no se puede reaccionar.
-        waitingForReaction = false;
+        reactionInProgress = true;
+        reactionActive = false;
+        reactionResolved = false;
+        returnScheduled = false;
+
+
+        Debug.Log(
+    $"[REACTION] STARTING {currentHand}"
+);
 
         SetResultNormal(currentHand);
 
-        // La mano comienza a moverse.
-        // El interactable todavía está apagado.
         ExecuteReaction(currentHand);
     }
 
@@ -150,20 +158,24 @@ public class ReactionExerciseController : MonoBehaviour
 
     private void ActivateCurrentHandReaction()
     {
-        // Evita activar dos veces la misma reacción.
-        if (waitingForReaction)
+
+        if (returnScheduled)
             return;
 
-        waitingForReaction = true;
+        returnScheduled = true;
 
-        Debug.Log(
-            $"Reaction activated: {currentHand}"
-        );
 
-        StartCurrentHandReaction();
+        if (!reactionResolved)
+        {
+            reactionActive = true;
 
-        // Después del tiempo permitido,
-        // la mano regresará.
+            Debug.Log(
+                $"[REACTION] ACTIVE {currentHand}"
+            );
+
+            StartCurrentHandReaction();
+        }
+
         Invoke(
             nameof(ReturnCurrentHand),
             timeBetweenReactions
@@ -211,7 +223,6 @@ public class ReactionExerciseController : MonoBehaviour
                 break;
         }
 
-        waitingForReaction = false;
     }
 
 
@@ -376,43 +387,93 @@ public class ReactionExerciseController : MonoBehaviour
 
     public void OnHandHover(Hand hand)
     {
-        if (!waitingForReaction)
-            return;
-
         Debug.Log(
-            $"Hover detected: {hand}"
+            $"========== HOVER INTERACTABLE ==========\n" +
+            $"GameObject: {gameObject.name}\n" +
+            $"Hand: {hand}\n" +
+            $"Controller: {this}\n" +
+            $"========================================"
         );
+
+        if (!reactionInProgress)
+        {
+            Debug.Log("[REACTION HOVER] Ignored: no reaction in progress.");
+            return;
+        }
+
+        if (reactionResolved)
+        {
+            Debug.Log("[REACTION HOVER] Ignored: reaction already resolved.");
+            return;
+        }
+
+        if (!reactionActive)
+        {
+            Debug.Log(
+                $"[REACTION HOVER] WRONG: {hand} touched before activation."
+            );
+
+            HandleWrongReaction(
+                $"Touched {hand} before reaction became active."
+            );
+
+            return;
+        }
 
         if (hand == currentHand)
         {
+            Debug.Log(
+                $"[REACTION HOVER] CORRECT: {hand} == {currentHand}"
+            );
+
             HandleCorrectReaction();
         }
         else
         {
-            HandleWrongReaction();
+            Debug.Log(
+                $"[REACTION HOVER] WRONG: {hand} != {currentHand}"
+            );
+
+            HandleWrongReaction(
+                $"Expected {currentHand}, received {hand}."
+            );
         }
     }
 
 
     private void HandleCorrectReaction()
     {
-        Debug.Log(
-            $"CORRECT - {currentHand} hand."
-        );
 
-        waitingForReaction = false;
+        Debug.Log(
+    $"========== CORRECT ==========\n" +
+    $"Hand: {currentHand}\n" +
+    $"Active: {reactionActive}\n" +
+    $"Resolved before: {reactionResolved}"
+);
+
+
+        reactionResolved = true;
 
         SetResultCorrect(currentHand);
     }
 
 
-    private void HandleWrongReaction()
+    private void HandleWrongReaction(string reason)
     {
-        Debug.Log(
-            $"WRONG - Expected {currentHand}."
-        );
+        if (reactionResolved)
+            return;
 
-        waitingForReaction = false;
+        Debug.Log(
+    $"========== WRONG ==========\n" +
+    $"Reason: {reason}\n" +
+    $"Current Hand: {currentHand}\n" +
+    $"Active: {reactionActive}\n" +
+    $"Resolved before: {reactionResolved}"
+);
+
+
+        reactionResolved = true;
+
 
         SetResultWrong(currentHand);
     }
@@ -467,7 +528,20 @@ public class ReactionExerciseController : MonoBehaviour
         if (characterIK == null)
             return;
 
+        if (!reactionInProgress)
+            return;
+
+        if (!reactionResolved)
+        {
+            HandleWrongReaction(
+                $"No reaction detected from {currentHand}."
+            );
+        }
+
         EndCurrentHandReaction();
+
+        reactionActive = false;
+        reactionInProgress = false;
 
         switch (currentHand)
         {
@@ -500,5 +574,18 @@ public class ReactionExerciseController : MonoBehaviour
 
         if (rightHandInteractable != null)
             rightHandInteractable.EndReaction();
+    }
+
+    private void SetupInteractables()
+    {
+        if (leftHandInteractable != null)
+        {
+            leftHandInteractable.SetReactionController(this);
+        }
+
+        if (rightHandInteractable != null)
+        {
+            rightHandInteractable.SetReactionController(this);
+        }
     }
 }

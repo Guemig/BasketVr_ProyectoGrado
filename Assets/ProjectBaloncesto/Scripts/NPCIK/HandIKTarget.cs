@@ -83,9 +83,6 @@ public class HandIKTarget : MonoBehaviour
             curveValue
         );
 
-
-        // Activa la reacción cuando alcanza
-        // el porcentaje configurado del movimiento.
         if (onReactionActivated != null &&
             normalizedTime >= reactionActivationProgress)
         {
@@ -146,8 +143,7 @@ public class HandIKTarget : MonoBehaviour
 
     public void ReturnToInitialPosition()
     {
-        // La vuelta a la posición inicial no necesita
-        // activar ninguna reacción.
+
         onReactionActivated = null;
 
         MoveToTarget(

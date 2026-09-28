@@ -19,13 +19,21 @@ public class ReactionHandInteractable : MonoBehaviour
 
     private void Awake()
     {
-        // Si no se asignó en el inspector, buscar en los hijos (incluyendo inactivos)
         if (handCollider == null)
         {
             handCollider = GetComponentInChildren<Collider>(true);
+
             if (handCollider == null)
-                Debug.LogWarning($"{name}: no se encontró ningún Collider en los hijos. Asigne 'handCollider' en el inspector si procede.");
+            {
+                Debug.LogWarning(
+                    $"{name}: no se encontró ningún Collider en los hijos."
+                );
+            }
         }
+
+        // El collider permanece activo siempre.
+        if (handCollider != null)
+            handCollider.enabled = true;
 
         SetNormalState();
     }
@@ -36,6 +44,10 @@ public class ReactionHandInteractable : MonoBehaviour
         isReacting = true;
 
         SetReactionState();
+
+        Debug.Log(
+            $"[ReactionHandInteractable] {hand} -> ACTIVE"
+        );
     }
 
 
@@ -44,18 +56,25 @@ public class ReactionHandInteractable : MonoBehaviour
         isReacting = false;
 
         SetNormalState();
+
+        Debug.Log(
+            $"[ReactionHandInteractable] {hand} -> NORMAL"
+        );
     }
 
 
-    // Este método se arrastra al evento On Hover
     public void OnHoverReaction()
     {
-        if (!isReacting)
+        Debug.Log(
+            $"[ReactionHandInteractable] Hover detected on {hand}"
+        );
+
+        // El controlador decide si es correcto,
+        // incorrecto o si debe ignorarse.
+        if (ReactionController == null)
             return;
 
-        Debug.Log(
-            $"Correct reaction with {hand} hand."
-        );
+        ReactionController.OnHandHover(hand);
     }
 
 
@@ -64,8 +83,10 @@ public class ReactionHandInteractable : MonoBehaviour
         if (handRenderer != null)
             handRenderer.material = normalMaterial;
 
+        // IMPORTANTE:
+        // No desactivamos el collider.
         if (handCollider != null)
-            handCollider.enabled = false;
+            handCollider.enabled = true;
     }
 
 
@@ -80,4 +101,14 @@ public class ReactionHandInteractable : MonoBehaviour
 
 
     public ReactionExerciseController.Hand Hand => hand;
+
+
+    private ReactionExerciseController ReactionController { get; set; }
+
+
+    public void SetReactionController(
+        ReactionExerciseController controller)
+    {
+        ReactionController = controller;
+    }
 }
