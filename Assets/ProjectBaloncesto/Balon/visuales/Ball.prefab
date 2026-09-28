@@ -134,9 +134,8 @@ GameObject:
   - component: {fileID: 937496197108696098}
   - component: {fileID: 4248758367877713297}
   - component: {fileID: 2122838981503062486}
-  - component: {fileID: 4453853692000151569}
   m_Layer: 0
-  m_Name: ReactionBall
+  m_Name: Ball
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -314,16 +313,3 @@ MonoBehaviour:
   bounceEnergyLoss: 0.9
   minBounceVelocity: 0.05
   groundStickDelay: 0.15
---- !u!114 &4453853692000151569
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7345636629230277528}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3fba5dc3cd2c4d0469ef1a508d6f89f2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  catchDuration: 0.3

@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 
 public class BallLauncher : MonoBehaviour
@@ -6,63 +5,54 @@ public class BallLauncher : MonoBehaviour
     [Header("Referencias")]
     [SerializeField] private GameObject ballPrefab;
     [SerializeField] private Transform spawnPoint;
-
-    [Header("Targets")]
     [SerializeField] private Transform[] passTargets;
+    [SerializeField] private PassReactionGameManager gameManager;
 
     [Header("Velocidades")]
     [SerializeField] private float slowFlightTime = 0.9f;
     [SerializeField] private float mediumFlightTime = 0.7f;
     [SerializeField] private float fastFlightTime = 0.5f;
 
-    [Header("Intervalo")]
-    [SerializeField] private float timeBetweenBalls = 2f;
+    private GameObject currentBall;
 
-    private Coroutine launchCoroutine;
-
-    private void Start()
+    public void LaunchBall()
     {
-        launchCoroutine = StartCoroutine(LaunchLoop());
-    }
+        if (gameManager == null || !gameManager.GameRunning)
+            return;
 
-    private IEnumerator LaunchLoop()
-    {
-        yield return new WaitForSeconds(2f);
+        if (currentBall != null)
+            return;
 
-        while (true)
-        {
-            LaunchBall();
-
-            yield return new WaitForSeconds(timeBetweenBalls);
-        }
-    }
-
-    private void LaunchBall()
-    {
         if (ballPrefab == null || spawnPoint == null)
             return;
 
         if (passTargets == null || passTargets.Length == 0)
             return;
 
-        Transform target = GetRandomTarget();
-
-        if (target == null)
-            return;
+        Transform target =
+            passTargets[Random.Range(0, passTargets.Length)];
 
         float flightTime = GetRandomFlightTime();
 
-        GameObject ball = Instantiate(
+        currentBall = Instantiate(
             ballPrefab,
             spawnPoint.position,
             spawnPoint.rotation
         );
 
-        Rigidbody rb = ball.GetComponent<Rigidbody>();
+        ReactionPassBall ball =
+            currentBall.GetComponent<ReactionPassBall>();
+
+        if (ball != null)
+            ball.Setup(gameManager, this);
+
+        Rigidbody rb =
+            currentBall.GetComponent<Rigidbody>();
 
         if (rb == null)
         {
-            Destroy(ball);
+            Destroy(currentBall);
+            currentBall = null;
             return;
         }
 
@@ -73,15 +63,20 @@ public class BallLauncher : MonoBehaviour
         );
 
         rb.linearVelocity = velocity;
-
-        Destroy(ball, 5f);
     }
 
-    private Transform GetRandomTarget()
+    public void BallResolved()
     {
-        int randomIndex = Random.Range(0, passTargets.Length);
+        currentBall = null;
+    }
 
-        return passTargets[randomIndex];
+    public void StopLauncher()
+    {
+        if (currentBall != null)
+        {
+            Destroy(currentBall);
+            currentBall = null;
+        }
     }
 
     private float GetRandomFlightTime()
