@@ -8,55 +8,42 @@ public class ReactionExerciseController : MonoBehaviour
         Right
     }
 
-    public enum ReactionLevel
-    {
-        Level1,
-        Level2,
-        Level3
-    }
-
 
     [Header("References")]
-    [SerializeField] private CharacterIKController characterIK;
+    [SerializeField] private ReactionSequence sequence;
+
+    [SerializeField] private ReactionLevelController levelController;
+
+    [SerializeField] private ReactionInteraction interaction;
 
     [SerializeField] private ReactionHandInteractable leftHandInteractable;
+
     [SerializeField] private ReactionHandInteractable rightHandInteractable;
 
-    [SerializeField] private ReactionResultIndicator resultIndicator;
+    [SerializeField] private CharacterIKController characterIK;
 
 
     [Header("Exercise Settings")]
-    [SerializeField] private ReactionLevel reactionLevel = ReactionLevel.Level1;
-
     [SerializeField] private int reactionsPerHand = 2;
 
     [SerializeField] private float timeBetweenReactions = 1f;
 
 
-    private Hand[] reactionSequence;
-
-    private int currentReaction;
-
     private Hand currentHand;
 
     private bool reactionInProgress;
-    private bool reactionActive;
-    private bool reactionResolved;
-    private bool returnScheduled;
-
-
-    private void Reset()
-    {
-        characterIK = GetComponent<CharacterIKController>();
-    }
 
 
     private void Awake()
     {
         SetupInteractables();
-
         StartExercise();
     }
+
+
+    // =====================================================
+    // EXERCISE
+    // =====================================================
 
     public void StartExercise()
     {
@@ -64,91 +51,42 @@ public class ReactionExerciseController : MonoBehaviour
 
         DisableAllInteractables();
 
-        CreateReactionSequence();
-
-        currentReaction = 0;
+        sequence.CreateSequence(
+            reactionsPerHand
+        );
 
         ExecuteNextReaction();
     }
 
 
-    // =====================================================
-    // SEQUENCE
-    // =====================================================
-
-    private void CreateReactionSequence()
-    {
-        int totalReactions = reactionsPerHand * 2;
-
-        reactionSequence = new Hand[totalReactions];
-
-        int index = 0;
-
-        for (int i = 0; i < reactionsPerHand; i++)
-        {
-            reactionSequence[index] = Hand.Left;
-            index++;
-
-            reactionSequence[index] = Hand.Right;
-            index++;
-        }
-
-        Debug.Log(
-            $"Reaction sequence created with {totalReactions} reactions."
-        );
-
-        ShuffleSequence();
-
-        Debug.Log(
-            $"Sequence: {string.Join(", ", reactionSequence)}"
-        );
-    }
-
-
-    private void ShuffleSequence()
-    {
-        for (int i = reactionSequence.Length - 1; i > 0; i--)
-        {
-            int randomIndex = Random.Range(0, i + 1);
-
-            Hand temporary = reactionSequence[i];
-
-            reactionSequence[i] = reactionSequence[randomIndex];
-
-            reactionSequence[randomIndex] = temporary;
-        }
-    }
-
-
-    // =====================================================
-    // REACTION
-    // =====================================================
-
     private void ExecuteNextReaction()
     {
-        if (characterIK == null)
-            return;
-
-        if (currentReaction >= reactionSequence.Length)
+        if (!sequence.HasNext())
         {
-            Debug.Log("Reaction exercise completed.");
+            CompleteExercise();
             return;
         }
-        currentHand = reactionSequence[currentReaction];
+
+
+        currentHand = sequence.GetNext();
 
         reactionInProgress = true;
-        reactionActive = false;
-        reactionResolved = false;
-        returnScheduled = false;
 
 
         Debug.Log(
-    $"[REACTION] STARTING {currentHand}"
-);
+            $"[REACTION] STARTING {currentHand}"
+        );
 
-        SetResultNormal(currentHand);
 
-        ExecuteReaction(currentHand);
+        interaction.StartReaction(
+            currentHand
+        );
+
+
+        levelController.ExecuteReaction(
+            currentHand,
+            ActivateCurrentReaction
+        );
     }
 
 
@@ -156,25 +94,21 @@ public class ReactionExerciseController : MonoBehaviour
     // REACTION ACTIVATION
     // =====================================================
 
-    private void ActivateCurrentHandReaction()
+    private void ActivateCurrentReaction()
     {
-
-        if (returnScheduled)
+        if (!reactionInProgress)
             return;
 
-        returnScheduled = true;
+
+        Debug.Log(
+            $"[REACTION] ACTIVE {currentHand}"
+        );
 
 
-        if (!reactionResolved)
-        {
-            reactionActive = true;
+        interaction.ActivateReaction();
 
-            Debug.Log(
-                $"[REACTION] ACTIVE {currentHand}"
-            );
+        StartCurrentHandReaction();
 
-            StartCurrentHandReaction();
-        }
 
         Invoke(
             nameof(ReturnCurrentHand),
@@ -194,6 +128,7 @@ public class ReactionExerciseController : MonoBehaviour
 
                 break;
 
+
             case Hand.Right:
 
                 if (rightHandInteractable != null)
@@ -201,6 +136,51 @@ public class ReactionExerciseController : MonoBehaviour
 
                 break;
         }
+    }
+
+
+    // =====================================================
+    // RETURN
+    // =====================================================
+
+    private void ReturnCurrentHand()
+    {
+        if (!reactionInProgress)
+            return;
+
+
+
+        interaction.ResolveTimeout();
+
+
+        EndCurrentHandReaction();
+
+        interaction.EndReaction();
+
+        reactionInProgress = false;
+
+
+        switch (currentHand)
+        {
+            case Hand.Left:
+
+                characterIK.ReturnLeftHand();
+
+                break;
+
+
+            case Hand.Right:
+
+                characterIK.ReturnRightHand();
+
+                break;
+        }
+
+
+        Invoke(
+            nameof(ExecuteNextReaction),
+            timeBetweenReactions
+        );
     }
 
 
@@ -215,6 +195,7 @@ public class ReactionExerciseController : MonoBehaviour
 
                 break;
 
+
             case Hand.Right:
 
                 if (rightHandInteractable != null)
@@ -222,343 +203,19 @@ public class ReactionExerciseController : MonoBehaviour
 
                 break;
         }
-
     }
 
 
     // =====================================================
-    // LEVELS
+    // COMPLETE
     // =====================================================
 
-    private void ExecuteReaction(Hand hand)
+    private void CompleteExercise()
     {
-        switch (reactionLevel)
-        {
-            case ReactionLevel.Level1:
-                ExecuteLevel1(hand);
-                break;
-
-            case ReactionLevel.Level2:
-                ExecuteLevel2(hand);
-                break;
-
-            case ReactionLevel.Level3:
-                ExecuteLevel3(hand);
-                break;
-        }
-    }
-
-
-    private void ExecuteLevel1(Hand hand)
-    {
-        switch (hand)
-        {
-            case Hand.Left:
-
-                characterIK.MoveLeftHandMiddle(
-                    ActivateCurrentHandReaction
-                );
-
-                break;
-
-            case Hand.Right:
-
-                characterIK.MoveRightHandMiddle(
-                    ActivateCurrentHandReaction
-                );
-
-                break;
-        }
-    }
-
-
-    private void ExecuteLevel2(Hand hand)
-    {
-        bool useHigh = Random.value > 0.5f;
-
-        if (useHigh)
-        {
-            MoveHandHigh(hand);
-        }
-        else
-        {
-            MoveHandMiddle(hand);
-        }
-    }
-
-
-    private void ExecuteLevel3(Hand hand)
-    {
-        int randomHeight = Random.Range(0, 3);
-
-        switch (randomHeight)
-        {
-            case 0:
-                MoveHandMiddle(hand);
-                break;
-
-            case 1:
-                MoveHandHigh(hand);
-                break;
-
-            case 2:
-                MoveHandLow(hand);
-                break;
-        }
-    }
-
-
-    // =====================================================
-    // MOVE HAND
-    // =====================================================
-
-    private void MoveHandMiddle(Hand hand)
-    {
-        switch (hand)
-        {
-            case Hand.Left:
-
-                characterIK.MoveLeftHandMiddle(
-                    ActivateCurrentHandReaction
-                );
-
-                break;
-
-            case Hand.Right:
-
-                characterIK.MoveRightHandMiddle(
-                    ActivateCurrentHandReaction
-                );
-
-                break;
-        }
-    }
-
-
-    private void MoveHandHigh(Hand hand)
-    {
-        switch (hand)
-        {
-            case Hand.Left:
-
-                characterIK.MoveLeftHandHigh(
-                    ActivateCurrentHandReaction
-                );
-
-                break;
-
-            case Hand.Right:
-
-                characterIK.MoveRightHandHigh(
-                    ActivateCurrentHandReaction
-                );
-
-                break;
-        }
-    }
-
-
-    private void MoveHandLow(Hand hand)
-    {
-        switch (hand)
-        {
-            case Hand.Left:
-
-                characterIK.MoveLeftHandLow(
-                    ActivateCurrentHandReaction
-                );
-
-                break;
-
-            case Hand.Right:
-
-                characterIK.MoveRightHandLow(
-                    ActivateCurrentHandReaction
-                );
-
-                break;
-        }
-    }
-
-
-    // =====================================================
-    // HOVER / REACTION
-    // =====================================================
-
-    public void OnHandHover(Hand hand)
-    {
-        Debug.Log(
-            $"========== HOVER INTERACTABLE ==========\n" +
-            $"GameObject: {gameObject.name}\n" +
-            $"Hand: {hand}\n" +
-            $"Controller: {this}\n" +
-            $"========================================"
-        );
-
-        if (!reactionInProgress)
-        {
-            Debug.Log("[REACTION HOVER] Ignored: no reaction in progress.");
-            return;
-        }
-
-        if (reactionResolved)
-        {
-            Debug.Log("[REACTION HOVER] Ignored: reaction already resolved.");
-            return;
-        }
-
-        if (!reactionActive)
-        {
-            Debug.Log(
-                $"[REACTION HOVER] WRONG: {hand} touched before activation."
-            );
-
-            HandleWrongReaction(
-                $"Touched {hand} before reaction became active."
-            );
-
-            return;
-        }
-
-        if (hand == currentHand)
-        {
-            Debug.Log(
-                $"[REACTION HOVER] CORRECT: {hand} == {currentHand}"
-            );
-
-            HandleCorrectReaction();
-        }
-        else
-        {
-            Debug.Log(
-                $"[REACTION HOVER] WRONG: {hand} != {currentHand}"
-            );
-
-            HandleWrongReaction(
-                $"Expected {currentHand}, received {hand}."
-            );
-        }
-    }
-
-
-    private void HandleCorrectReaction()
-    {
-
-        Debug.Log(
-    $"========== CORRECT ==========\n" +
-    $"Hand: {currentHand}\n" +
-    $"Active: {reactionActive}\n" +
-    $"Resolved before: {reactionResolved}"
-);
-
-
-        reactionResolved = true;
-
-        SetResultCorrect(currentHand);
-    }
-
-
-    private void HandleWrongReaction(string reason)
-    {
-        if (reactionResolved)
-            return;
-
-        Debug.Log(
-    $"========== WRONG ==========\n" +
-    $"Reason: {reason}\n" +
-    $"Current Hand: {currentHand}\n" +
-    $"Active: {reactionActive}\n" +
-    $"Resolved before: {reactionResolved}"
-);
-
-
-        reactionResolved = true;
-
-
-        SetResultWrong(currentHand);
-    }
-
-
-    // =====================================================
-    // RESULT INDICATOR
-    // =====================================================
-
-    private void SetResultNormal(Hand hand)
-    {
-        if (resultIndicator == null)
-            return;
-
-        resultIndicator.SetResult(
-            hand,
-            ReactionResultIndicator.Result.Normal
-        );
-    }
-
-
-    private void SetResultCorrect(Hand hand)
-    {
-        if (resultIndicator == null)
-            return;
-
-        resultIndicator.SetResult(
-            hand,
-            ReactionResultIndicator.Result.Correct
-        );
-    }
-
-
-    private void SetResultWrong(Hand hand)
-    {
-        if (resultIndicator == null)
-            return;
-
-        resultIndicator.SetResult(
-            hand,
-            ReactionResultIndicator.Result.Wrong
-        );
-    }
-
-
-    // =====================================================
-    // RETURN HAND
-    // =====================================================
-
-    private void ReturnCurrentHand()
-    {
-        if (characterIK == null)
-            return;
-
-        if (!reactionInProgress)
-            return;
-
-        if (!reactionResolved)
-        {
-            HandleWrongReaction(
-                $"No reaction detected from {currentHand}."
-            );
-        }
-
-        EndCurrentHandReaction();
-
-        reactionActive = false;
         reactionInProgress = false;
 
-        switch (currentHand)
-        {
-            case Hand.Left:
-                characterIK.ReturnLeftHand();
-                break;
-
-            case Hand.Right:
-                characterIK.ReturnRightHand();
-                break;
-        }
-
-        currentReaction++;
-
-        Invoke(
-            nameof(ExecuteNextReaction),
-            timeBetweenReactions
+        Debug.Log(
+            "[EXERCISE] Exercise completed."
         );
     }
 
@@ -567,25 +224,32 @@ public class ReactionExerciseController : MonoBehaviour
     // INTERACTABLES
     // =====================================================
 
+    private void SetupInteractables()
+    {
+        if (leftHandInteractable != null)
+        {
+            leftHandInteractable.SetReactionInteraction(
+                interaction
+            );
+        }
+
+
+        if (rightHandInteractable != null)
+        {
+            rightHandInteractable.SetReactionInteraction(
+                interaction
+            );
+        }
+    }
+
+
     private void DisableAllInteractables()
     {
         if (leftHandInteractable != null)
             leftHandInteractable.EndReaction();
 
+
         if (rightHandInteractable != null)
             rightHandInteractable.EndReaction();
-    }
-
-    private void SetupInteractables()
-    {
-        if (leftHandInteractable != null)
-        {
-            leftHandInteractable.SetReactionController(this);
-        }
-
-        if (rightHandInteractable != null)
-        {
-            rightHandInteractable.SetReactionController(this);
-        }
     }
 }

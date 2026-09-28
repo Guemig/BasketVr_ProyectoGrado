@@ -3,25 +3,35 @@ using UnityEngine;
 public class ReactionHandInteractable : MonoBehaviour
 {
     [Header("Hand")]
-    [SerializeField] private ReactionExerciseController.Hand hand;
+    [SerializeField]
+    private ReactionExerciseController.Hand hand;
+
 
     [Header("Visual")]
-    [SerializeField] private Renderer handRenderer;
+    [SerializeField]
+    private Renderer handRenderer;
 
-    [SerializeField] private Material normalMaterial;
-    [SerializeField] private Material reactionMaterial;
+    [SerializeField]
+    private Material normalMaterial;
+
+    [SerializeField]
+    private Material reactionMaterial;
+
 
     [Header("Collider")]
-    [SerializeField] private Collider handCollider;
+    [SerializeField]
+    private Collider handCollider;
 
-    private bool isReacting;
+
+    private ReactionInteraction reactionInteraction;
 
 
     private void Awake()
     {
         if (handCollider == null)
         {
-            handCollider = GetComponentInChildren<Collider>(true);
+            handCollider =
+                GetComponentInChildren<Collider>(true);
 
             if (handCollider == null)
             {
@@ -31,9 +41,10 @@ public class ReactionHandInteractable : MonoBehaviour
             }
         }
 
-        // El collider permanece activo siempre.
+
         if (handCollider != null)
             handCollider.enabled = true;
+
 
         SetNormalState();
     }
@@ -41,8 +52,6 @@ public class ReactionHandInteractable : MonoBehaviour
 
     public void StartReaction()
     {
-        isReacting = true;
-
         SetReactionState();
 
         Debug.Log(
@@ -53,8 +62,6 @@ public class ReactionHandInteractable : MonoBehaviour
 
     public void EndReaction()
     {
-        isReacting = false;
-
         SetNormalState();
 
         Debug.Log(
@@ -66,15 +73,24 @@ public class ReactionHandInteractable : MonoBehaviour
     public void OnHoverReaction()
     {
         Debug.Log(
-            $"[ReactionHandInteractable] Hover detected on {hand}"
+            $"[ReactionHandInteractable] " +
+            $"Hover -> {hand}"
         );
 
-        // El controlador decide si es correcto,
-        // incorrecto o si debe ignorarse.
-        if (ReactionController == null)
-            return;
 
-        ReactionController.OnHandHover(hand);
+        if (reactionInteraction == null)
+        {
+            Debug.LogWarning(
+                $"{name}: ReactionInteraction no asignado."
+            );
+
+            return;
+        }
+
+
+        reactionInteraction.OnHandHover(
+            hand
+        );
     }
 
 
@@ -83,8 +99,7 @@ public class ReactionHandInteractable : MonoBehaviour
         if (handRenderer != null)
             handRenderer.material = normalMaterial;
 
-        // IMPORTANTE:
-        // No desactivamos el collider.
+
         if (handCollider != null)
             handCollider.enabled = true;
     }
@@ -95,20 +110,19 @@ public class ReactionHandInteractable : MonoBehaviour
         if (handRenderer != null)
             handRenderer.material = reactionMaterial;
 
+
         if (handCollider != null)
             handCollider.enabled = true;
     }
 
 
-    public ReactionExerciseController.Hand Hand => hand;
+    public ReactionExerciseController.Hand Hand =>
+        hand;
 
 
-    private ReactionExerciseController ReactionController { get; set; }
-
-
-    public void SetReactionController(
-        ReactionExerciseController controller)
+    public void SetReactionInteraction(
+        ReactionInteraction interaction)
     {
-        ReactionController = controller;
+        reactionInteraction = interaction;
     }
 }
