@@ -3,7 +3,8 @@ using UnityEngine;
 
 public class ReactionPassBall : MonoBehaviour
 {
-    [SerializeField] private float catchDuration = 0.2f;
+    [SerializeField] private float catchDuration = 0.7f;
+    [SerializeField] private float maxLifeTime = 3f;
 
     private PassReactionGameManager gameManager;
     private BallLauncher launcher;
@@ -13,6 +14,8 @@ public class ReactionPassBall : MonoBehaviour
 
     private bool resolved = false;
     private float launchTime;
+
+    private Coroutine lifeCoroutine;
 
     private void Awake()
     {
@@ -28,6 +31,8 @@ public class ReactionPassBall : MonoBehaviour
         launcher = ballLauncher;
 
         launchTime = Time.time;
+
+        lifeCoroutine = StartCoroutine(LifeTimer());
     }
 
     private void OnTriggerEnter(Collider other)
@@ -46,10 +51,18 @@ public class ReactionPassBall : MonoBehaviour
 
     private void CatchBall(Transform hand)
     {
+        if (resolved)
+            return;
+
         resolved = true;
 
-        float reactionTime =
-            Time.time - launchTime;
+        if (lifeCoroutine != null)
+        {
+            StopCoroutine(lifeCoroutine);
+            lifeCoroutine = null;
+        }
+
+        float reactionTime = Time.time - launchTime;
 
         if (gameManager != null)
             gameManager.RegisterCatch(reactionTime);
@@ -80,6 +93,30 @@ public class ReactionPassBall : MonoBehaviour
     {
         if (resolved)
             return;
+
+        resolved = true;
+
+        if (lifeCoroutine != null)
+        {
+            StopCoroutine(lifeCoroutine);
+            lifeCoroutine = null;
+        }
+
+        if (gameManager != null)
+            gameManager.RegisterMiss();
+
+        if (launcher != null)
+            launcher.BallResolved();
+
+        Destroy(gameObject);
+    }
+
+    private IEnumerator LifeTimer()
+    {
+        yield return new WaitForSeconds(maxLifeTime);
+
+        if (resolved)
+            yield break;
 
         resolved = true;
 
