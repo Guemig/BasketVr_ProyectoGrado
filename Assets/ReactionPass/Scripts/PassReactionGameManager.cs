@@ -22,13 +22,18 @@ public class PassReactionGameManager : MonoBehaviour
     [SerializeField] private GameObject exitButton;
     [SerializeField] private TMP_Text gameStatusText;
 
-    [Header("Configuración")]
+    [Header("Duración")]
     [SerializeField] private float gameDuration = 60f;
-    [SerializeField] private float delayBetweenBalls = 1f;
+
+    [Header("Tiempo entre pases")]
+    [SerializeField] private float level1Delay = 1f;
+    [SerializeField] private float level2Delay = 0.7f;
+    [SerializeField] private float level3Delay = 0.5f;
 
     [Header("Estado")]
     [SerializeField] private int currentLevel = 1;
     [SerializeField] private bool gameRunning = false;
+    [SerializeField] private bool timeExpired = false;
     [SerializeField] private bool exerciseFinished = false;
     [SerializeField] private float timeRemaining = 0f;
 
@@ -59,6 +64,7 @@ public class PassReactionGameManager : MonoBehaviour
     {
         currentLevel = 1;
         gameRunning = false;
+        timeExpired = false;
         exerciseFinished = false;
         timeRemaining = 0f;
 
@@ -79,7 +85,7 @@ public class PassReactionGameManager : MonoBehaviour
 
     private void Update()
     {
-        if (!gameRunning)
+        if (!gameRunning || timeExpired)
             return;
 
         timeRemaining -= Time.deltaTime;
@@ -87,7 +93,19 @@ public class PassReactionGameManager : MonoBehaviour
         if (timeRemaining <= 0f)
         {
             timeRemaining = 0f;
-            FinishCurrentLevel();
+            timeExpired = true;
+
+            if (nextBallCoroutine != null)
+            {
+                StopCoroutine(nextBallCoroutine);
+                nextBallCoroutine = null;
+            }
+
+            if (ballLauncher == null ||
+                !ballLauncher.HasActiveBall())
+            {
+                FinishCurrentLevel();
+            }
         }
     }
 
@@ -124,18 +142,13 @@ public class PassReactionGameManager : MonoBehaviour
         averageReactionTime = 0f;
 
         timeRemaining = gameDuration;
+        timeExpired = false;
         gameRunning = true;
 
         if (gameStatusText != null)
         {
             gameStatusText.text =
                 "NIVEL " + currentLevel;
-        }
-
-        if (ballLauncher != null)
-        {
-            ballLauncher.SetLevel(currentLevel);
-            ballLauncher.LaunchBall();
         }
 
         if (startButton != null)
@@ -146,6 +159,12 @@ public class PassReactionGameManager : MonoBehaviour
 
         if (exitButton != null)
             exitButton.SetActive(false);
+
+        if (ballLauncher != null)
+        {
+            ballLauncher.SetLevel(currentLevel);
+            ballLauncher.LaunchBall();
+        }
     }
 
     public void RegisterCatch(float reactionTime)
@@ -160,7 +179,7 @@ public class PassReactionGameManager : MonoBehaviour
         averageReactionTime =
             totalReactionTime / caughtBalls;
 
-        ScheduleNextBall();
+        BallFinished();
     }
 
     public void RegisterMiss()
@@ -170,16 +189,29 @@ public class PassReactionGameManager : MonoBehaviour
 
         missedBalls++;
 
+        BallFinished();
+    }
+
+    private void BallFinished()
+    {
+        if (timeExpired)
+        {
+            FinishCurrentLevel();
+            return;
+        }
+
         ScheduleNextBall();
     }
 
     private void ScheduleNextBall()
     {
-        if (!gameRunning)
+        if (!gameRunning || timeExpired)
             return;
 
         if (nextBallCoroutine != null)
+        {
             StopCoroutine(nextBallCoroutine);
+        }
 
         nextBallCoroutine =
             StartCoroutine(NextBall());
@@ -187,12 +219,29 @@ public class PassReactionGameManager : MonoBehaviour
 
     private IEnumerator NextBall()
     {
-        yield return new WaitForSeconds(delayBetweenBalls);
+        float delay = GetCurrentLevelDelay();
+
+        yield return new WaitForSeconds(delay);
 
         nextBallCoroutine = null;
 
-        if (gameRunning && ballLauncher != null)
+        if (gameRunning &&
+            !timeExpired &&
+            ballLauncher != null)
+        {
             ballLauncher.LaunchBall();
+        }
+    }
+
+    private float GetCurrentLevelDelay()
+    {
+        if (currentLevel == 1)
+            return level1Delay;
+
+        if (currentLevel == 2)
+            return level2Delay;
+
+        return level3Delay;
     }
 
     private void FinishCurrentLevel()
@@ -209,9 +258,6 @@ public class PassReactionGameManager : MonoBehaviour
             StopCoroutine(nextBallCoroutine);
             nextBallCoroutine = null;
         }
-
-        if (ballLauncher != null)
-            ballLauncher.StopLauncher();
 
         if (currentLevel < 3)
         {
@@ -263,13 +309,17 @@ public class PassReactionGameManager : MonoBehaviour
         }
 
         if (currentLevel == 1)
+        {
             level1Stats = stats;
-
+        }
         else if (currentLevel == 2)
+        {
             level2Stats = stats;
-
-        else if (currentLevel == 3)
+        }
+        else
+        {
             level3Stats = stats;
+        }
     }
 
     private void ResetAllStats()
@@ -298,21 +348,48 @@ public class PassReactionGameManager : MonoBehaviour
             "¡EJERCICIO COMPLETADO!\n\n" +
 
             "NIVEL 1\n" +
-            "Atrapadas: " + level1Stats.caught + "\n" +
-            "Falladas: " + level1Stats.missed + "\n" +
-            "Precisión: " + level1Stats.accuracy.ToString("F1") + "%\n" +
-            "Reacción: " + level1Stats.averageReaction.ToString("F3") + " s\n\n" +
+            "Atrapadas: " +
+            level1Stats.caught + "\n" +
+
+            "Falladas: " +
+            level1Stats.missed + "\n" +
+
+            "Precisión: " +
+            level1Stats.accuracy.ToString("F1") +
+            "%\n" +
+
+            "Reacción: " +
+            level1Stats.averageReaction.ToString("F3") +
+            " s\n\n" +
 
             "NIVEL 2\n" +
-            "Atrapadas: " + level2Stats.caught + "\n" +
-            "Falladas: " + level2Stats.missed + "\n" +
-            "Precisión: " + level2Stats.accuracy.ToString("F1") + "%\n" +
-            "Reacción: " + level2Stats.averageReaction.ToString("F3") + " s\n\n" +
+            "Atrapadas: " +
+            level2Stats.caught + "\n" +
+
+            "Falladas: " +
+            level2Stats.missed + "\n" +
+
+            "Precisión: " +
+            level2Stats.accuracy.ToString("F1") +
+            "%\n" +
+
+            "Reacción: " +
+            level2Stats.averageReaction.ToString("F3") +
+            " s\n\n" +
 
             "NIVEL 3\n" +
-            "Atrapadas: " + level3Stats.caught + "\n" +
-            "Falladas: " + level3Stats.missed + "\n" +
-            "Precisión: " + level3Stats.accuracy.ToString("F1") + "%\n" +
-            "Reacción: " + level3Stats.averageReaction.ToString("F3") + " s";
+            "Atrapadas: " +
+            level3Stats.caught + "\n" +
+
+            "Falladas: " +
+            level3Stats.missed + "\n" +
+
+            "Precisión: " +
+            level3Stats.accuracy.ToString("F1") +
+            "%\n" +
+
+            "Reacción: " +
+            level3Stats.averageReaction.ToString("F3") +
+            " s";
     }
 }
