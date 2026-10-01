@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class ReactionInteraction : MonoBehaviour
@@ -12,9 +13,15 @@ public class ReactionInteraction : MonoBehaviour
     private bool reactionActive;
     private bool reactionResolved;
 
+    private float activationTime;
+
 
     public bool IsResolved =>
         reactionResolved;
+
+
+    // Evento que notifica resultado: (correcto, reactionTime)
+    public event Action<bool, float> ReactionResolved;
 
 
     // =====================================================
@@ -29,6 +36,7 @@ public class ReactionInteraction : MonoBehaviour
         reactionInProgress = true;
         reactionActive = false;
         reactionResolved = false;
+        activationTime = 0f;
 
         SetResultNormal(hand);
 
@@ -51,6 +59,7 @@ public class ReactionInteraction : MonoBehaviour
             return;
 
         reactionActive = true;
+        activationTime = Time.time;
 
         Debug.Log(
             $"[INTERACTION] Active - Expected: {expectedHand}"
@@ -159,6 +168,11 @@ public class ReactionInteraction : MonoBehaviour
         if (reactionResolved)
             return;
 
+        float reactionTime =
+            reactionActive && activationTime > 0f
+            ? Time.time - activationTime
+            : 0f;
+
         reactionResolved = true;
 
         Debug.Log(
@@ -166,14 +180,20 @@ public class ReactionInteraction : MonoBehaviour
         );
 
         SetResultCorrect(expectedHand);
-    }
 
+        ReactionResolved?.Invoke(true, reactionTime);
+    }
 
     private void HandleWrongReaction(
         string reason)
     {
         if (reactionResolved)
             return;
+
+        float reactionTime =
+            reactionActive && activationTime > 0f
+            ? Time.time - activationTime
+            : 0f;
 
         reactionResolved = true;
 
@@ -182,6 +202,8 @@ public class ReactionInteraction : MonoBehaviour
         );
 
         SetResultWrong(expectedHand);
+
+        ReactionResolved?.Invoke(false, reactionTime);
     }
 
 

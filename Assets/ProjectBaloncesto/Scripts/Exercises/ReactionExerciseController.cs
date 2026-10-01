@@ -27,6 +27,10 @@ public class ReactionExerciseController : MonoBehaviour
 
     [SerializeField] private ReactionMenuController menuController;
 
+    [SerializeField] private ReactionResultsUI resultsUI;
+
+    [SerializeField] private ReactionResultsController resultsController;
+
 
     [Header("Reaction Timing By Level")]
     [SerializeField]
@@ -326,8 +330,12 @@ public class ReactionExerciseController : MonoBehaviour
         {
             menuController.ShowEndMenu();
         }
-    }
 
+        if (resultsUI != null)
+        {
+            resultsUI.ShowAllLevels();
+        }
+    }
 
     // =====================================================
     // INTERACTABLES
@@ -349,6 +357,23 @@ public class ReactionExerciseController : MonoBehaviour
                 interaction
             );
         }
+
+        if (interaction != null)
+        {
+            interaction.ReactionResolved += OnReactionResolved;
+        }
+    }
+
+    private void OnReactionResolved(bool correct, float reactionTime)
+    {
+        if (resultsController == null || levelController == null)
+            return;
+
+        resultsController.RegisterReaction(
+            levelController.CurrentLevel,
+            correct,
+            reactionTime
+        );
     }
 
 
