@@ -210,6 +210,13 @@ public class ReactionTransition : MonoBehaviour
 
         while (elapsed < duration)
         {
+            // Pausable: no avanzar tiempo mientras el ejercicio esté pausado.
+            if (ReactionExerciseController.IsPaused)
+            {
+                yield return null;
+                continue;
+            }
+
             elapsed += Time.deltaTime;
 
 

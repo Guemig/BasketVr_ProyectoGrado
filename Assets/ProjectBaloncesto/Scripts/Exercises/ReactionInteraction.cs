@@ -13,7 +13,8 @@ public class ReactionInteraction : MonoBehaviour
     private bool reactionActive;
     private bool reactionResolved;
 
-    private float activationTime;
+    // Guardar tiempo normalizado: Time.realtimeSinceStartup - TotalPausedTime al activarse.
+    private float activationTimeNormalized;
 
 
     public bool IsResolved =>
@@ -36,7 +37,7 @@ public class ReactionInteraction : MonoBehaviour
         reactionInProgress = true;
         reactionActive = false;
         reactionResolved = false;
-        activationTime = 0f;
+        activationTimeNormalized = 0f;
 
         SetResultNormal(hand);
 
@@ -58,8 +59,14 @@ public class ReactionInteraction : MonoBehaviour
         if (reactionResolved)
             return;
 
+        // No activar durante pausa
+        if (ReactionExerciseController.IsPaused)
+            return;
+
         reactionActive = true;
-        activationTime = Time.time;
+        // Normalizamos tiempo para excluir pausas acumuladas
+        activationTimeNormalized =
+            Time.realtimeSinceStartup - ReactionExerciseController.TotalPausedTime;
 
         Debug.Log(
             $"[INTERACTION] Active - Expected: {expectedHand}"
@@ -78,6 +85,12 @@ public class ReactionInteraction : MonoBehaviour
             $"[INTERACTION] Hover received: {hand}"
         );
 
+        // No procesar entradas durante pausa
+        if (ReactionExerciseController.IsPaused)
+        {
+            Debug.Log("[INTERACTION] Ignored: exercise paused.");
+            return;
+        }
 
         if (!reactionInProgress)
         {
@@ -142,6 +155,10 @@ public class ReactionInteraction : MonoBehaviour
         if (reactionResolved)
             return;
 
+        // No resolver timeout durante pausa
+        if (ReactionExerciseController.IsPaused)
+            return;
+
         HandleWrongReaction(
             $"No reaction detected from {expectedHand}."
         );
@@ -169,8 +186,8 @@ public class ReactionInteraction : MonoBehaviour
             return;
 
         float reactionTime =
-            reactionActive && activationTime > 0f
-            ? Time.time - activationTime
+            reactionActive && activationTimeNormalized > 0f
+            ? Time.realtimeSinceStartup - ReactionExerciseController.TotalPausedTime - activationTimeNormalized
             : 0f;
 
         reactionResolved = true;
@@ -191,8 +208,8 @@ public class ReactionInteraction : MonoBehaviour
             return;
 
         float reactionTime =
-            reactionActive && activationTime > 0f
-            ? Time.time - activationTime
+            reactionActive && activationTimeNormalized > 0f
+            ? Time.realtimeSinceStartup - ReactionExerciseController.TotalPausedTime - activationTimeNormalized
             : 0f;
 
         reactionResolved = true;

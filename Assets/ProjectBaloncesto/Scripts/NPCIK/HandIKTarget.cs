@@ -76,6 +76,10 @@ public class HandIKTarget : MonoBehaviour
 
     private void Update()
     {
+        // Pausable: no avanzar movimiento ni activar reacción mientras el ejercicio está pausado.
+        if (ReactionExerciseController.IsPaused)
+            return;
+
         if (!isMoving)
             return;
 

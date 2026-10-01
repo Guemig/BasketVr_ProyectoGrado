@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 public class ReactionExerciseController : MonoBehaviour
@@ -47,6 +48,16 @@ public class ReactionExerciseController : MonoBehaviour
     private bool reactionInProgress;
 
 
+    // --- PAUSE (GLOBAL para este exercise controller) ---
+    private static bool isPaused;
+    private static float totalPausedTime;
+    private static float pauseStartRealtime;
+
+    public static bool IsPaused => isPaused;
+
+    public static float TotalPausedTime => totalPausedTime;
+
+
     private void Awake()
     {
         SetupInteractables();
@@ -59,7 +70,8 @@ public class ReactionExerciseController : MonoBehaviour
 
     public void StartExercise()
     {
-        CancelInvoke();
+        // Detener corrutinas locales previas del controlador
+        StopAllCoroutines();
 
         DisableAllInteractables();
 
@@ -97,6 +109,42 @@ public class ReactionExerciseController : MonoBehaviour
         sequence.CreateSequence();
 
         ExecuteNextReaction();
+    }
+
+
+    // =====================================================
+    // PAUSE API
+    // =====================================================
+
+    // Conectar desde botón Pause
+    public void PauseExercise()
+    {
+        if (isPaused)
+            return;
+
+        isPaused = true;
+        pauseStartRealtime = Time.realtimeSinceStartup;
+
+        Debug.Log("[EXERCISE] Paused.");
+
+        // No detener corrutinas aquí: las corrutinas son "pausables" y respetan IsPaused.
+        // Evitamos que nuevas interacciones se procesen; Interaction y HandIKTarget consultan IsPaused.
+    }
+
+    // Conectar desde botón Resume
+    public void ResumeExercise()
+    {
+        if (!isPaused)
+            return;
+
+        float pausedDuration =
+            Time.realtimeSinceStartup - pauseStartRealtime;
+
+        totalPausedTime += pausedDuration;
+        pauseStartRealtime = 0f;
+        isPaused = false;
+
+        Debug.Log("[EXERCISE] Resumed.");
     }
 
 
@@ -147,6 +195,9 @@ public class ReactionExerciseController : MonoBehaviour
         if (!reactionInProgress)
             return;
 
+        if (IsPaused)
+            return;
+
 
         Debug.Log(
             $"[REACTION] ACTIVE {currentHand}"
@@ -159,9 +210,11 @@ public class ReactionExerciseController : MonoBehaviour
         StartCurrentHandReaction();
 
 
-        Invoke(
-            nameof(ReturnCurrentHand),
-            GetTimeBetweenReactions()
+        StartCoroutine(
+            WaitAndExecute(
+                GetTimeBetweenReactions(),
+                ReturnCurrentHand
+            )
         );
     }
 
@@ -216,6 +269,11 @@ public class ReactionExerciseController : MonoBehaviour
         if (!reactionInProgress)
             return;
 
+        if (IsPaused)
+        {
+            // Si está pausado, reintentará cuando la corrutina continue tras reanudar.
+            return;
+        }
 
         interaction.ResolveTimeout();
 
@@ -243,9 +301,11 @@ public class ReactionExerciseController : MonoBehaviour
         }
 
 
-        Invoke(
-            nameof(ExecuteNextReaction),
-            GetTimeBetweenReactions()
+        StartCoroutine(
+            WaitAndExecute(
+                GetTimeBetweenReactions(),
+                ExecuteNextReaction
+            )
         );
     }
 
@@ -418,6 +478,23 @@ public class ReactionExerciseController : MonoBehaviour
             0f,
             timeBetweenReactions[index]
         );
+    }
+
+    private IEnumerator WaitAndExecute(float duration, Action onComplete)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (!IsPaused)
+            {
+                elapsed += Time.deltaTime;
+            }
+
+            yield return null;
+        }
+
+        onComplete?.Invoke();
     }
 
 
