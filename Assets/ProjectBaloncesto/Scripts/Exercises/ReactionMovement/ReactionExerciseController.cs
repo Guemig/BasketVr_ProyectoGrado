@@ -32,6 +32,9 @@ public class ReactionExerciseController : MonoBehaviour
 
     [SerializeField] private ReactionResultsController resultsController;
 
+    // Nuevo: referencia opcional al controlador de tutorial
+    [SerializeField] private ReactionTutorialController tutorialController;
+
 
     [Header("Reaction Timing By Level")]
     [SerializeField]
@@ -63,6 +66,25 @@ public class ReactionExerciseController : MonoBehaviour
         SetupInteractables();
     }
 
+    private void Start()
+    {
+        // Si el modo actual es Tutorial, iniciar el tutorial en lugar
+        // de comenzar inmediatamente la secuencia del ejercicio.
+        if (ReactionModeController.CurrentMode ==
+            ReactionModeController.ReactionMode.Tutorial)
+        {
+            if (tutorialController != null)
+            {
+                // Ocultar el botón Start mientras dura el tutorial si hay menú.
+                if (menuController != null)
+                {
+                    menuController.SetStartButtonActive(false);
+                }
+
+                tutorialController.StartTutorial();
+            }
+        }
+    }
 
     // =====================================================
     // EXERCISE

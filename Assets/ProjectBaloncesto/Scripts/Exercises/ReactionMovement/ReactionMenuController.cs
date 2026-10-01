@@ -36,6 +36,22 @@ public class ReactionMenuController : MonoBehaviour
     // UNITY
     // =====================================================
 
+    private void Start()
+    {
+        // Si estamos en modo Training mostramos el Start al inicio,
+        // si estamos en modo Tutorial lo dejamos oculto.
+        bool showStart =
+            ReactionModeController.CurrentMode ==
+            ReactionModeController.ReactionMode.Training;
+
+        if (startButton != null)
+        {
+            startButton.SetActive(showStart);
+        }
+
+        currentState = showStart ? MenuState.Start : MenuState.Exercise;
+    }
+
     private void OnEnable()
     {
         if (pauseAction != null)
@@ -104,6 +120,42 @@ public class ReactionMenuController : MonoBehaviour
         }
     }
 
+    // Nuevo: Exponer control simple para activar/desactivar el start button desde código
+    // (usado por el tutorial para ocultarlo/mostrarlo sin duplicar lógica).
+    public void SetStartButtonActive(bool active)
+    {
+        if (startButton != null)
+            startButton.SetActive(active);
+
+        currentState = active ? MenuState.Start : MenuState.Exercise;
+    }
+
+    // Nuevo: Mostrar el menú de inicio (Start) cuando finaliza el tutorial
+    public void ShowStartMenu()
+    {
+        isPaused = false;
+        currentState = MenuState.Start;
+
+        if (startButton != null)
+        {
+            startButton.SetActive(true);
+        }
+
+        if (pausePanel != null)
+        {
+            pausePanel.SetActive(false);
+        }
+
+        if (endPanel != null)
+        {
+            endPanel.SetActive(false);
+        }
+
+        if (OptionPanel != null)
+        {
+            OptionPanel.SetActive(false);
+        }
+    }
 
     // =====================================================
     // PAUSE / RESUME

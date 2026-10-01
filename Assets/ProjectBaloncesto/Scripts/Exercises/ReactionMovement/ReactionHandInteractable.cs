@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class ReactionHandInteractable : MonoBehaviour
@@ -24,6 +25,9 @@ public class ReactionHandInteractable : MonoBehaviour
 
 
     private ReactionInteraction reactionInteraction;
+
+    // Nuevo: evento que notifica que el jugador ha hecho hover/interacción en esta mano.
+    public event Action<ReactionExerciseController.Hand> Hovered;
 
 
     private void Awake()
@@ -91,6 +95,8 @@ public class ReactionHandInteractable : MonoBehaviour
         reactionInteraction.OnHandHover(
             hand
         );
+
+        Hovered?.Invoke(hand);
     }
 
 
