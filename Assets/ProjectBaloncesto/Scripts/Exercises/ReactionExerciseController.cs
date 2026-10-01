@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class ReactionExerciseController : MonoBehaviour
@@ -24,9 +25,17 @@ public class ReactionExerciseController : MonoBehaviour
 
     [SerializeField] private CharacterIKController characterIK;
 
+    [SerializeField] private ReactionMenuController menuController;
 
-    [Header("Exercise Settings")]
-    [SerializeField] private float timeBetweenReactions = 1f;
+
+    [Header("Reaction Timing By Level")]
+    [SerializeField]
+    private float[] timeBetweenReactions =
+    {
+        1f,
+        0.8f,
+        0.6f
+    };
 
 
     private Hand currentHand;
@@ -50,6 +59,25 @@ public class ReactionExerciseController : MonoBehaviour
 
         DisableAllInteractables();
 
+
+        if (transition != null)
+        {
+            if (levelController != null)
+            {
+                transition.SetLevelLabel(
+                    levelController.CurrentLevel.ToString()
+                );
+            }
+
+
+            transition.PlayTransition(
+                StartCurrentLevel
+            );
+
+            return;
+        }
+
+
         StartCurrentLevel();
     }
 
@@ -57,7 +85,8 @@ public class ReactionExerciseController : MonoBehaviour
     private void StartCurrentLevel()
     {
         Debug.Log(
-            $"[EXERCISE] Starting {levelController.CurrentLevel}"
+            $"[EXERCISE] Starting " +
+            $"{levelController.CurrentLevel}"
         );
 
 
@@ -81,7 +110,9 @@ public class ReactionExerciseController : MonoBehaviour
         }
 
 
-        currentHand = sequence.GetNext();
+        currentHand =
+            sequence.GetNext();
+
 
         reactionInProgress = true;
 
@@ -120,12 +151,13 @@ public class ReactionExerciseController : MonoBehaviour
 
         interaction.ActivateReaction();
 
+
         StartCurrentHandReaction();
 
 
         Invoke(
             nameof(ReturnCurrentHand),
-            timeBetweenReactions
+            GetTimeBetweenReactions()
         );
     }
 
@@ -151,6 +183,25 @@ public class ReactionExerciseController : MonoBehaviour
         }
     }
 
+    private void EndCurrentHandReaction()
+    {
+        switch (currentHand)
+        {
+            case Hand.Left:
+
+                if (leftHandInteractable != null)
+                    leftHandInteractable.EndReaction();
+
+                break;
+
+            case Hand.Right:
+
+                if (rightHandInteractable != null)
+                    rightHandInteractable.EndReaction();
+
+                break;
+        }
+    }
 
     // =====================================================
     // RETURN
@@ -163,7 +214,6 @@ public class ReactionExerciseController : MonoBehaviour
 
 
         interaction.ResolveTimeout();
-
 
         EndCurrentHandReaction();
 
@@ -191,30 +241,8 @@ public class ReactionExerciseController : MonoBehaviour
 
         Invoke(
             nameof(ExecuteNextReaction),
-            timeBetweenReactions
+            GetTimeBetweenReactions()
         );
-    }
-
-
-    private void EndCurrentHandReaction()
-    {
-        switch (currentHand)
-        {
-            case Hand.Left:
-
-                if (leftHandInteractable != null)
-                    leftHandInteractable.EndReaction();
-
-                break;
-
-
-            case Hand.Right:
-
-                if (rightHandInteractable != null)
-                    rightHandInteractable.EndReaction();
-
-                break;
-        }
     }
 
 
@@ -235,7 +263,6 @@ public class ReactionExerciseController : MonoBehaviour
         );
 
 
-        // ¿Hay otro nivel?
         if (levelController.HasNextLevel())
         {
             StartLevelTransition();
@@ -244,7 +271,6 @@ public class ReactionExerciseController : MonoBehaviour
         }
 
 
-        // No hay más niveles.
         CompleteExercise();
     }
 
@@ -265,6 +291,14 @@ public class ReactionExerciseController : MonoBehaviour
 
         if (transition != null)
         {
+            if (levelController != null)
+            {
+                transition.SetLevelLabel(
+                    levelController.CurrentLevel.ToString()
+                );
+            }
+
+
             transition.PlayTransition(
                 StartCurrentLevel
             );
@@ -287,6 +321,11 @@ public class ReactionExerciseController : MonoBehaviour
         Debug.Log(
             "[EXERCISE] Exercise completed."
         );
+
+        if (menuController != null)
+        {
+            menuController.ShowEndMenu();
+        }
     }
 
 
@@ -322,4 +361,82 @@ public class ReactionExerciseController : MonoBehaviour
         if (rightHandInteractable != null)
             rightHandInteractable.EndReaction();
     }
+
+
+    // =====================================================
+    // TIMING
+    // =====================================================
+
+    private float GetTimeBetweenReactions()
+    {
+        int index =
+            (int)levelController.CurrentLevel;
+
+
+        if (timeBetweenReactions == null ||
+            timeBetweenReactions.Length == 0)
+        {
+            return 1f;
+        }
+
+
+        if (index < 0 ||
+            index >= timeBetweenReactions.Length)
+        {
+            return timeBetweenReactions[
+                timeBetweenReactions.Length - 1
+            ];
+        }
+
+
+        return Mathf.Max(
+            0f,
+            timeBetweenReactions[index]
+        );
+    }
+
+
+#if UNITY_EDITOR
+
+    private void OnValidate()
+    {
+        int levelCount =
+            Enum.GetValues(
+                typeof(
+                    ReactionLevelController.ReactionLevel
+                )
+            ).Length;
+
+
+        if (timeBetweenReactions == null ||
+            timeBetweenReactions.Length != levelCount)
+        {
+            float[] newTimes =
+                new float[levelCount];
+
+
+            for (int i = 0;
+                 i < levelCount;
+                 i++)
+            {
+                if (timeBetweenReactions != null &&
+                    i < timeBetweenReactions.Length)
+                {
+                    newTimes[i] =
+                        timeBetweenReactions[i];
+                }
+                else
+                {
+                    newTimes[i] =
+                        1f;
+                }
+            }
+
+
+            timeBetweenReactions =
+                newTimes;
+        }
+    }
+
+#endif
 }

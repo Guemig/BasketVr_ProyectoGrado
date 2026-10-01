@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using UnityEngine;
+using TMPro;
 
 public class ReactionTransition : MonoBehaviour
 {
@@ -8,6 +9,8 @@ public class ReactionTransition : MonoBehaviour
     [SerializeField] private Transform playerCamera;
 
     [SerializeField] private AudioSource transitionAudioSource;
+
+    [SerializeField] private TextMeshProUGUI levelText;
 
 
     [Header("Position")]
@@ -43,6 +46,19 @@ public class ReactionTransition : MonoBehaviour
     private Coroutine transitionCoroutine;
 
     private bool isTransitioning;
+
+
+    // =====================================================
+    // PUBLIC API
+    // =====================================================
+
+    public void SetLevelLabel(string label)
+    {
+        if (levelText == null)
+            return;
+
+        levelText.text = label;
+    }
 
 
     // =====================================================

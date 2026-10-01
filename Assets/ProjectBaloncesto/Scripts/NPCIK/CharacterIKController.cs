@@ -9,6 +9,7 @@ public class CharacterIKController : MonoBehaviour
     [SerializeField] private HandIKTarget rightHandTarget;
     [SerializeField] private HandIKTarget leftHandTarget;
 
+
     [Header("IK Settings")]
     [Range(0f, 1f)]
     [SerializeField] private float rightHandWeight = 1f;
@@ -16,13 +17,15 @@ public class CharacterIKController : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float leftHandWeight = 1f;
 
+
     [Header("Rotation")]
     [SerializeField] private bool useHandRotation = true;
 
 
     private void Reset()
     {
-        animator = GetComponent<Animator>();
+        animator =
+            GetComponent<Animator>();
     }
 
 
@@ -41,15 +44,18 @@ public class CharacterIKController : MonoBehaviour
         if (rightHandTarget == null)
             return;
 
+
         animator.SetIKPositionWeight(
             AvatarIKGoal.RightHand,
             rightHandWeight
         );
 
+
         animator.SetIKPosition(
             AvatarIKGoal.RightHand,
             rightHandTarget.transform.position
         );
+
 
         if (useHandRotation)
         {
@@ -57,6 +63,7 @@ public class CharacterIKController : MonoBehaviour
                 AvatarIKGoal.RightHand,
                 rightHandWeight
             );
+
 
             animator.SetIKRotation(
                 AvatarIKGoal.RightHand,
@@ -71,15 +78,18 @@ public class CharacterIKController : MonoBehaviour
         if (leftHandTarget == null)
             return;
 
+
         animator.SetIKPositionWeight(
             AvatarIKGoal.LeftHand,
             leftHandWeight
         );
 
+
         animator.SetIKPosition(
             AvatarIKGoal.LeftHand,
             leftHandTarget.transform.position
         );
+
 
         if (useHandRotation)
         {
@@ -87,6 +97,7 @@ public class CharacterIKController : MonoBehaviour
                 AvatarIKGoal.LeftHand,
                 leftHandWeight
             );
+
 
             animator.SetIKRotation(
                 AvatarIKGoal.LeftHand,
@@ -100,30 +111,45 @@ public class CharacterIKController : MonoBehaviour
     // RIGHT HAND
     // =====================================================
 
-    public void MoveRightHandMiddle(Action onActivated = null)
+    public void MoveRightHandMiddle(
+        ReactionLevelController.ReactionLevel level,
+        Action onActivated = null)
     {
         if (rightHandTarget == null)
             return;
 
-        rightHandTarget.MoveToMiddle(onActivated);
+        rightHandTarget.MoveToMiddle(
+            level,
+            onActivated
+        );
     }
 
 
-    public void MoveRightHandHigh(Action onActivated = null)
+    public void MoveRightHandHigh(
+        ReactionLevelController.ReactionLevel level,
+        Action onActivated = null)
     {
         if (rightHandTarget == null)
             return;
 
-        rightHandTarget.MoveToHigh(onActivated);
+        rightHandTarget.MoveToHigh(
+            level,
+            onActivated
+        );
     }
 
 
-    public void MoveRightHandLow(Action onActivated = null)
+    public void MoveRightHandLow(
+        ReactionLevelController.ReactionLevel level,
+        Action onActivated = null)
     {
         if (rightHandTarget == null)
             return;
 
-        rightHandTarget.MoveToLow(onActivated);
+        rightHandTarget.MoveToLow(
+            level,
+            onActivated
+        );
     }
 
 
@@ -140,30 +166,45 @@ public class CharacterIKController : MonoBehaviour
     // LEFT HAND
     // =====================================================
 
-    public void MoveLeftHandMiddle(Action onActivated = null)
+    public void MoveLeftHandMiddle(
+        ReactionLevelController.ReactionLevel level,
+        Action onActivated = null)
     {
         if (leftHandTarget == null)
             return;
 
-        leftHandTarget.MoveToMiddle(onActivated);
+        leftHandTarget.MoveToMiddle(
+            level,
+            onActivated
+        );
     }
 
 
-    public void MoveLeftHandHigh(Action onActivated = null)
+    public void MoveLeftHandHigh(
+        ReactionLevelController.ReactionLevel level,
+        Action onActivated = null)
     {
         if (leftHandTarget == null)
             return;
 
-        leftHandTarget.MoveToHigh(onActivated);
+        leftHandTarget.MoveToHigh(
+            level,
+            onActivated
+        );
     }
 
 
-    public void MoveLeftHandLow(Action onActivated = null)
+    public void MoveLeftHandLow(
+        ReactionLevelController.ReactionLevel level,
+        Action onActivated = null)
     {
         if (leftHandTarget == null)
             return;
 
-        leftHandTarget.MoveToLow(onActivated);
+        leftHandTarget.MoveToLow(
+            level,
+            onActivated
+        );
     }
 
 

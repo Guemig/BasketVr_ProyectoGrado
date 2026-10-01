@@ -6,27 +6,30 @@ public class VRPlayerRotationTracker : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform playerCamera;
 
-    [Header("Rotation Settings")]
+    [Header("Rotation")]
     [SerializeField] private float rotationThreshold = 90f;
 
-    private readonly List<IVRPlayerRotationObserver> observers = new();
+    [Header("Height")]
+    [SerializeField] private float heightThreshold = 0.01f;
+
+    private readonly List<IVRPlayerRotationObserver> observers =
+        new List<IVRPlayerRotationObserver>();
 
     private Vector3 lastForward;
+    private float lastHeight;
 
     public Transform PlayerCamera => playerCamera;
 
     private void Start()
     {
         if (playerCamera == null)
-        {
-            Debug.LogError(
-                "VRPlayerRotationTracker: No se asignó la cámara."
-            );
-
             return;
-        }
 
-        lastForward = GetFlatForward(playerCamera.forward);
+        lastForward =
+            GetFlatForward(playerCamera.forward);
+
+        lastHeight =
+            playerCamera.position.y;
     }
 
     private void Update()
@@ -34,6 +37,11 @@ public class VRPlayerRotationTracker : MonoBehaviour
         if (playerCamera == null)
             return;
 
+        CheckPlayerMovement();
+    }
+
+    private void CheckPlayerMovement()
+    {
         Vector3 currentForward =
             GetFlatForward(playerCamera.forward);
 
@@ -43,11 +51,30 @@ public class VRPlayerRotationTracker : MonoBehaviour
                 currentForward
             );
 
-        if (angle >= rotationThreshold)
+        float currentHeight =
+            playerCamera.position.y;
+
+        float heightDifference =
+            Mathf.Abs(
+                currentHeight -
+                lastHeight
+            );
+
+        bool rotationChanged =
+            angle >= rotationThreshold;
+
+        bool heightChanged =
+            heightDifference >= heightThreshold;
+
+        if (rotationChanged || heightChanged)
         {
             NotifyObservers();
 
-            lastForward = currentForward;
+            lastForward =
+                currentForward;
+
+            lastHeight =
+                currentHeight;
         }
     }
 
@@ -57,10 +84,10 @@ public class VRPlayerRotationTracker : MonoBehaviour
         if (observer == null)
             return;
 
-        if (observers.Contains(observer))
-            return;
-
-        observers.Add(observer);
+        if (!observers.Contains(observer))
+        {
+            observers.Add(observer);
+        }
     }
 
     public void UnregisterObserver(
@@ -76,11 +103,12 @@ public class VRPlayerRotationTracker : MonoBehaviour
     {
         foreach (IVRPlayerRotationObserver observer in observers)
         {
-            observer.OnPlayerRotation();
+            observer.OnPlayerTransformChanged();
         }
     }
 
-    private Vector3 GetFlatForward(Vector3 direction)
+    private Vector3 GetFlatForward(
+        Vector3 direction)
     {
         direction.y = 0f;
 

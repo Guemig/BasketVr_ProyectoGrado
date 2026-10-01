@@ -818,6 +818,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerCamera: {fileID: 1594959807}
   rotationThreshold: 80
+  heightThreshold: 0.01
 --- !u!1001 &234113934
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3825,6 +3826,7 @@ MonoBehaviour:
   playerTracker: {fileID: 195125751}
   radius: 2
   heightOffset: 1
+  followPlayerHeight: 0
   maxAngle: 80
   movementDuration: 0.7
   movementCurve:

@@ -5,6 +5,8 @@ public class ReactionMenuController : MonoBehaviour
     [Header("References")]
     [SerializeField] private GameObject startButton;
 
+    [SerializeField] private GameObject endPanel;
+
     [SerializeField] private ReactionExerciseController exerciseController;
 
 
@@ -19,11 +21,27 @@ public class ReactionMenuController : MonoBehaviour
             startButton.SetActive(false);
         }
 
+        if (endPanel != null)
+        {
+            endPanel.SetActive(false);
+        }
 
         if (exerciseController != null)
         {
             exerciseController.StartExercise();
         }
     }
-}
 
+
+    // =====================================================
+    // EXERCISE COMPLETE
+    // =====================================================
+
+    public void ShowEndMenu()
+    {
+        if (endPanel != null)
+        {
+            endPanel.SetActive(true);
+        }
+    }
+}

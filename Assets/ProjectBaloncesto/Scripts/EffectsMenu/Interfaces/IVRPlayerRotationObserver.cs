@@ -1,4 +1,4 @@
 public interface IVRPlayerRotationObserver
 {
-    void OnPlayerRotation();
+    void OnPlayerTransformChanged();
 }

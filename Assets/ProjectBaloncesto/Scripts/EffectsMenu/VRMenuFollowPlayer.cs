@@ -1,7 +1,9 @@
 using System.Collections;
 using UnityEngine;
 
-public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
+public class VRMenuFollowPlayer :
+    MonoBehaviour,
+    IVRPlayerRotationObserver
 {
     [Header("References")]
     [SerializeField] private VRPlayerRotationTracker playerTracker;
@@ -9,6 +11,9 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
     [Header("Position")]
     [SerializeField] private float radius = 2f;
     [SerializeField] private float heightOffset = 0f;
+
+    [Header("Follow Height")]
+    [SerializeField] private bool followPlayerHeight = true;
 
     [Header("Menu Angle")]
     [SerializeField] private float maxAngle = 90f;
@@ -37,7 +42,6 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
         if (playerTracker == null)
             return;
 
-        // Dejar de escuchar al Player.
         playerTracker.UnregisterObserver(this);
 
         SetInitialPosition();
@@ -65,7 +69,9 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
             playerCamera.position +
             forward * radius;
 
-        targetPosition.y += heightOffset;
+        targetPosition.y =
+            playerCamera.position.y +
+            heightOffset;
 
         transform.position =
             targetPosition;
@@ -74,9 +80,9 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
             playerCamera.position
         );
     }
-    public void OnPlayerRotation()
-    {
 
+    public void OnPlayerTransformChanged()
+    {
         CheckMenuPosition();
     }
 
@@ -87,6 +93,27 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
 
         if (playerCamera == null)
             return;
+
+        // -----------------------------------------
+        // SEGUIR ALTURA DEL JUGADOR
+        // -----------------------------------------
+
+        if (followPlayerHeight)
+        {
+            Vector3 currentPosition =
+                transform.position;
+
+            currentPosition.y =
+                playerCamera.position.y +
+                heightOffset;
+
+            transform.position =
+                currentPosition;
+        }
+
+        // -----------------------------------------
+        // LÓGICA DE ROTACIÓN
+        // -----------------------------------------
 
         Vector3 playerForward =
             playerCamera.forward;
@@ -123,7 +150,6 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
                 Mathf.Clamp(dot, -1f, 1f)
             ) * Mathf.Rad2Deg;
 
-
         if (angle > maxAngle)
         {
             RepositionInFront();
@@ -141,7 +167,9 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
         }
 
         movementCoroutine =
-            StartCoroutine(MoveInFront());
+            StartCoroutine(
+                MoveInFront()
+            );
     }
 
     private IEnumerator MoveInFront()
@@ -169,7 +197,9 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
             playerPosition +
             forward * radius;
 
-        targetPosition.y += heightOffset;
+        targetPosition.y =
+            playerCamera.position.y +
+            heightOffset;
 
         Vector3 startDirection =
             GetFlatDirection(
@@ -185,7 +215,8 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
 
         if (startDirection == Vector3.zero)
         {
-            startDirection = targetDirection;
+            startDirection =
+                targetDirection;
         }
 
         float totalAngle =
@@ -199,7 +230,8 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
 
         while (elapsed < movementDuration)
         {
-            elapsed += Time.deltaTime;
+            elapsed +=
+                Time.deltaTime;
 
             float t =
                 Mathf.Clamp01(
@@ -207,7 +239,8 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
                     movementDuration
                 );
 
-            t = movementCurve.Evaluate(t);
+            t =
+                movementCurve.Evaluate(t);
 
             float currentAngle =
                 totalAngle * t;
@@ -223,21 +256,48 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
                 playerPosition +
                 currentDirection * radius;
 
-            currentPosition.y =
-                targetPosition.y;
+            // -----------------------------------------
+            // ALTURA
+            // -----------------------------------------
+
+            if (followPlayerHeight)
+            {
+                currentPosition.y =
+                    playerCamera.position.y +
+                    heightOffset;
+            }
+            else
+            {
+                currentPosition.y =
+                    targetPosition.y;
+            }
 
             transform.position =
                 currentPosition;
 
-            LookAtPlayer(playerPosition);
+            LookAtPlayer(
+                playerCamera.position
+            );
 
             yield return null;
         }
 
+        // -----------------------------------------
+        // POSICIÓN FINAL
+        // -----------------------------------------
+
+        targetPosition.y =
+            followPlayerHeight
+                ? playerCamera.position.y +
+                  heightOffset
+                : targetPosition.y;
+
         transform.position =
             targetPosition;
 
-        LookAtPlayer(playerPosition);
+        LookAtPlayer(
+            playerCamera.position
+        );
 
         movementCoroutine = null;
     }
@@ -255,7 +315,9 @@ public class VRMenuFollowPlayer : MonoBehaviour, IVRPlayerRotationObserver
             return;
 
         transform.rotation =
-            Quaternion.LookRotation(direction);
+            Quaternion.LookRotation(
+                direction
+            );
     }
 
     private Vector3 GetFlatDirection(

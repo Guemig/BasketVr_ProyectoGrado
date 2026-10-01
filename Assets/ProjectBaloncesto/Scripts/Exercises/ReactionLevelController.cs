@@ -29,9 +29,11 @@ public class ReactionLevelController : MonoBehaviour
     // LEVEL
     // =====================================================
 
-    public void SetLevel(ReactionLevel level)
+    public void SetLevel(
+        ReactionLevel level)
     {
-        currentLevel = level;
+        currentLevel =
+            level;
 
         Debug.Log(
             $"[LEVEL] Changed to {currentLevel}"
@@ -41,7 +43,8 @@ public class ReactionLevelController : MonoBehaviour
 
     public bool HasNextLevel()
     {
-        return currentLevel != ReactionLevel.Level3;
+        return currentLevel !=
+               ReactionLevel.Level3;
     }
 
 
@@ -63,6 +66,7 @@ public class ReactionLevelController : MonoBehaviour
         Debug.Log(
             $"[LEVEL] Advanced to {currentLevel}"
         );
+
 
         return true;
     }
@@ -163,7 +167,10 @@ public class ReactionLevelController : MonoBehaviour
         Action onActivated)
     {
         int randomHeight =
-            UnityEngine.Random.Range(0, 3);
+            UnityEngine.Random.Range(
+                0,
+                3
+            );
 
 
         switch (randomHeight)
@@ -213,6 +220,7 @@ public class ReactionLevelController : MonoBehaviour
             case ReactionExerciseController.Hand.Left:
 
                 characterIK.MoveLeftHandMiddle(
+                    currentLevel,
                     onActivated
                 );
 
@@ -222,6 +230,7 @@ public class ReactionLevelController : MonoBehaviour
             case ReactionExerciseController.Hand.Right:
 
                 characterIK.MoveRightHandMiddle(
+                    currentLevel,
                     onActivated
                 );
 
@@ -239,6 +248,7 @@ public class ReactionLevelController : MonoBehaviour
             case ReactionExerciseController.Hand.Left:
 
                 characterIK.MoveLeftHandHigh(
+                    currentLevel,
                     onActivated
                 );
 
@@ -248,6 +258,7 @@ public class ReactionLevelController : MonoBehaviour
             case ReactionExerciseController.Hand.Right:
 
                 characterIK.MoveRightHandHigh(
+                    currentLevel,
                     onActivated
                 );
 
@@ -265,6 +276,7 @@ public class ReactionLevelController : MonoBehaviour
             case ReactionExerciseController.Hand.Left:
 
                 characterIK.MoveLeftHandLow(
+                    currentLevel,
                     onActivated
                 );
 
@@ -274,6 +286,7 @@ public class ReactionLevelController : MonoBehaviour
             case ReactionExerciseController.Hand.Right:
 
                 characterIK.MoveRightHandLow(
+                    currentLevel,
                     onActivated
                 );
 
