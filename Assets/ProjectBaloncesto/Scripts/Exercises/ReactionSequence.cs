@@ -3,7 +3,13 @@ using UnityEngine;
 public class ReactionSequence : MonoBehaviour
 {
     [Header("Sequence Settings")]
-    [SerializeField] private int totalReactions = 10;
+    [SerializeField] private ReactionLevelController levelController;
+
+    [SerializeField]
+    private int[] totalReactionsByLevel =
+    {
+        10, 10, 10
+    };
 
     [SerializeField] private int maxConsecutiveReactions = 3;
 
@@ -19,6 +25,8 @@ public class ReactionSequence : MonoBehaviour
 
     public void CreateSequence()
     {
+        int totalReactions = GetTotalReactions();
+
         sequence =
             new ReactionExerciseController.Hand[totalReactions];
 
@@ -156,4 +164,79 @@ public class ReactionSequence : MonoBehaviour
     {
         currentIndex = 0;
     }
+
+
+    // =====================================================
+    // TOTAL REACTIONS BY LEVEL
+    // =====================================================
+
+    private int GetTotalReactions()
+    {
+        if (totalReactionsByLevel == null ||
+            totalReactionsByLevel.Length == 0)
+        {
+            return 10;
+        }
+
+        if (levelController == null)
+        {
+            return Mathf.Max(1, totalReactionsByLevel[0]);
+        }
+
+        int index = (int)levelController.CurrentLevel;
+
+        if (index < 0 || index >= totalReactionsByLevel.Length)
+        {
+            return Mathf.Max(1, totalReactionsByLevel[
+                totalReactionsByLevel.Length - 1
+            ]);
+        }
+
+        return Mathf.Max(1, totalReactionsByLevel[index]);
+    }
+
+
+#if UNITY_EDITOR
+
+    private void OnValidate()
+    {
+        int levelCount =
+            System.Enum.GetValues(
+                typeof(
+                    ReactionLevelController.ReactionLevel
+                )
+            ).Length;
+
+
+        if (totalReactionsByLevel == null ||
+            totalReactionsByLevel.Length != levelCount)
+        {
+            int[] newTotals =
+                new int[levelCount];
+
+
+            for (int i = 0;
+                 i < levelCount;
+                 i++)
+            {
+                if (totalReactionsByLevel != null &&
+                    i < totalReactionsByLevel.Length)
+                {
+                    newTotals[i] =
+                        totalReactionsByLevel[i];
+                }
+                else
+                {
+                    newTotals[i] =
+                        10;
+                }
+            }
+
+
+            totalReactionsByLevel =
+                newTotals;
+        }
+    }
+
+#endif
 }

@@ -4987,7 +4987,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eda560bcb0f18e744996522ebb464dd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  totalReactions: 10
+  levelController: {fileID: 627634410}
+  totalReactionsByLevel: 0f0000001900000023000000
   maxConsecutiveReactions: 3
 --- !u!82 &627634412
 AudioSource:
