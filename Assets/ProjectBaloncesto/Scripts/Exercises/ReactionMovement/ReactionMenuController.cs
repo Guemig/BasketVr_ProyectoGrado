@@ -10,27 +10,22 @@ public class ReactionMenuController : MonoBehaviour
         End
     }
 
-
     [Header("References")]
     [SerializeField] private GameObject startButton;
-
     [SerializeField] private GameObject endPanel;
-
     [SerializeField] private GameObject pausePanel;
-
     [SerializeField] private GameObject OptionPanel;
 
     [SerializeField] private ReactionExerciseController exerciseController;
 
+    [SerializeField] private ReactionTutorialController tutorialController;
 
     [Header("Input")]
     [SerializeField] private InputActionReference pauseAction;
 
-
     private bool isPaused;
 
     private MenuState currentState;
-
 
     // =====================================================
     // UNITY
@@ -38,8 +33,8 @@ public class ReactionMenuController : MonoBehaviour
 
     private void Start()
     {
-        // Si estamos en modo Training mostramos el Start al inicio,
-        // si estamos en modo Tutorial lo dejamos oculto.
+        // Si estamos en Training mostramos el Start.
+        // Si estamos en Tutorial lo dejamos oculto.
         bool showStart =
             ReactionModeController.CurrentMode ==
             ReactionModeController.ReactionMode.Training;
@@ -49,7 +44,17 @@ public class ReactionMenuController : MonoBehaviour
             startButton.SetActive(showStart);
         }
 
-        currentState = showStart ? MenuState.Start : MenuState.Exercise;
+        currentState =
+            showStart
+                ? MenuState.Start
+                : MenuState.Exercise;
+
+        // En Training el canvas del tutorial debe estar apagado.
+        if (showStart)
+        {
+            if (tutorialController != null)
+                tutorialController.HideTutorialUI();
+        }
     }
 
     private void OnEnable()
@@ -61,7 +66,6 @@ public class ReactionMenuController : MonoBehaviour
         }
     }
 
-
     private void OnDisable()
     {
         if (pauseAction != null)
@@ -70,7 +74,6 @@ public class ReactionMenuController : MonoBehaviour
             pauseAction.action.Disable();
         }
     }
-
 
     private void OnPausePerformed(
         InputAction.CallbackContext context)
@@ -85,7 +88,6 @@ public class ReactionMenuController : MonoBehaviour
         }
     }
 
-
     // =====================================================
     // START EXERCISE
     // =====================================================
@@ -95,24 +97,33 @@ public class ReactionMenuController : MonoBehaviour
         isPaused = false;
         currentState = MenuState.Exercise;
 
+        // -----------------------------------------------
+        // OCULTAR TUTORIAL
+        // -----------------------------------------------
+
+        if (tutorialController != null)
+        {
+            tutorialController.HideTutorialUI();
+        }
+
+        // -----------------------------------------------
+        // MENÚS NORMALES
+        // -----------------------------------------------
 
         if (startButton != null)
         {
             startButton.SetActive(false);
         }
 
-
         if (endPanel != null)
         {
             endPanel.SetActive(false);
         }
 
-
         if (pausePanel != null)
         {
             pausePanel.SetActive(false);
         }
-
 
         if (exerciseController != null)
         {
@@ -120,17 +131,25 @@ public class ReactionMenuController : MonoBehaviour
         }
     }
 
-    // Nuevo: Exponer control simple para activar/desactivar el start button desde código
-    // (usado por el tutorial para ocultarlo/mostrarlo sin duplicar lógica).
+    // =====================================================
+    // START BUTTON
+    // =====================================================
+
     public void SetStartButtonActive(bool active)
     {
         if (startButton != null)
             startButton.SetActive(active);
 
-        currentState = active ? MenuState.Start : MenuState.Exercise;
+        currentState =
+            active
+                ? MenuState.Start
+                : MenuState.Exercise;
     }
 
-    // Nuevo: Mostrar el menú de inicio (Start) cuando finaliza el tutorial
+    // =====================================================
+    // SHOW START MENU
+    // =====================================================
+
     public void ShowStartMenu()
     {
         isPaused = false;
@@ -166,27 +185,22 @@ public class ReactionMenuController : MonoBehaviour
         if (isPaused)
             return;
 
-
         isPaused = true;
-
 
         if (startButton != null)
         {
             startButton.SetActive(false);
         }
 
-
         if (endPanel != null)
         {
             endPanel.SetActive(false);
         }
 
-
         if (pausePanel != null)
         {
             pausePanel.SetActive(true);
         }
-
 
         if (OptionPanel != null)
         {
@@ -199,21 +213,17 @@ public class ReactionMenuController : MonoBehaviour
         }
     }
 
-
     public void ResumeExercise()
     {
         if (!isPaused)
             return;
 
-
         isPaused = false;
-
 
         if (pausePanel != null)
         {
             pausePanel.SetActive(false);
         }
-
 
         switch (currentState)
         {
@@ -226,14 +236,12 @@ public class ReactionMenuController : MonoBehaviour
 
                 break;
 
-
             case MenuState.Exercise:
 
                 // Durante el ejercicio no mostramos
                 // ningún otro menú.
 
                 break;
-
 
             case MenuState.End:
 
@@ -245,13 +253,11 @@ public class ReactionMenuController : MonoBehaviour
                 break;
         }
 
-
         if (exerciseController != null)
         {
             exerciseController.ResumeExercise();
         }
     }
-
 
     // =====================================================
     // EXERCISE COMPLETE
@@ -262,22 +268,41 @@ public class ReactionMenuController : MonoBehaviour
         isPaused = false;
         currentState = MenuState.End;
 
-
         if (startButton != null)
         {
             startButton.SetActive(false);
         }
-
 
         if (pausePanel != null)
         {
             pausePanel.SetActive(false);
         }
 
-
         if (endPanel != null)
         {
             endPanel.SetActive(true);
         }
+    }
+
+    // =====================================================
+    // TUTORIAL MENU
+    // =====================================================
+
+    public void ShowTutorialMenu()
+    {
+        isPaused = false;
+        currentState = MenuState.Exercise;
+
+        if (startButton != null)
+            startButton.SetActive(false);
+
+        if (pausePanel != null)
+            pausePanel.SetActive(false);
+
+        if (endPanel != null)
+            endPanel.SetActive(false);
+
+        if (OptionPanel != null)
+            OptionPanel.SetActive(false);
     }
 }
