@@ -153,6 +153,20 @@ public class CharacterIKController : MonoBehaviour
     }
 
 
+    // =====================================================
+    // TUTORIAL - RIGHT HAND
+    // =====================================================
+
+    public void MoveRightHandMiddle(
+        Action onActivated = null)
+    {
+        MoveRightHandMiddle(
+            ReactionLevelController.ReactionLevel.Level1,
+            onActivated
+        );
+    }
+
+
     public void ReturnRightHand()
     {
         if (rightHandTarget == null)
@@ -203,6 +217,20 @@ public class CharacterIKController : MonoBehaviour
 
         leftHandTarget.MoveToLow(
             level,
+            onActivated
+        );
+    }
+
+
+    // =====================================================
+    // TUTORIAL - LEFT HAND
+    // =====================================================
+
+    public void MoveLeftHandMiddle(
+        Action onActivated = null)
+    {
+        MoveLeftHandMiddle(
+            ReactionLevelController.ReactionLevel.Level1,
             onActivated
         );
     }

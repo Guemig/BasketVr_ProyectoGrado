@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,27 +13,30 @@ public class ReactionTutorialController : MonoBehaviour
         Error
     }
 
+    public enum ErrorType
+    {
+        Timeout,
+        WrongHand
+    }
+
     [Serializable]
     public class TutorialStep
     {
         [TextArea(2, 6)]
         public string text;
+
         public AudioClip audio;
 
         public StepAdvanceType advanceType;
 
-        public bool allowAnyHand;
-
+        [Header("InteracciÃ³n")]
         public ReactionExerciseController.Hand expectedHand;
+        public int requiredCorrectTouches = 1;
 
-        public int requiredCorrectTouches;
-
-        public float interactionTimeoutSeconds;
-
-        // Solo usado cuando advanceType == Error:
-        // true  = el "error" que debe ocurrir es timeout (no tocar a tiempo)
-        // false = el "error" que debe ocurrir es tocar la mano equivocada
-        public bool errorIsTimeout;
+        [Header("Error")]
+        public ErrorType errorType;
+        public int errorDemonstrations = 3;
+        public float interactionTimeoutSeconds = 2f;
     }
 
     [Header("Contenido del tutorial")]
@@ -41,92 +44,131 @@ public class ReactionTutorialController : MonoBehaviour
 
     [Header("Referencias")]
     [SerializeField] private ReactionMenuController menuController;
-    [SerializeField] private ReactionHandInteractable leftHandInteractable;
-    [SerializeField] private ReactionHandInteractable rightHandInteractable;
+    [SerializeField] private ReactionTutorialReaction tutorialReaction;
 
     [Header("UI")]
     [SerializeField] private GameObject dialogueContainer;
     [SerializeField] private TextMeshProUGUI dialogueText;
     [SerializeField] private GameObject nextButtonObject;
+    [SerializeField] private GameObject TutorialCanvas;
 
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
 
-    [Header("Tipowriter")]
+    [Header("Typewriter")]
     [SerializeField] private float typingDelay = 0.03f;
 
     private int currentIndex;
-    private int currentCorrectCount;
     private bool isTyping;
+    private bool contentFinished;
+
     private Coroutine typingCoroutine;
-    private Coroutine interactionTimeoutCoroutine;
+    private Coroutine stepCoroutine;
+
+    // =====================================================
+    // AWAKE
+    // =====================================================
 
     private void Awake()
     {
-        if (leftHandInteractable != null) leftHandInteractable.Hovered += OnHandHovered;
-        if (rightHandInteractable != null) rightHandInteractable.Hovered += OnHandHovered;
+        if (tutorialReaction != null)
+        {
+            tutorialReaction.SetTutorialController(this);
+        }
 
-        if (dialogueText != null) dialogueText.text = string.Empty;
-        if (dialogueContainer != null) dialogueContainer.SetActive(false);
-        if (nextButtonObject != null) nextButtonObject.SetActive(false);
+        if (dialogueText != null)
+            dialogueText.text = string.Empty;
+
+        if (nextButtonObject != null)
+            nextButtonObject.SetActive(false);
+
+        // El canvas del tutorial comienza apagado.
+        // Solo se activa cuando se inicia el tutorial.
+        if (TutorialCanvas != null)
+            TutorialCanvas.SetActive(false);
     }
 
-    private void OnDestroy()
+    // =====================================================
+    // TUTORIAL CANVAS
+    // =====================================================
+
+    public void SetTutorialCanvasActive(bool active)
     {
-        if (leftHandInteractable != null) leftHandInteractable.Hovered -= OnHandHovered;
-        if (rightHandInteractable != null) rightHandInteractable.Hovered -= OnHandHovered;
+        if (TutorialCanvas != null)
+            TutorialCanvas.SetActive(active);
     }
+
+    public void HideTutorialUI()
+    {
+        if (TutorialCanvas != null)
+            TutorialCanvas.SetActive(false);
+
+        if (dialogueContainer != null)
+            dialogueContainer.SetActive(false);
+
+        if (nextButtonObject != null)
+            nextButtonObject.SetActive(false);
+    }
+
+    // =====================================================
+    // START TUTORIAL
+    // =====================================================
 
     public void StartTutorial()
     {
         StopAllCoroutines();
+
+        if (tutorialReaction != null)
+            tutorialReaction.StopCurrentReaction();
+
         currentIndex = 0;
-        currentCorrectCount = 0;
 
-        if (menuController != null) menuController.SetStartButtonActive(false);
+        if (menuController != null)
+            menuController.ShowTutorialMenu();
 
-        BeginStep(currentIndex);
+        // Activar canvas completo del tutorial.
+        if (TutorialCanvas != null)
+            TutorialCanvas.SetActive(true);
+
+        if (dialogueContainer != null)
+            dialogueContainer.SetActive(true);
+
+        BeginStep();
     }
 
-    private void BeginStep(int index)
+    // =====================================================
+    // BEGIN STEP
+    // =====================================================
+
+    private void BeginStep()
     {
-        if (steps == null || steps.Length == 0 || index < 0 || index >= steps.Length)
+        if (steps == null ||
+            steps.Length == 0 ||
+            currentIndex >= steps.Length)
         {
             EndTutorial();
             return;
         }
 
-        if (interactionTimeoutCoroutine != null)
-        {
-            StopCoroutine(interactionTimeoutCoroutine);
-            interactionTimeoutCoroutine = null;
-        }
+        StopStepCoroutine();
 
-        TutorialStep step = steps[index];
-        currentCorrectCount = 0;
+        if (tutorialReaction != null)
+            tutorialReaction.StopCurrentReaction();
 
-        bool hasText = !string.IsNullOrEmpty(step.text);
-        if (dialogueContainer != null) dialogueContainer.SetActive(hasText);
+        TutorialStep step = steps[currentIndex];
 
-        if (typingCoroutine != null)
-        {
-            StopCoroutine(typingCoroutine);
-            typingCoroutine = null;
-        }
+        contentFinished = false;
 
-        if (hasText && dialogueText != null)
-        {
-            typingCoroutine = StartCoroutine(TypeText(step.text));
-        }
-        else
-        {
-            isTyping = false;
-            if (dialogueText != null) dialogueText.text = string.Empty;
-        }
+        UpdateNextButtonForStep();
+
+        // -------------------------------------------------
+        // AUDIO
+        // -------------------------------------------------
 
         if (audioSource != null)
         {
             audioSource.Stop();
+
             if (step.audio != null)
             {
                 audioSource.clip = step.audio;
@@ -134,215 +176,9 @@ public class ReactionTutorialController : MonoBehaviour
             }
         }
 
-        if (nextButtonObject != null)
-            nextButtonObject.SetActive(false);
-
-        switch (step.advanceType)
-        {
-            case StepAdvanceType.Button:
-                if (nextButtonObject != null) nextButtonObject.SetActive(true);
-                var btn = nextButtonObject != null ? nextButtonObject.GetComponentInChildren<Button>() : null;
-                if (btn != null) btn.interactable = true;
-                break;
-
-            case StepAdvanceType.Interaction:
-                if (step.allowAnyHand)
-                {
-                    if (leftHandInteractable != null) leftHandInteractable.StartReaction();
-                    if (rightHandInteractable != null) rightHandInteractable.StartReaction();
-                }
-                else
-                {
-                    GetHandInteractable(step.expectedHand)?.StartReaction();
-                }
-
-                if (step.interactionTimeoutSeconds > 0f)
-                    interactionTimeoutCoroutine = StartCoroutine(WaitForInteractionTimeout(step.interactionTimeoutSeconds));
-                break;
-
-            case StepAdvanceType.Error:
-                // Mostrar las manos para la demostración del error
-                if (step.allowAnyHand)
-                {
-                    if (leftHandInteractable != null) leftHandInteractable.StartReaction();
-                    if (rightHandInteractable != null) rightHandInteractable.StartReaction();
-                }
-                else
-                {
-                    GetHandInteractable(step.expectedHand)?.StartReaction();
-                }
-
-                if (step.errorIsTimeout)
-                {
-                    // Avanzar cuando ocurra timeout (si se configuró)
-                    float timeout = step.interactionTimeoutSeconds > 0f ? step.interactionTimeoutSeconds : 1f;
-                    interactionTimeoutCoroutine = StartCoroutine(WaitForInteractionTimeout(timeout));
-                }
-                // si errorIsTimeout == false => esperamos un toque equivocado; OnHandHovered lo detectará
-                break;
-        }
-    }
-
-    private IEnumerator TypeText(string fullText)
-    {
-        isTyping = true;
-        if (dialogueContainer != null) dialogueContainer.SetActive(true);
-        if (dialogueText != null) dialogueText.text = string.Empty;
-
-        if (string.IsNullOrEmpty(fullText))
-        {
-            isTyping = false;
-            yield break;
-        }
-
-        for (int i = 0; i < fullText.Length; i++)
-        {
-            if (dialogueText != null) dialogueText.text += fullText[i];
-            yield return new WaitForSeconds(typingDelay);
-        }
-
-        isTyping = false;
-    }
-
-    public void OnNextButtonPressed()
-    {
-        if (isTyping) return;
-        AdvanceStep();
-    }
-
-    private void OnHandHovered(ReactionExerciseController.Hand hand)
-    {
-        if (steps == null || currentIndex < 0 || currentIndex >= steps.Length) return;
-
-        TutorialStep step = steps[currentIndex];
-
-        if (isTyping) return;
-        if (audioSource != null && audioSource.isPlaying) return;
-
-        if (step.advanceType == StepAdvanceType.Button)
-            return;
-
-        if (step.advanceType == StepAdvanceType.Interaction)
-        {
-            bool validHand = step.allowAnyHand || hand == step.expectedHand;
-            if (!validHand)
-            {
-                // tocar mano equivocada durante una interacción no cuenta: avanzar por timeout si está configurado,
-                // o simplemente ignorar. No tratamos esto como el "error" demo.
-                return;
-            }
-
-            currentCorrectCount++;
-            int needed = step.requiredCorrectTouches <= 0 ? 1 : step.requiredCorrectTouches;
-
-            if (currentCorrectCount >= needed)
-            {
-                if (step.allowAnyHand)
-                    GetHandInteractable(hand)?.EndReaction();
-                else
-                    GetHandInteractable(step.expectedHand)?.EndReaction();
-
-                if (interactionTimeoutCoroutine != null)
-                {
-                    StopCoroutine(interactionTimeoutCoroutine);
-                    interactionTimeoutCoroutine = null;
-                }
-
-                AdvanceStep();
-            }
-
-            return;
-        }
-
-        if (step.advanceType == StepAdvanceType.Error)
-        {
-            if (step.errorIsTimeout)
-            {
-                // Si esperamos que el "error" sea por timeout, una interacción del jugador no es el trigger:
-                // ignorar toques válidos; si toca antes de tiempo no lo contamos como éxito.
-                return;
-            }
-            else
-            {
-                // Error esperado = tocar mano equivocada.
-                if (step.allowAnyHand)
-                {
-                    // Si allowAnyHand es true no hay "equivocado", ignorar.
-                    return;
-                }
-
-                // Si el jugador toca y la mano es distinta a la esperada => trigger de error
-                if (hand != step.expectedHand)
-                {
-                    if (interactionTimeoutCoroutine != null)
-                    {
-                        StopCoroutine(interactionTimeoutCoroutine);
-                        interactionTimeoutCoroutine = null;
-                    }
-
-                    GetHandInteractable(hand)?.EndReaction();
-                    AdvanceStep();
-                }
-            }
-        }
-    }
-
-    private IEnumerator WaitForInteractionTimeout(float timeout)
-    {
-        yield return new WaitUntil(() => !isTyping && (audioSource == null || !audioSource.isPlaying));
-        float elapsed = 0f;
-        while (elapsed < timeout)
-        {
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-        OnInteractionTimeout();
-    }
-
-    private void OnInteractionTimeout()
-    {
-        interactionTimeoutCoroutine = null;
-        AdvanceStep();
-    }
-
-    private void AdvanceStep()
-    {
-        currentIndex++;
-
-        if (currentIndex - 1 >= 0 && currentIndex - 1 < steps.Length)
-        {
-            var prev = steps[currentIndex - 1];
-            if (prev.advanceType != StepAdvanceType.Button)
-            {
-                if (prev.allowAnyHand)
-                {
-                    if (leftHandInteractable != null) leftHandInteractable.EndReaction();
-                    if (rightHandInteractable != null) rightHandInteractable.EndReaction();
-                }
-                else
-                {
-                    GetHandInteractable(prev.expectedHand)?.EndReaction();
-                }
-            }
-        }
-
-        if (currentIndex >= (steps?.Length ?? 0))
-        {
-            EndTutorial();
-            return;
-        }
-
-        BeginStep(currentIndex);
-    }
-
-    private void EndTutorial()
-    {
-        if (leftHandInteractable != null) leftHandInteractable.EndReaction();
-        if (rightHandInteractable != null) rightHandInteractable.EndReaction();
-
-        if (menuController != null) menuController.ShowStartMenu();
-
-        if (audioSource != null) audioSource.Stop();
+        // -------------------------------------------------
+        // TEXTO
+        // -------------------------------------------------
 
         if (typingCoroutine != null)
         {
@@ -350,23 +186,277 @@ public class ReactionTutorialController : MonoBehaviour
             typingCoroutine = null;
         }
 
-        if (interactionTimeoutCoroutine != null)
+        if (dialogueContainer != null)
+            dialogueContainer.SetActive(true);
+
+        if (!string.IsNullOrEmpty(step.text))
         {
-            StopCoroutine(interactionTimeoutCoroutine);
-            interactionTimeoutCoroutine = null;
+            typingCoroutine =
+                StartCoroutine(TypeText(step.text));
+        }
+        else
+        {
+            isTyping = false;
+
+            if (dialogueText != null)
+                dialogueText.text = string.Empty;
         }
 
-        if (nextButtonObject != null) nextButtonObject.SetActive(false);
-        if (dialogueContainer != null) dialogueContainer.SetActive(false);
+        // -------------------------------------------------
+        // ESPERAR CONTENIDO
+        // -------------------------------------------------
+
+        stepCoroutine =
+            StartCoroutine(
+                WaitForContent(step)
+            );
     }
 
-    private ReactionHandInteractable GetHandInteractable(ReactionExerciseController.Hand hand)
+    // =====================================================
+    // NEXT BUTTON
+    // =====================================================
+
+    private void UpdateNextButtonForStep()
     {
-        switch (hand)
+        if (nextButtonObject == null)
+            return;
+
+        TutorialStep step =
+            steps[currentIndex];
+
+        Button button =
+            nextButtonObject.GetComponentInChildren<Button>();
+
+        if (step.advanceType == StepAdvanceType.Button)
         {
-            case ReactionExerciseController.Hand.Left: return leftHandInteractable;
-            case ReactionExerciseController.Hand.Right: return rightHandInteractable;
-            default: return null;
+            nextButtonObject.SetActive(true);
+
+            if (button != null)
+                button.interactable = false;
         }
+        else
+        {
+            nextButtonObject.SetActive(false);
+        }
+    }
+
+    private void EnableNextButton()
+    {
+        if (nextButtonObject == null)
+            return;
+
+        nextButtonObject.SetActive(true);
+
+        Button button =
+            nextButtonObject.GetComponentInChildren<Button>();
+
+        if (button != null)
+            button.interactable = true;
+    }
+
+    public void OnNextButtonPressed()
+    {
+        if (!contentFinished)
+            return;
+
+        if (isTyping)
+            return;
+
+        if (audioSource != null &&
+            audioSource.isPlaying)
+            return;
+
+        AdvanceStep();
+    }
+
+    // =====================================================
+    // WAIT FOR CONTENT
+    // =====================================================
+
+    private IEnumerator WaitForContent(
+        TutorialStep step)
+    {
+        yield return new WaitUntil(
+            () =>
+                !isTyping &&
+                (
+                    audioSource == null ||
+                    !audioSource.isPlaying
+                )
+        );
+
+        contentFinished = true;
+
+        switch (step.advanceType)
+        {
+            case StepAdvanceType.Button:
+
+                EnableNextButton();
+
+                break;
+
+            case StepAdvanceType.Interaction:
+
+                StartInteractionStep(step);
+
+                break;
+
+            case StepAdvanceType.Error:
+
+                StartErrorStep(step);
+
+                break;
+        }
+
+        stepCoroutine = null;
+    }
+
+    // =====================================================
+    // INTERACTION
+    // =====================================================
+
+    private void StartInteractionStep(
+        TutorialStep step)
+    {
+        if (tutorialReaction == null)
+            return;
+
+        tutorialReaction.StartInteraction(
+            step.expectedHand,
+            Mathf.Max(1, step.requiredCorrectTouches)
+        );
+    }
+
+    // =====================================================
+    // ERROR
+    // =====================================================
+
+    private void StartErrorStep(
+        TutorialStep step)
+    {
+        if (tutorialReaction == null)
+            return;
+
+        tutorialReaction.StartError(
+            step.expectedHand,
+            step.errorType,
+            Mathf.Max(1, step.errorDemonstrations),
+            step.interactionTimeoutSeconds
+        );
+    }
+
+    // =====================================================
+    // REACTION FINISHED
+    // =====================================================
+
+    public void OnReactionTutorialCompleted()
+    {
+        if (!contentFinished)
+            return;
+
+        AdvanceStep();
+    }
+
+    // =====================================================
+    // ADVANCE
+    // =====================================================
+
+    private void AdvanceStep()
+    {
+        if (!contentFinished)
+            return;
+
+        StopStepCoroutine();
+
+        if (tutorialReaction != null)
+            tutorialReaction.StopCurrentReaction();
+
+        currentIndex++;
+
+        if (currentIndex >= steps.Length)
+        {
+            EndTutorial();
+            return;
+        }
+
+        BeginStep();
+    }
+
+    // =====================================================
+    // TYPEWRITER
+    // =====================================================
+
+    private IEnumerator TypeText(
+        string fullText)
+    {
+        isTyping = true;
+
+        if (dialogueContainer != null)
+            dialogueContainer.SetActive(true);
+
+        if (dialogueText != null)
+            dialogueText.text = string.Empty;
+
+        for (int i = 0;
+             i < fullText.Length;
+             i++)
+        {
+            if (dialogueText != null)
+                dialogueText.text += fullText[i];
+
+            yield return new WaitForSeconds(
+                typingDelay
+            );
+        }
+
+        isTyping = false;
+        typingCoroutine = null;
+    }
+
+    // =====================================================
+    // STOP COROUTINE
+    // =====================================================
+
+    private void StopStepCoroutine()
+    {
+        if (stepCoroutine != null)
+        {
+            StopCoroutine(stepCoroutine);
+            stepCoroutine = null;
+        }
+    }
+
+    // =====================================================
+    // END
+    // =====================================================
+
+    private void EndTutorial()
+    {
+        StopStepCoroutine();
+
+        if (tutorialReaction != null)
+            tutorialReaction.StopCurrentReaction();
+
+        if (audioSource != null)
+            audioSource.Stop();
+
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
+        }
+
+        // Al terminar el tutorial se apaga todo el canvas.
+        if (TutorialCanvas != null)
+            TutorialCanvas.SetActive(false);
+
+        if (nextButtonObject != null)
+            nextButtonObject.SetActive(false);
+
+        if (dialogueContainer != null)
+            dialogueContainer.SetActive(false);
+
+        if (menuController != null)
+            menuController.ShowStartMenu();
     }
 }
