@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - piso
+  - DribbleBall
   layers:
   - Default
   - TransparentFX
