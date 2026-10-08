@@ -29,6 +29,20 @@ public class RegistroEstudiante : MonoBehaviour
     public TMP_Text mensajeErrorLogin;
 
 
+    [Header("Modo Test")]
+    [SerializeField]
+    private bool modoTest = false;
+
+    [SerializeField]
+    private string nombreTest = "Sebastian Villamil";
+
+    [SerializeField]
+    private string codigoRegistroTest = "TEST001";
+
+    [SerializeField]
+    private string codigoLoginTest = "TEST001";
+
+
     [Header("Cambio de escena")]
     [SerializeField]
     private float esperaAntesDeCambiar = 0.25f;
@@ -68,6 +82,41 @@ public class RegistroEstudiante : MonoBehaviour
         LimpiarErrorRegistro();
 
         LimpiarErrorLogin();
+
+
+        // Rellenar campos automáticamente en modo test.
+        if (modoTest)
+        {
+            RellenarCamposTest();
+        }
+    }
+
+
+    // =====================================================
+    // MODO TEST
+    // =====================================================
+
+    private void RellenarCamposTest()
+    {
+        if (inputNombre != null)
+        {
+            inputNombre.text =
+                nombreTest;
+        }
+
+
+        if (inputCodigoRegistro != null)
+        {
+            inputCodigoRegistro.text =
+                codigoRegistroTest;
+        }
+
+
+        if (inputCodigoLogin != null)
+        {
+            inputCodigoLogin.text =
+                codigoLoginTest;
+        }
     }
 
 
