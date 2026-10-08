@@ -20317,7 +20317,7 @@ MonoBehaviour:
   pausePanel: {fileID: 1565552457}
   OptionPanel: {fileID: 1522022347}
   exerciseController: {fileID: 627634406}
-  tutorialController: {fileID: 0}
+  tutorialController: {fileID: 1182120979}
   pauseAction: {fileID: -1954357944720845486, guid: 9d3ed873c5b49004b8d74a6d67eca324, type: 3}
 --- !u!114 &1681627837
 MonoBehaviour:
@@ -20335,12 +20335,30 @@ MonoBehaviour:
   - totalReactions: 0
     correctReactions: 0
     totalReactionTime: 0
+    leftHandCorrect: 0
+    leftHandAttempts: 0
+    leftHandTotalReactionTime: 0
+    rightHandCorrect: 0
+    rightHandAttempts: 0
+    rightHandTotalReactionTime: 0
   - totalReactions: 0
     correctReactions: 0
     totalReactionTime: 0
+    leftHandCorrect: 0
+    leftHandAttempts: 0
+    leftHandTotalReactionTime: 0
+    rightHandCorrect: 0
+    rightHandAttempts: 0
+    rightHandTotalReactionTime: 0
   - totalReactions: 0
     correctReactions: 0
     totalReactionTime: 0
+    leftHandCorrect: 0
+    leftHandAttempts: 0
+    leftHandTotalReactionTime: 0
+    rightHandCorrect: 0
+    rightHandAttempts: 0
+    rightHandTotalReactionTime: 0
 --- !u!114 &1681627838
 MonoBehaviour:
   m_ObjectHideFlags: 0
