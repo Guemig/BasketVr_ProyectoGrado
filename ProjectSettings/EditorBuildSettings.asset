@@ -21,7 +21,7 @@ EditorBuildSettings:
     path: Assets/ProjectBaloncesto/Scenes/Casilleros.unity
     guid: 16665dc74f1aa724fb2576465d0b11b1
   - enabled: 1
-    path: Assets/EjercicioLuces/Luces.unity
+    path: Assets/ProjectBaloncesto/EjercicioLuces/Luces.unity
     guid: 1ec51c4d65507054e9c0f16680c782cc
   - enabled: 1
     path: Assets/DriblingReactivo/DriblingReactivo.unity

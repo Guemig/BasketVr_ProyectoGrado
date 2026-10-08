@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -69,85 +68,30 @@ public class ReactionGameManager : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // GRUPOS DE NIVELES
-    // =========================================================
-
     [Header("GRUPOS DE NIVELES")]
     [SerializeField] private GameObject level1Group;
     [SerializeField] private GameObject level2Group;
     [SerializeField] private GameObject level3Group;
 
+    [Header("TARGETS NIVEL 1")]
+    [SerializeField] private List<ReactionTarget> level1Targets;
 
-    // =========================================================
-    // DURACIÓN
-    // =========================================================
+    [Header("TARGETS NIVEL 2")]
+    [SerializeField] private List<ReactionTarget> level2Targets;
 
-    [Header("DURACIÓN DEL NIVEL")]
+    [Header("TARGETS NIVEL 3")]
+    [SerializeField] private List<ReactionTarget> level3Targets;
+
+    [Header("CONFIGURACIÓN")]
     [SerializeField] private float levelDuration = 30f;
-
-
-    // =========================================================
-    // TIEMPO DE AVISO
-    // =========================================================
-
-    [Header("TIEMPO DE AVISO POR NIVEL")]
-    [SerializeField]
-    private float[] warningTimeByLevel =
-    {
-        0.3f,
-        0.3f,
-        0.3f
-    };
-
-
-    // =========================================================
-    // ESPERA ENTRE TARGETS
-    // =========================================================
-
-    [Header("ESPERA ENTRE TARGETS POR NIVEL")]
-    [SerializeField]
-    private float[] delayBetweenTargetsByLevel =
-    {
-        0.5f,
-        0.4f,
-        0.3f
-    };
-
-
-    // =========================================================
-    // TIEMPO MÁXIMO DE REACCIÓN
-    // =========================================================
-
-    [Header("TIEMPO MÁXIMO DE REACCIÓN POR NIVEL")]
-    [SerializeField]
-    private float[] maxReactionTimeByLevel =
-    {
-        1.5f,
-        1.2f,
-        1.0f
-    };
-
-
-    // =========================================================
-    // CANVAS FINAL
-    // =========================================================
+    [SerializeField] private float delayBetweenTargets = 0.5f;
+    [SerializeField] private float maxReactionTime = 1.5f;
 
     [Header("CANVAS FINAL")]
     [SerializeField] private GameObject finalCanvas;
 
-
-    // =========================================================
-    // TRANSICIÓN
-    // =========================================================
-
     [Header("TRANSICIÓN")]
     [SerializeField] private ReactionTransition reactionTransition;
-
-
-    // =========================================================
-    // AUDIO
-    // =========================================================
 
     [Header("AUDIO")]
     [SerializeField] private AudioSource audioSource;
@@ -156,106 +100,55 @@ public class ReactionGameManager : MonoBehaviour
     [SerializeField] private AudioClip hitSound;
     [SerializeField] private AudioClip missSound;
 
-
-    // =========================================================
-    // ESTADO
-    // =========================================================
-
     [Header("ESTADO")]
     [SerializeField] private int currentLevel = 0;
     [SerializeField] private bool gameRunning = false;
     [SerializeField] private float timeRemaining = 0f;
 
+    private ReactionTarget currentTarget;
+    private ReactionTarget previousTarget;
 
-    // =========================================================
-    // TARGETS
-    // Se obtienen automáticamente de los grupos
-    // =========================================================
-
-    private List<LightTargetReaction> level1Targets;
-    private List<LightTargetReaction> level2Targets;
-    private List<LightTargetReaction> level3Targets;
-
-    private List<LightTargetReaction> activeTargets;
-
-
-    // =========================================================
-    // TARGET ACTUAL
-    // =========================================================
-
-    private LightTargetReaction currentTarget;
-    private LightTargetReaction previousTarget;
-
-
-    // =========================================================
-    // COROUTINES
-    // =========================================================
+    private List<ReactionTarget> activeTargets;
 
     private Coroutine nextTargetCoroutine;
-    private Coroutine targetWarningCoroutine;
     private Coroutine targetTimeoutCoroutine;
 
-
-    // =========================================================
-    // TIEMPO DE ACTIVACIÓN
-    // =========================================================
-
     private float targetActivationTime;
-
-
-    // =========================================================
-    // ESTADÍSTICAS
-    // =========================================================
 
     private LevelStats level1Stats = new LevelStats();
     private LevelStats level2Stats = new LevelStats();
     private LevelStats level3Stats = new LevelStats();
 
-
-    // =========================================================
-    // PROPIEDADES PÚBLICAS
-    // =========================================================
-
     public int CurrentLevel => currentLevel;
-
     public bool GameRunning => gameRunning;
-
     public float TimeRemaining => timeRemaining;
 
     public LevelStats Level1Stats => level1Stats;
-
     public LevelStats Level2Stats => level2Stats;
-
     public LevelStats Level3Stats => level3Stats;
-
 
     public int TotalHits =>
         level1Stats.hits +
         level2Stats.hits +
         level3Stats.hits;
 
-
     public int TotalMisses =>
         level1Stats.misses +
         level2Stats.misses +
         level3Stats.misses;
 
-
     public float TotalPrecision
     {
         get
         {
-            int totalAttempts =
-                TotalHits + TotalMisses;
+            int totalAttempts = TotalHits + TotalMisses;
 
             if (totalAttempts == 0)
                 return 0f;
 
-            return ((float)TotalHits /
-                    totalAttempts) * 100f;
+            return ((float)TotalHits / totalAttempts) * 100f;
         }
     }
-
 
     public float TotalAverageReactionTime
     {
@@ -278,17 +171,8 @@ public class ReactionGameManager : MonoBehaviour
         }
     }
 
-
-    // =========================================================
-    // START
-    // =========================================================
-
     private void Start()
     {
-        // Obtiene automáticamente los targets
-        // que están dentro de cada grupo.
-        GetTargetsFromGroups();
-
         SetupTargets();
 
         DeactivateAllGroups();
@@ -298,11 +182,6 @@ public class ReactionGameManager : MonoBehaviour
 
         ResetAllStats();
     }
-
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
 
     private void Update()
     {
@@ -314,96 +193,31 @@ public class ReactionGameManager : MonoBehaviour
         if (timeRemaining <= 0f)
         {
             timeRemaining = 0f;
-
             EndLevel();
         }
     }
 
-
-    // =========================================================
-    // OBTENER TARGETS DE LOS GRUPOS
-    // =========================================================
-
-    private void GetTargetsFromGroups()
-    {
-        level1Targets =
-            GetTargetsFromGroup(level1Group);
-
-        level2Targets =
-            GetTargetsFromGroup(level2Group);
-
-        level3Targets =
-            GetTargetsFromGroup(level3Group);
-    }
-
-
-    private List<LightTargetReaction> GetTargetsFromGroup(
-        GameObject group)
-    {
-        if (group == null)
-        {
-            Debug.LogWarning(
-                "ReactionGameManager: " +
-                "El grupo de nivel es NULL."
-            );
-
-            return new List<LightTargetReaction>();
-        }
-
-        LightTargetReaction[] targets =
-            group.GetComponentsInChildren<LightTargetReaction>(
-                true
-            );
-
-        List<LightTargetReaction> targetList =
-            new List<LightTargetReaction>(targets);
-
-        Debug.Log(
-            "Grupo '" +
-            group.name +
-            "' | Targets encontrados: " +
-            targetList.Count
-        );
-
-        return targetList;
-    }
-
-
-    // =========================================================
-    // CONFIGURAR TARGETS
-    // =========================================================
-
     private void SetupTargets()
     {
         SetupTargetList(level1Targets);
-
         SetupTargetList(level2Targets);
-
         SetupTargetList(level3Targets);
     }
 
-
-    private void SetupTargetList(
-        List<LightTargetReaction> list)
+    private void SetupTargetList(List<ReactionTarget> list)
     {
         if (list == null)
             return;
 
-        foreach (LightTargetReaction target in list)
+        foreach (ReactionTarget target in list)
         {
             if (target == null)
                 continue;
 
             target.Setup(this);
-
             target.Deactivate();
         }
     }
-
-
-    // =========================================================
-    // INICIAR EJERCICIO
-    // =========================================================
 
     public void StartExercise()
     {
@@ -421,11 +235,6 @@ public class ReactionGameManager : MonoBehaviour
 
         StartLevelWithTransition();
     }
-
-
-    // =========================================================
-    // TRANSICIÓN DE NIVEL
-    // =========================================================
 
     private void StartLevelWithTransition()
     {
@@ -445,11 +254,6 @@ public class ReactionGameManager : MonoBehaviour
         }
     }
 
-
-    // =========================================================
-    // INICIAR NIVEL
-    // =========================================================
-
     private void StartLevel()
     {
         StopAllGameCoroutines();
@@ -463,70 +267,49 @@ public class ReactionGameManager : MonoBehaviour
                 if (level1Group != null)
                     level1Group.SetActive(true);
 
-                activeTargets =
-                    level1Targets;
+                activeTargets = level1Targets;
 
                 break;
-
 
             case 2:
 
                 if (level2Group != null)
                     level2Group.SetActive(true);
 
-                activeTargets =
-                    level2Targets;
+                activeTargets = level2Targets;
 
                 break;
-
 
             case 3:
 
                 if (level3Group != null)
                     level3Group.SetActive(true);
 
-                activeTargets =
-                    level3Targets;
+                activeTargets = level3Targets;
 
                 break;
         }
 
-        DeactivateTargetList(
-            activeTargets
-        );
+        DeactivateTargetList(activeTargets);
 
         previousTarget = null;
-
         currentTarget = null;
 
-        timeRemaining =
-            levelDuration;
-
+        timeRemaining = levelDuration;
         gameRunning = true;
 
         Debug.Log(
-            "INICIANDO NIVEL " +
-            currentLevel
+            "INICIANDO NIVEL " + currentLevel
         );
 
         nextTargetCoroutine =
-            StartCoroutine(
-                ActivateNextTarget()
-            );
+            StartCoroutine(ActivateNextTarget());
     }
-
-
-    // =========================================================
-    // ACTIVAR SIGUIENTE TARGET
-    // =========================================================
 
     private IEnumerator ActivateNextTarget()
     {
-        float delay =
-            GetDelayBetweenTargets();
-
         yield return new WaitForSeconds(
-            delay
+            delayBetweenTargets
         );
 
         if (!gameRunning)
@@ -541,17 +324,15 @@ public class ReactionGameManager : MonoBehaviour
         do
         {
             randomIndex =
-                UnityEngine.Random.Range(
+                Random.Range(
                     0,
                     activeTargets.Count
                 );
-
-        } while (
+        }
+        while (
             activeTargets.Count > 1 &&
-            activeTargets[randomIndex] ==
-            previousTarget
+            activeTargets[randomIndex] == previousTarget
         );
-
 
         currentTarget =
             activeTargets[randomIndex];
@@ -559,79 +340,23 @@ public class ReactionGameManager : MonoBehaviour
         previousTarget =
             currentTarget;
 
-
         if (currentTarget != null)
         {
-            targetWarningCoroutine =
+            currentTarget.Activate();
+
+            targetActivationTime =
+                Time.time;
+
+            targetTimeoutCoroutine =
                 StartCoroutine(
-                    WarningAndActivate(
-                        currentTarget
-                    )
+                    TargetTimeout(currentTarget)
                 );
         }
     }
 
-
-    // =========================================================
-    // WARNING + ACTIVACIÓN
-    // =========================================================
-
-    private IEnumerator WarningAndActivate(
-        LightTargetReaction target)
-    {
-        target.Warning();
-
-        float warningTime =
-            GetWarningTime();
-
-        Debug.Log(
-            "NIVEL " +
-            currentLevel +
-            " | AVISO | " +
-            warningTime.ToString("F3") +
-            " s"
-        );
-
-        yield return new WaitForSeconds(
-            warningTime
-        );
-
-        if (!gameRunning)
-            yield break;
-
-        if (currentTarget != target)
-            yield break;
-
-        target.Activate();
-
-        // El tiempo de reacción comienza
-        // exactamente cuando se activa el target.
-        targetActivationTime =
-            Time.time;
-
-        Debug.Log(
-            "NIVEL " +
-            currentLevel +
-            " | TARGET ACTIVADO"
-        );
-
-        targetTimeoutCoroutine =
-            StartCoroutine(
-                TargetTimeout(target)
-            );
-    }
-
-
-    // =========================================================
-    // TIMEOUT DEL TARGET
-    // =========================================================
-
     private IEnumerator TargetTimeout(
-        LightTargetReaction target)
+        ReactionTarget target)
     {
-        float maxReactionTime =
-            GetMaxReactionTime();
-
         yield return new WaitForSeconds(
             maxReactionTime
         );
@@ -645,23 +370,14 @@ public class ReactionGameManager : MonoBehaviour
         RegisterMiss(target);
     }
 
-
-    // =========================================================
-    // TARGET TOCADO
-    // =========================================================
-
     public void TargetTouched(
-        LightTargetReaction touchedTarget)
+        ReactionTarget touchedTarget)
     {
         if (!gameRunning)
             return;
 
         if (touchedTarget != currentTarget)
             return;
-
-        if (!touchedTarget.IsActive)
-            return;
-
 
         if (targetTimeoutCoroutine != null)
         {
@@ -672,31 +388,24 @@ public class ReactionGameManager : MonoBehaviour
             targetTimeoutCoroutine = null;
         }
 
-
         float reactionTime =
             Time.time -
             targetActivationTime;
 
-
         LevelStats stats =
             GetCurrentStats();
 
-
         stats.hits++;
-
 
         stats.AddReactionTime(
             reactionTime
         );
 
-
         PlaySound(hitSound);
-
 
         touchedTarget.Deactivate();
 
         currentTarget = null;
-
 
         Debug.Log(
             "NIVEL " +
@@ -706,7 +415,6 @@ public class ReactionGameManager : MonoBehaviour
             " s"
         );
 
-
         if (gameRunning)
         {
             nextTargetCoroutine =
@@ -716,31 +424,22 @@ public class ReactionGameManager : MonoBehaviour
         }
     }
 
-
-    // =========================================================
-    // REGISTRAR FALLO
-    // =========================================================
-
     private void RegisterMiss(
-        LightTargetReaction target)
+        ReactionTarget target)
     {
         LevelStats stats =
             GetCurrentStats();
 
         stats.misses++;
 
-
         PlaySound(missSound);
-
 
         if (target != null)
             target.Deactivate();
 
-
         currentTarget = null;
 
         targetTimeoutCoroutine = null;
-
 
         Debug.Log(
             "NIVEL " +
@@ -748,7 +447,6 @@ public class ReactionGameManager : MonoBehaviour
             " | FALLO"
         );
 
-
         if (gameRunning)
         {
             nextTargetCoroutine =
@@ -757,11 +455,6 @@ public class ReactionGameManager : MonoBehaviour
                 );
         }
     }
-
-
-    // =========================================================
-    // TERMINAR NIVEL
-    // =========================================================
 
     private void EndLevel()
     {
@@ -772,20 +465,15 @@ public class ReactionGameManager : MonoBehaviour
 
         StopAllGameCoroutines();
 
-
         DeactivateTargetList(
             activeTargets
         );
 
-
         currentTarget = null;
-
 
         DeactivateAllGroups();
 
-
         DebugLevelStats();
-
 
         if (currentLevel == 1)
         {
@@ -805,14 +493,10 @@ public class ReactionGameManager : MonoBehaviour
         }
         else if (currentLevel == 3)
         {
+
             EndExercise();
         }
     }
-
-
-    // =========================================================
-    // TERMINAR EJERCICIO
-    // =========================================================
 
     private void EndExercise()
     {
@@ -822,27 +506,22 @@ public class ReactionGameManager : MonoBehaviour
 
         DeactivateAllGroups();
 
-
         if (finalCanvas != null)
             finalCanvas.SetActive(true);
-
 
         Debug.Log(
             "EJERCICIO FINALIZADO"
         );
-
 
         Debug.Log(
             "ACIERTOS TOTALES: " +
             TotalHits
         );
 
-
         Debug.Log(
             "FALLOS TOTALES: " +
             TotalMisses
         );
-
 
         Debug.Log(
             "PRECISIÓN TOTAL: " +
@@ -850,18 +529,12 @@ public class ReactionGameManager : MonoBehaviour
             "%"
         );
 
-
         Debug.Log(
             "PROMEDIO TOTAL: " +
             TotalAverageReactionTime.ToString("F3") +
             " s"
         );
     }
-
-
-    // =========================================================
-    // REINICIAR EJERCICIO
-    // =========================================================
 
     public void RestartExercise()
     {
@@ -873,20 +546,13 @@ public class ReactionGameManager : MonoBehaviour
 
         currentLevel = 1;
 
-
         if (finalCanvas != null)
             finalCanvas.SetActive(false);
-
 
         PlaySound(startSound);
 
         StartLevelWithTransition();
     }
-
-
-    // =========================================================
-    // OBTENER ESTADÍSTICAS ACTUALES
-    // =========================================================
 
     private LevelStats GetCurrentStats()
     {
@@ -905,128 +571,37 @@ public class ReactionGameManager : MonoBehaviour
         return level1Stats;
     }
 
-
-    // =========================================================
-    // TIEMPO DE AVISO
-    // =========================================================
-
-    private float GetWarningTime()
-    {
-        int index =
-            currentLevel - 1;
-
-
-        if (warningTimeByLevel == null ||
-            index < 0 ||
-            index >= warningTimeByLevel.Length)
-        {
-            return 0.3f;
-        }
-
-
-        return warningTimeByLevel[index];
-    }
-
-
-    // =========================================================
-    // DELAY ENTRE TARGETS
-    // =========================================================
-
-    private float GetDelayBetweenTargets()
-    {
-        int index =
-            currentLevel - 1;
-
-
-        if (delayBetweenTargetsByLevel == null ||
-            index < 0 ||
-            index >= delayBetweenTargetsByLevel.Length)
-        {
-            return 0.5f;
-        }
-
-
-        return delayBetweenTargetsByLevel[index];
-    }
-
-
-    // =========================================================
-    // TIEMPO MÁXIMO DE REACCIÓN
-    // =========================================================
-
-    private float GetMaxReactionTime()
-    {
-        int index =
-            currentLevel - 1;
-
-
-        if (maxReactionTimeByLevel == null ||
-            index < 0 ||
-            index >= maxReactionTimeByLevel.Length)
-        {
-            return 1.5f;
-        }
-
-
-        return maxReactionTimeByLevel[index];
-    }
-
-
-    // =========================================================
-    // RESET ESTADÍSTICAS
-    // =========================================================
-
     private void ResetAllStats()
     {
         level1Stats.ResetStats();
-
         level2Stats.ResetStats();
-
         level3Stats.ResetStats();
     }
 
-
-    // =========================================================
-    // DESACTIVAR LISTA DE TARGETS
-    // =========================================================
-
     private void DeactivateTargetList(
-        List<LightTargetReaction> list)
+        List<ReactionTarget> list)
     {
         if (list == null)
             return;
 
-
-        foreach (LightTargetReaction target in list)
+        foreach (ReactionTarget target in list)
         {
             if (target != null)
                 target.Deactivate();
         }
     }
 
-
-    // =========================================================
-    // DESACTIVAR TODOS LOS GRUPOS
-    // =========================================================
-
     private void DeactivateAllGroups()
     {
         if (level1Group != null)
             level1Group.SetActive(false);
 
-
         if (level2Group != null)
             level2Group.SetActive(false);
-
 
         if (level3Group != null)
             level3Group.SetActive(false);
     }
-
-
-    // =========================================================
-    // DETENER COROUTINES
-    // =========================================================
 
     private void StopAllGameCoroutines()
     {
@@ -1039,17 +614,6 @@ public class ReactionGameManager : MonoBehaviour
             nextTargetCoroutine = null;
         }
 
-
-        if (targetWarningCoroutine != null)
-        {
-            StopCoroutine(
-                targetWarningCoroutine
-            );
-
-            targetWarningCoroutine = null;
-        }
-
-
         if (targetTimeoutCoroutine != null)
         {
             StopCoroutine(
@@ -1060,13 +624,7 @@ public class ReactionGameManager : MonoBehaviour
         }
     }
 
-
-    // =========================================================
-    // AUDIO
-    // =========================================================
-
-    private void PlaySound(
-        AudioClip clip)
+    private void PlaySound(AudioClip clip)
     {
         if (audioSource != null &&
             clip != null)
@@ -1075,16 +633,10 @@ public class ReactionGameManager : MonoBehaviour
         }
     }
 
-
-    // =========================================================
-    // DEBUG ESTADÍSTICAS
-    // =========================================================
-
     private void DebugLevelStats()
     {
         LevelStats stats =
             GetCurrentStats();
-
 
         Debug.Log(
             "NIVEL " +
@@ -1092,18 +644,15 @@ public class ReactionGameManager : MonoBehaviour
             " TERMINADO"
         );
 
-
         Debug.Log(
             "Aciertos: " +
             stats.hits
         );
 
-
         Debug.Log(
             "Fallos: " +
             stats.misses
         );
-
 
         Debug.Log(
             "Precisión: " +
@@ -1111,13 +660,11 @@ public class ReactionGameManager : MonoBehaviour
             "%"
         );
 
-
         Debug.Log(
             "Promedio: " +
             stats.averageReactionTime.ToString("F3") +
             " s"
         );
-
 
         Debug.Log(
             "Mejor: " +
@@ -1125,13 +672,11 @@ public class ReactionGameManager : MonoBehaviour
             " s"
         );
 
-
         Debug.Log(
             "Peor: " +
             stats.worstReactionTime.ToString("F3") +
             " s"
         );
-
 
         Debug.Log(
             "Tiempo total reacción: " +

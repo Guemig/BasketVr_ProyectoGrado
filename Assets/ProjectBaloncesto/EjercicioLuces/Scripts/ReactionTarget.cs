@@ -52,6 +52,6 @@ public class ReactionTarget : MonoBehaviour
         if (gameManager == null)
             return;
 
-        gameManager.TargetTouched(this);
+        //gameManager.TargetTouched(this);
     }
 }
