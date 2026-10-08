@@ -11,8 +11,29 @@ public class ReactionResultsController : MonoBehaviour
 
         public float totalReactionTime;
 
+        // -----------------------------
+        // LEFT HAND
+        // -----------------------------
+
+        public int leftHandCorrect;
+        public int leftHandAttempts;
+
+        public float leftHandTotalReactionTime;
+
+
+        // -----------------------------
+        // RIGHT HAND
+        // -----------------------------
+
+        public int rightHandCorrect;
+        public int rightHandAttempts;
+
+        public float rightHandTotalReactionTime;
+
+
         public int CorrectReactions =>
             correctReactions;
+
 
         public float AverageReactionTime
         {
@@ -25,6 +46,33 @@ public class ReactionResultsController : MonoBehaviour
                        correctReactions;
             }
         }
+
+
+        public float LeftHandReaction
+        {
+            get
+            {
+                if (leftHandCorrect <= 0)
+                    return 0f;
+
+                return leftHandTotalReactionTime /
+                       leftHandCorrect;
+            }
+        }
+
+
+        public float RightHandReaction
+        {
+            get
+            {
+                if (rightHandCorrect <= 0)
+                    return 0f;
+
+                return rightHandTotalReactionTime /
+                       rightHandCorrect;
+            }
+        }
+
 
         public float Accuracy
         {
@@ -40,11 +88,50 @@ public class ReactionResultsController : MonoBehaviour
             }
         }
 
+
+        public float LeftHandAccuracy
+        {
+            get
+            {
+                if (leftHandAttempts <= 0)
+                    return 0f;
+
+                return
+                    (float)leftHandCorrect /
+                    leftHandAttempts *
+                    100f;
+            }
+        }
+
+
+        public float RightHandAccuracy
+        {
+            get
+            {
+                if (rightHandAttempts <= 0)
+                    return 0f;
+
+                return
+                    (float)rightHandCorrect /
+                    rightHandAttempts *
+                    100f;
+            }
+        }
+
+
         public void Reset()
         {
             totalReactions = 0;
             correctReactions = 0;
             totalReactionTime = 0f;
+
+            leftHandCorrect = 0;
+            leftHandAttempts = 0;
+            leftHandTotalReactionTime = 0f;
+
+            rightHandCorrect = 0;
+            rightHandAttempts = 0;
+            rightHandTotalReactionTime = 0f;
         }
     }
 
@@ -102,7 +189,8 @@ public class ReactionResultsController : MonoBehaviour
     public void RegisterReaction(
         ReactionLevelController.ReactionLevel level,
         bool correct,
-        float reactionTime)
+        float reactionTime,
+        ReactionExerciseController.Hand hand)
     {
         int index =
             (int)level;
@@ -118,6 +206,48 @@ public class ReactionResultsController : MonoBehaviour
 
         results.totalReactions++;
 
+
+        // -----------------------------------------
+        // LEFT HAND
+        // -----------------------------------------
+
+        if (hand ==
+            ReactionExerciseController.Hand.Left)
+        {
+            results.leftHandAttempts++;
+
+            if (correct)
+            {
+                results.leftHandCorrect++;
+
+                results.leftHandTotalReactionTime +=
+                    Mathf.Max(0f, reactionTime);
+            }
+        }
+
+
+        // -----------------------------------------
+        // RIGHT HAND
+        // -----------------------------------------
+
+        else if (hand ==
+                 ReactionExerciseController.Hand.Right)
+        {
+            results.rightHandAttempts++;
+
+            if (correct)
+            {
+                results.rightHandCorrect++;
+
+                results.rightHandTotalReactionTime +=
+                    Mathf.Max(0f, reactionTime);
+            }
+        }
+
+
+        // -----------------------------------------
+        // GENERAL
+        // -----------------------------------------
 
         if (!correct)
             return;
@@ -218,6 +348,106 @@ public class ReactionResultsController : MonoBehaviour
 
 
     // =====================================================
+    // HAND RESULTS
+    // =====================================================
+
+    public int GetLeftHandCorrect(
+        ReactionLevelController.ReactionLevel level)
+    {
+        LevelResults results =
+            GetLevelResults(level);
+
+        return results != null
+            ? results.leftHandCorrect
+            : 0;
+    }
+
+
+    public int GetLeftHandAttempts(
+        ReactionLevelController.ReactionLevel level)
+    {
+        LevelResults results =
+            GetLevelResults(level);
+
+        return results != null
+            ? results.leftHandAttempts
+            : 0;
+    }
+
+
+    public float GetLeftHandReaction(
+        ReactionLevelController.ReactionLevel level)
+    {
+        LevelResults results =
+            GetLevelResults(level);
+
+        return results != null
+            ? results.LeftHandReaction
+            : 0f;
+    }
+
+
+    public float GetLeftHandAccuracy(
+        ReactionLevelController.ReactionLevel level)
+    {
+        LevelResults results =
+            GetLevelResults(level);
+
+        return results != null
+            ? results.LeftHandAccuracy
+            : 0f;
+    }
+
+
+    public int GetRightHandCorrect(
+        ReactionLevelController.ReactionLevel level)
+    {
+        LevelResults results =
+            GetLevelResults(level);
+
+        return results != null
+            ? results.rightHandCorrect
+            : 0;
+    }
+
+
+    public int GetRightHandAttempts(
+        ReactionLevelController.ReactionLevel level)
+    {
+        LevelResults results =
+            GetLevelResults(level);
+
+        return results != null
+            ? results.rightHandAttempts
+            : 0;
+    }
+
+
+    public float GetRightHandReaction(
+        ReactionLevelController.ReactionLevel level)
+    {
+        LevelResults results =
+            GetLevelResults(level);
+
+        return results != null
+            ? results.RightHandReaction
+            : 0f;
+    }
+
+
+    public float GetRightHandAccuracy(
+        ReactionLevelController.ReactionLevel level)
+    {
+        LevelResults results =
+            GetLevelResults(level);
+
+        return results != null
+            ? results.RightHandAccuracy
+            : 0f;
+    }
+
+
+    // =====================================================
     // INTERNAL
     // =====================================================
 
@@ -233,6 +463,43 @@ public class ReactionResultsController : MonoBehaviour
 
 
         return levelResults[index];
+    }
+
+    public FirestoreService.MovementLevel
+    GetFirestoreLevelData(
+        ReactionLevelController.ReactionLevel level)
+    {
+        return new FirestoreService.MovementLevel
+        {
+            level = (int)level + 1,
+
+            averageReaction =
+                GetAverageReactionTime(level),
+
+            correctAnswers =
+                GetCorrectReactions(level),
+
+            totalAttempts =
+                GetTotalReactions(level),
+
+            leftHandReaction =
+                GetLeftHandReaction(level),
+
+            rightHandReaction =
+                GetRightHandReaction(level),
+
+            leftHandCorrect =
+                GetLeftHandCorrect(level),
+
+            leftHandAttempts =
+                GetLeftHandAttempts(level),
+
+            rightHandCorrect =
+                GetRightHandCorrect(level),
+
+            rightHandAttempts =
+                GetRightHandAttempts(level)
+        };
     }
 
 

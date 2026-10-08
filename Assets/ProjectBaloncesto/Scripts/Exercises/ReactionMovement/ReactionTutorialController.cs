@@ -446,7 +446,11 @@ public class ReactionTutorialController : MonoBehaviour
             typingCoroutine = null;
         }
 
-        // Al terminar el tutorial se apaga todo el canvas.
+        // Al terminar el tutorial, cambiar al modo entrenamiento.
+        ReactionModeController.CurrentMode =
+            ReactionModeController.ReactionMode.Training;
+
+        // Apagar todo el canvas del tutorial.
         if (TutorialCanvas != null)
             TutorialCanvas.SetActive(false);
 

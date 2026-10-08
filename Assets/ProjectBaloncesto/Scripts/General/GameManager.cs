@@ -68,6 +68,8 @@ public class GameManager : MonoBehaviour
         isPaused = false;
 
         string currentScene = SceneManager.GetActiveScene().name;
-        SceneManager.LoadScene(currentScene);
+        StartCoroutine(
+            transitionSceneController.LoadSceneAfterTransition(currentScene)
+        );
     }
 }

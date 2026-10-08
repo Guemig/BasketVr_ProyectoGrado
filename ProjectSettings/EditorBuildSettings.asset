@@ -5,22 +5,22 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Teclado/teclado.unity
-    guid: 36eaebd280ce0ea45b18d8b182ac12a7
-  - enabled: 0
-    path: Assets/ReactionPass/ReactionPass.unity
-    guid: 463bd8452d0574f4499415b8b356e10e
-  - enabled: 0
+  - enabled: 1
     path: Assets/ProjectBaloncesto/Scenes/MenuPrincipal.unity
     guid: ac40281ed4c6aff43b175b88926ba62c
-  - enabled: 0
-    path: Assets/ReactionMovement/ReactionMovement.unity
+  - enabled: 1
+    path: Assets/Teclado/Registro.unity
+    guid: 36eaebd280ce0ea45b18d8b182ac12a7
+  - enabled: 1
+    path: Assets/ReactionPass/ReactionPass.unity
+    guid: 463bd8452d0574f4499415b8b356e10e
+  - enabled: 1
+    path: Assets/ProjectBaloncesto/ReactionMovement/ReactionMovement.unity
     guid: 960cb526729c0f743abb0c2ff3765376
-  - enabled: 0
+  - enabled: 1
     path: Assets/ProjectBaloncesto/Scenes/Casilleros.unity
     guid: 16665dc74f1aa724fb2576465d0b11b1
-  - enabled: 0
+  - enabled: 1
     path: Assets/EjercicioLuces/Luces.unity
     guid: 1ec51c4d65507054e9c0f16680c782cc
   - enabled: 1

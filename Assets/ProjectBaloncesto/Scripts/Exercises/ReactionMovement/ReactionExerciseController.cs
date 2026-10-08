@@ -32,7 +32,6 @@ public class ReactionExerciseController : MonoBehaviour
 
     [SerializeField] private ReactionResultsController resultsController;
 
-    // Nuevo: referencia opcional al controlador de tutorial
     [SerializeField] private ReactionTutorialController tutorialController;
 
 
@@ -51,40 +50,53 @@ public class ReactionExerciseController : MonoBehaviour
     private bool reactionInProgress;
 
 
-    // --- PAUSE (GLOBAL para este exercise controller) ---
+    // =====================================================
+    // PAUSE
+    // =====================================================
+
     private static bool isPaused;
+
     private static float totalPausedTime;
+
     private static float pauseStartRealtime;
 
-    public static bool IsPaused => isPaused;
+    public static bool IsPaused =>
+        isPaused;
 
-    public static float TotalPausedTime => totalPausedTime;
+    public static float TotalPausedTime =>
+        totalPausedTime;
 
+
+    // =====================================================
+    // UNITY
+    // =====================================================
 
     private void Awake()
     {
         SetupInteractables();
     }
 
+
     private void Start()
     {
-        // Si el modo actual es Tutorial, iniciar el tutorial en lugar
-        // de comenzar inmediatamente la secuencia del ejercicio.
         if (ReactionModeController.CurrentMode ==
             ReactionModeController.ReactionMode.Tutorial)
         {
             if (tutorialController != null)
             {
-                // Ocultar el botón Start mientras dura el tutorial si hay menú.
                 if (menuController != null)
                 {
-                    menuController.SetStartButtonActive(false);
+                    menuController.SetStartButtonActive(
+                        false
+                    );
                 }
+
 
                 tutorialController.StartTutorial();
             }
         }
     }
+
 
     // =====================================================
     // EXERCISE
@@ -92,7 +104,6 @@ public class ReactionExerciseController : MonoBehaviour
 
     public void StartExercise()
     {
-        // Detener corrutinas locales previas del controlador
         StopAllCoroutines();
 
         DisableAllInteractables();
@@ -111,6 +122,7 @@ public class ReactionExerciseController : MonoBehaviour
             transition.PlayTransition(
                 StartCurrentLevel
             );
+
 
             return;
         }
@@ -138,35 +150,47 @@ public class ReactionExerciseController : MonoBehaviour
     // PAUSE API
     // =====================================================
 
-    // Conectar desde botón Pause
     public void PauseExercise()
     {
         if (isPaused)
             return;
 
+
         isPaused = true;
-        pauseStartRealtime = Time.realtimeSinceStartup;
 
-        Debug.Log("[EXERCISE] Paused.");
+        pauseStartRealtime =
+            Time.realtimeSinceStartup;
 
-        // No detener corrutinas aquí: las corrutinas son "pausables" y respetan IsPaused.
-        // Evitamos que nuevas interacciones se procesen; Interaction y HandIKTarget consultan IsPaused.
+
+        Debug.Log(
+            "[EXERCISE] Paused."
+        );
     }
 
-    // Conectar desde botón Resume
+
     public void ResumeExercise()
     {
         if (!isPaused)
             return;
 
-        float pausedDuration =
-            Time.realtimeSinceStartup - pauseStartRealtime;
 
-        totalPausedTime += pausedDuration;
+        float pausedDuration =
+            Time.realtimeSinceStartup -
+            pauseStartRealtime;
+
+
+        totalPausedTime +=
+            pausedDuration;
+
+
         pauseStartRealtime = 0f;
+
         isPaused = false;
 
-        Debug.Log("[EXERCISE] Resumed.");
+
+        Debug.Log(
+            "[EXERCISE] Resumed."
+        );
     }
 
 
@@ -217,6 +241,7 @@ public class ReactionExerciseController : MonoBehaviour
         if (!reactionInProgress)
             return;
 
+
         if (IsPaused)
             return;
 
@@ -248,7 +273,9 @@ public class ReactionExerciseController : MonoBehaviour
             case Hand.Left:
 
                 if (leftHandInteractable != null)
+                {
                     leftHandInteractable.StartReaction();
+                }
 
                 break;
 
@@ -256,11 +283,14 @@ public class ReactionExerciseController : MonoBehaviour
             case Hand.Right:
 
                 if (rightHandInteractable != null)
+                {
                     rightHandInteractable.StartReaction();
+                }
 
                 break;
         }
     }
+
 
     private void EndCurrentHandReaction()
     {
@@ -269,18 +299,24 @@ public class ReactionExerciseController : MonoBehaviour
             case Hand.Left:
 
                 if (leftHandInteractable != null)
+                {
                     leftHandInteractable.EndReaction();
+                }
 
                 break;
+
 
             case Hand.Right:
 
                 if (rightHandInteractable != null)
+                {
                     rightHandInteractable.EndReaction();
+                }
 
                 break;
         }
     }
+
 
     // =====================================================
     // RETURN
@@ -291,11 +327,12 @@ public class ReactionExerciseController : MonoBehaviour
         if (!reactionInProgress)
             return;
 
+
         if (IsPaused)
         {
-            // Si está pausado, reintentará cuando la corrutina continue tras reanudar.
             return;
         }
+
 
         interaction.ResolveTimeout();
 
@@ -400,24 +437,135 @@ public class ReactionExerciseController : MonoBehaviour
     // EXERCISE COMPLETE
     // =====================================================
 
-    private void CompleteExercise()
+    private async void CompleteExercise()
     {
         reactionInProgress = false;
+
 
         Debug.Log(
             "[EXERCISE] Exercise completed."
         );
+
+
+        // =================================================
+        // SAVE TO FIRESTORE
+        // =================================================
+
+        if (resultsController != null)
+        {
+            if (FirestoreService.Instance == null)
+            {
+                Debug.LogError(
+                    "[FIRESTORE] FirestoreService.Instance is null."
+                );
+            }
+            else if (!FirestoreService.Instance.HasCurrentStudent)
+            {
+                Debug.LogError(
+                    "[FIRESTORE] No hay un estudiante activo."
+                );
+            }
+            else
+            {
+                try
+                {
+                    FirestoreService.MovementSession session =
+                        BuildMovementSession();
+
+
+                    string studentCode =
+                        FirestoreService.Instance
+                            .CurrentStudentCode;
+
+
+                    string attemptId =
+                        await FirestoreService.Instance
+                            .SaveCompletedAttempt(
+                                studentCode,
+                                session
+                            );
+
+
+                    Debug.Log(
+                        "[FIRESTORE] Attempt saved successfully. " +
+                        $"Student: {studentCode} | " +
+                        $"Attempt: {attemptId}"
+                    );
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(
+                        "[FIRESTORE] Error saving attempt: " +
+                        e
+                    );
+                }
+            }
+        }
+
+
+        // =================================================
+        // END UI
+        // =================================================
 
         if (menuController != null)
         {
             menuController.ShowEndMenu();
         }
 
+
         if (resultsUI != null)
         {
             resultsUI.ShowAllLevels();
         }
     }
+
+
+    // =====================================================
+    // BUILD MOVEMENT SESSION
+    // =====================================================
+
+    private FirestoreService.MovementSession
+        BuildMovementSession()
+    {
+        FirestoreService.MovementSession session =
+            FirestoreService.Instance
+                .CreateMovementSession();
+
+
+        int levelCount =
+            Enum.GetValues(
+                typeof(
+                    ReactionLevelController.ReactionLevel
+                )
+            ).Length;
+
+
+        for (int i = 0;
+             i < levelCount;
+             i++)
+        {
+            ReactionLevelController.ReactionLevel level =
+                (ReactionLevelController.ReactionLevel)i;
+
+
+            FirestoreService.MovementLevel levelData =
+                resultsController
+                    .GetFirestoreLevelData(
+                        level
+                    );
+
+
+            FirestoreService.Instance
+                .AddLevelToSession(
+                    session,
+                    levelData
+                );
+        }
+
+
+        return session;
+    }
+
 
     // =====================================================
     // INTERACTABLES
@@ -427,34 +575,53 @@ public class ReactionExerciseController : MonoBehaviour
     {
         if (leftHandInteractable != null)
         {
-            leftHandInteractable.SetReactionInteraction(
-                interaction
-            );
+            leftHandInteractable
+                .SetReactionInteraction(
+                    interaction
+                );
         }
 
 
         if (rightHandInteractable != null)
         {
-            rightHandInteractable.SetReactionInteraction(
-                interaction
-            );
+            rightHandInteractable
+                .SetReactionInteraction(
+                    interaction
+                );
         }
+
 
         if (interaction != null)
         {
-            interaction.ReactionResolved += OnReactionResolved;
+            interaction.ReactionResolved +=
+                OnReactionResolved;
         }
     }
 
-    private void OnReactionResolved(bool correct, float reactionTime)
+
+    private void OnReactionResolved(
+        bool correct,
+        float reactionTime)
     {
-        if (resultsController == null || levelController == null)
+        if (ReactionModeController.CurrentMode ==
+            ReactionModeController.ReactionMode.Tutorial)
+        {
             return;
+        }
+
+
+        if (resultsController == null ||
+            levelController == null)
+        {
+            return;
+        }
+
 
         resultsController.RegisterReaction(
             levelController.CurrentLevel,
             correct,
-            reactionTime
+            reactionTime,
+            currentHand
         );
     }
 
@@ -462,11 +629,15 @@ public class ReactionExerciseController : MonoBehaviour
     private void DisableAllInteractables()
     {
         if (leftHandInteractable != null)
+        {
             leftHandInteractable.EndReaction();
+        }
 
 
         if (rightHandInteractable != null)
+        {
             rightHandInteractable.EndReaction();
+        }
     }
 
 
@@ -502,9 +673,13 @@ public class ReactionExerciseController : MonoBehaviour
         );
     }
 
-    private IEnumerator WaitAndExecute(float duration, Action onComplete)
+
+    private IEnumerator WaitAndExecute(
+        float duration,
+        Action onComplete)
     {
         float elapsed = 0f;
+
 
         while (elapsed < duration)
         {
@@ -513,8 +688,10 @@ public class ReactionExerciseController : MonoBehaviour
                 elapsed += Time.deltaTime;
             }
 
+
             yield return null;
         }
+
 
         onComplete?.Invoke();
     }
@@ -539,11 +716,13 @@ public class ReactionExerciseController : MonoBehaviour
                 new float[levelCount];
 
 
-            for (int i = 0;
-                 i < levelCount;
-                 i++)
+            for (
+                int i = 0;
+                i < levelCount;
+                i++)
             {
-                if (timeBetweenReactions != null &&
+                if (
+                    timeBetweenReactions != null &&
                     i < timeBetweenReactions.Length)
                 {
                     newTimes[i] =
@@ -551,8 +730,7 @@ public class ReactionExerciseController : MonoBehaviour
                 }
                 else
                 {
-                    newTimes[i] =
-                        1f;
+                    newTimes[i] = 1f;
                 }
             }
 
