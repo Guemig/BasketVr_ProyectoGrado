@@ -2340,9 +2340,9 @@ MonoBehaviour:
   botonIniciarSesion: {fileID: 1098423356}
   mensajeErrorLogin: {fileID: 2138463784}
   modoTest: 1
-  nombreTest: Sebas gutierrez
-  codigoRegistroTest: 30000089926
-  codigoLoginTest: 30000089926
+  nombreTest: andres edgar
+  codigoRegistroTest: 30000089927
+  codigoLoginTest: 30000089927
   esperaAntesDeCambiar: 0.25
   nombreEscenaSiguiente: Casilleros
 --- !u!4 &354227234

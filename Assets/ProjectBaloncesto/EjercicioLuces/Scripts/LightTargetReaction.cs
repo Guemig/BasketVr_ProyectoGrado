@@ -1,14 +1,40 @@
+
+using System;
+using System.Collections;
 using UnityEngine;
 
 public class LightTargetReaction : MonoBehaviour
 {
+    public enum Direction
+    {
+        Frente,
+        FrenteDerecha,
+        Derecha,
+        AtrasDerecha,
+        Atras,
+        AtrasIzquierda,
+        Izquierda,
+        FrenteIzquierda
+    }
+
     public enum LightState
     {
         Off,
         Inactive,
         Warning,
-        Active
+        Active,
+        Success,
+        Error
     }
+
+    // =========================================================
+    // DIRECCIÓN
+    // =========================================================
+
+    [Header("Dirección del target")]
+    [SerializeField] private Direction direction = Direction.Frente;
+
+    public Direction TargetDirection => direction;
 
     // =========================================================
     // VISUAL
@@ -17,58 +43,60 @@ public class LightTargetReaction : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private Renderer targetRenderer;
 
-    // =========================================================
-    // COLOR APAGADO
-    // =========================================================
-
     [Header("Color Apagado")]
     [SerializeField] private Color offColor = Color.black;
     [SerializeField] private Color offEmissionColor = Color.black;
-
-    // =========================================================
-    // COLOR INACTIVO
-    // =========================================================
 
     [Header("Color Inactivo")]
     [SerializeField] private Color inactiveColor = Color.white;
     [SerializeField] private Color inactiveEmissionColor = Color.black;
 
-    // =========================================================
-    // COLOR WARNING
-    // =========================================================
-
     [Header("Color Warning")]
     [SerializeField] private Color warningColor = Color.yellow;
     [SerializeField] private Color warningEmissionColor = Color.yellow;
 
-    // =========================================================
-    // COLOR ACTIVE
-    // =========================================================
-
     [Header("Color Active")]
     [SerializeField] private Color activeColor = Color.green;
     [SerializeField] private Color activeEmissionColor = Color.green;
+
+    [Header("Color Éxito")]
+    [SerializeField] private Color successColor = Color.cyan;
+    [SerializeField] private Color successEmissionColor = Color.cyan;
+
+    [Header("Color Error")]
+    [SerializeField] private Color errorColor = Color.red;
+    [SerializeField] private Color errorEmissionColor = Color.red;
+
+    // =========================================================
+    // AUDIO INDIVIDUAL
+    // =========================================================
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip successSound;
+    [SerializeField] private AudioClip errorSound;
+
+    // =========================================================
+    // FEEDBACK
+    // =========================================================
+
+    [Header("Duración del feedback")]
+    [SerializeField, Min(0f)]
+    private float feedbackDuration = 0.5f;
 
     // =========================================================
     // ESTADO
     // =========================================================
 
     [Header("Estado")]
-    [SerializeField]
-    private LightState currentState = LightState.Off;
+    [SerializeField] private LightState currentState = LightState.Off;
 
     private ReactionGameManager gameManager;
-
     private Material targetMaterial;
-
-    // =========================================================
-    // PROPIEDADES
-    // =========================================================
+    private Coroutine feedbackCoroutine;
 
     public LightState CurrentState => currentState;
-
-    public bool IsActive =>
-        currentState == LightState.Active;
+    public bool IsActive => currentState == LightState.Active;
 
     // =========================================================
     // AWAKE
@@ -79,43 +107,38 @@ public class LightTargetReaction : MonoBehaviour
         if (targetRenderer == null)
         {
             Debug.LogWarning(
-                "LightTargetReaction | " +
-                gameObject.name +
+                "LightTargetReaction | " + gameObject.name +
                 " no tiene Renderer asignado."
             );
 
             return;
         }
 
-        Material[] materials =
-            targetRenderer.materials;
+        Material[] materials = targetRenderer.materials;
 
         if (materials.Length <= 1)
         {
             Debug.LogWarning(
-                "LightTargetReaction | " +
-                gameObject.name +
+                "LightTargetReaction | " + gameObject.name +
                 " necesita al menos 2 materiales."
             );
 
             return;
         }
 
-        // Segundo material.
+        // Se utiliza el segundo material.
         targetMaterial = materials[1];
 
         ApplyOffVisual();
     }
 
     // =========================================================
-    // SETUP
+    // CONFIGURACIÓN
     // =========================================================
 
-    public void Setup(
-        ReactionGameManager manager)
+    public void Setup(ReactionGameManager manager)
     {
         gameManager = manager;
-
         Deactivate();
     }
 
@@ -125,8 +148,7 @@ public class LightTargetReaction : MonoBehaviour
 
     public void Warning()
     {
-        currentState =
-            LightState.Warning;
+        currentState = LightState.Warning;
 
         SetMaterialColor(
             warningColor,
@@ -135,13 +157,12 @@ public class LightTargetReaction : MonoBehaviour
     }
 
     // =========================================================
-    // ACTIVE
+    // ACTIVAR
     // =========================================================
 
     public void Activate()
     {
-        currentState =
-            LightState.Active;
+        currentState = LightState.Active;
 
         SetMaterialColor(
             activeColor,
@@ -150,56 +171,99 @@ public class LightTargetReaction : MonoBehaviour
     }
 
     // =========================================================
-    // INACTIVE
+    // MOSTRAR ÉXITO O ERROR
+    // =========================================================
+
+    public void ShowResult(bool success)
+    {
+        if (feedbackCoroutine != null)
+            StopCoroutine(feedbackCoroutine);
+
+        feedbackCoroutine = StartCoroutine(
+            ShowResultCoroutine(success)
+        );
+    }
+
+    private IEnumerator ShowResultCoroutine(bool success)
+    {
+        if (success)
+        {
+            currentState = LightState.Success;
+
+            SetMaterialColor(
+                successColor,
+                successEmissionColor
+            );
+
+            PlaySound(successSound);
+        }
+        else
+        {
+            currentState = LightState.Error;
+
+            SetMaterialColor(
+                errorColor,
+                errorEmissionColor
+            );
+
+            PlaySound(errorSound);
+        }
+
+        yield return new WaitForSecondsRealtime(feedbackDuration);
+
+        feedbackCoroutine = null;
+
+        Deactivate();
+
+        if (gameManager != null)
+            gameManager.TargetFeedbackFinished(this);
+    }
+
+    // =========================================================
+    // INACTIVAR
     // =========================================================
 
     public void Deactivate()
     {
-        currentState =
-            LightState.Inactive;
+        if (feedbackCoroutine != null)
+        {
+            StopCoroutine(feedbackCoroutine);
+            feedbackCoroutine = null;
+        }
 
+        currentState = LightState.Inactive;
         ApplyInactiveVisual();
     }
 
     // =========================================================
-    // OFF
+    // APAGAR
     // =========================================================
 
     public void TurnOff()
     {
-        currentState =
-            LightState.Off;
+        if (feedbackCoroutine != null)
+        {
+            StopCoroutine(feedbackCoroutine);
+            feedbackCoroutine = null;
+        }
 
+        currentState = LightState.Off;
         ApplyOffVisual();
     }
 
     // =========================================================
-    // VISUAL APAGADO
+    // VISUALES
     // =========================================================
 
     private void ApplyOffVisual()
     {
-        SetMaterialColor(
-            offColor,
-            offEmissionColor
-        );
+        SetMaterialColor(offColor, offEmissionColor);
     }
-
-    // =========================================================
-    // VISUAL INACTIVO
-    // =========================================================
 
     private void ApplyInactiveVisual()
     {
-        SetMaterialColor(
-            inactiveColor,
-            inactiveEmissionColor
-        );
+        SetMaterialColor(inactiveColor, inactiveEmissionColor);
     }
-
-    // =========================================================
-    // CAMBIAR COLOR DEL MATERIAL
-    // =========================================================
 
     private void SetMaterialColor(
         Color baseColor,
@@ -208,34 +272,18 @@ public class LightTargetReaction : MonoBehaviour
         if (targetMaterial == null)
             return;
 
-        // -----------------------------------------------------
-        // COLOR BASE
-        // -----------------------------------------------------
-
         if (targetMaterial.HasProperty("_BaseColor"))
         {
-            targetMaterial.SetColor(
-                "_BaseColor",
-                baseColor
-            );
+            targetMaterial.SetColor("_BaseColor", baseColor);
         }
         else if (targetMaterial.HasProperty("_Color"))
         {
-            targetMaterial.SetColor(
-                "_Color",
-                baseColor
-            );
+            targetMaterial.SetColor("_Color", baseColor);
         }
-
-        // -----------------------------------------------------
-        // EMISSION
-        // -----------------------------------------------------
 
         if (targetMaterial.HasProperty("_EmissionColor"))
         {
-            targetMaterial.EnableKeyword(
-                "_EMISSION"
-            );
+            targetMaterial.EnableKeyword("_EMISSION");
 
             targetMaterial.SetColor(
                 "_EmissionColor",
@@ -245,7 +293,17 @@ public class LightTargetReaction : MonoBehaviour
     }
 
     // =========================================================
-    // POKED
+    // AUDIO
+    // =========================================================
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+            audioSource.PlayOneShot(clip);
+    }
+
+    // =========================================================
+    // INTERACCIÓN
     // =========================================================
 
     public void Poked()

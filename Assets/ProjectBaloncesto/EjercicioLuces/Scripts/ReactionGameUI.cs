@@ -1,49 +1,67 @@
+
 using TMPro;
 using UnityEngine;
 
 public class ReactionGameUI : MonoBehaviour
 {
+    // =========================================================
+    // GAME MANAGER
+    // =========================================================
+
     [Header("GAME MANAGER")]
     [SerializeField] private ReactionGameManager gameManager;
 
+    // =========================================================
+    // UI DURANTE EL EJERCICIO
+    // =========================================================
 
     [Header("UI DURANTE EL EJERCICIO")]
     [SerializeField] private TMP_Text levelText;
-    [SerializeField] private TMP_Text timeText;
+    [SerializeField] private TMP_Text reactionsText;
 
+    // =========================================================
+    // RESULTADOS NIVEL 1
+    // =========================================================
 
     [Header("RESULTADOS NIVEL 1")]
     [SerializeField] private TMP_Text level1HitsText;
     [SerializeField] private TMP_Text level1PrecisionText;
     [SerializeField] private TMP_Text level1AverageText;
 
+    // =========================================================
+    // RESULTADOS NIVEL 2
+    // =========================================================
 
     [Header("RESULTADOS NIVEL 2")]
     [SerializeField] private TMP_Text level2HitsText;
     [SerializeField] private TMP_Text level2PrecisionText;
     [SerializeField] private TMP_Text level2AverageText;
 
+    // =========================================================
+    // RESULTADOS NIVEL 3
+    // =========================================================
 
     [Header("RESULTADOS NIVEL 3")]
     [SerializeField] private TMP_Text level3HitsText;
     [SerializeField] private TMP_Text level3PrecisionText;
     [SerializeField] private TMP_Text level3AverageText;
 
+    // =========================================================
+    // UPDATE
+    // =========================================================
 
     private void Update()
     {
         if (gameManager == null)
             return;
 
-
         UpdateGameUI();
         UpdateFinalResults();
     }
 
-
-    // =========================================
+    // =========================================================
     // UI DURANTE EL EJERCICIO
-    // =========================================
+    // =========================================================
 
     private void UpdateGameUI()
     {
@@ -52,8 +70,7 @@ public class ReactionGameUI : MonoBehaviour
             if (gameManager.CurrentLevel > 0)
             {
                 levelText.text =
-                    "NIVEL " +
-                    gameManager.CurrentLevel;
+                    "NIVEL " + gameManager.CurrentLevel;
             }
             else
             {
@@ -61,27 +78,26 @@ public class ReactionGameUI : MonoBehaviour
             }
         }
 
-
-        if (timeText != null)
+        if (reactionsText != null)
         {
             if (gameManager.GameRunning)
             {
-                timeText.text =
-                    "TIEMPO: " +
-                    gameManager.TimeRemaining.ToString("F1") +
-                    " s";
+                reactionsText.text =
+                    "REACCIONES: " +
+                    gameManager.ReactionsResolved +
+                    " / " +
+                    gameManager.RequiredReactions;
             }
             else
             {
-                timeText.text = "";
+                reactionsText.text = "";
             }
         }
     }
 
-
-    // =========================================
-    // CANVAS FINAL
-    // =========================================
+    // =========================================================
+    // RESULTADOS FINALES
+    // =========================================================
 
     private void UpdateFinalResults()
     {
@@ -90,24 +106,20 @@ public class ReactionGameUI : MonoBehaviour
         UpdateLevel3Results();
     }
 
-
-    // =========================================
+    // =========================================================
     // NIVEL 1
-    // =========================================
+    // =========================================================
 
     private void UpdateLevel1Results()
     {
         ReactionGameManager.LevelStats stats =
             gameManager.Level1Stats;
 
-
         if (level1HitsText != null)
         {
             level1HitsText.text =
-                "ACIERTOS: " +
-                stats.hits;
+                "ACIERTOS: " + stats.hits;
         }
-
 
         if (level1PrecisionText != null)
         {
@@ -116,7 +128,6 @@ public class ReactionGameUI : MonoBehaviour
                 stats.Precision.ToString("F1") +
                 "%";
         }
-
 
         if (level1AverageText != null)
         {
@@ -127,24 +138,20 @@ public class ReactionGameUI : MonoBehaviour
         }
     }
 
-
-    // =========================================
+    // =========================================================
     // NIVEL 2
-    // =========================================
+    // =========================================================
 
     private void UpdateLevel2Results()
     {
         ReactionGameManager.LevelStats stats =
             gameManager.Level2Stats;
 
-
         if (level2HitsText != null)
         {
             level2HitsText.text =
-                "ACIERTOS: " +
-                stats.hits;
+                "ACIERTOS: " + stats.hits;
         }
-
 
         if (level2PrecisionText != null)
         {
@@ -153,7 +160,6 @@ public class ReactionGameUI : MonoBehaviour
                 stats.Precision.ToString("F1") +
                 "%";
         }
-
 
         if (level2AverageText != null)
         {
@@ -164,24 +170,20 @@ public class ReactionGameUI : MonoBehaviour
         }
     }
 
-
-    // =========================================
+    // =========================================================
     // NIVEL 3
-    // =========================================
+    // =========================================================
 
     private void UpdateLevel3Results()
     {
         ReactionGameManager.LevelStats stats =
             gameManager.Level3Stats;
 
-
         if (level3HitsText != null)
         {
             level3HitsText.text =
-                "ACIERTOS: " +
-                stats.hits;
+                "ACIERTOS: " + stats.hits;
         }
-
 
         if (level3PrecisionText != null)
         {
@@ -190,7 +192,6 @@ public class ReactionGameUI : MonoBehaviour
                 stats.Precision.ToString("F1") +
                 "%";
         }
-
 
         if (level3AverageText != null)
         {

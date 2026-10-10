@@ -15,6 +15,7 @@ public class ReactionMenuController : MonoBehaviour
     [SerializeField] private GameObject endPanel;
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private GameObject OptionPanel;
+    [SerializeField] private GameObject NpcObject;
 
     [SerializeField] private ReactionExerciseController exerciseController;
 
@@ -281,6 +282,11 @@ public class ReactionMenuController : MonoBehaviour
         if (endPanel != null)
         {
             endPanel.SetActive(true);
+        }
+
+        if (NpcObject != null)
+        {
+            NpcObject.SetActive(false);
         }
     }
 

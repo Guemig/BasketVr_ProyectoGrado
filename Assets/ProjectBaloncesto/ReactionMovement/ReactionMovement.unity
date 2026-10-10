@@ -20430,6 +20430,7 @@ MonoBehaviour:
   endPanel: {fileID: 268137692}
   pausePanel: {fileID: 1565552457}
   OptionPanel: {fileID: 1522022347}
+  NpcObject: {fileID: 8915346366867611395}
   exerciseController: {fileID: 627634406}
   tutorialController: {fileID: 1182120979}
   pauseAction: {fileID: -1954357944720845486, guid: 9d3ed873c5b49004b8d74a6d67eca324, type: 3}
@@ -25025,7 +25026,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2488883582507031656, guid: 464480d4e25456f4d8ad3306e751e021, type: 3}
   m_PrefabInstance: {fileID: 8915346366867611392}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 8915346366867611395}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86a4d2f202504db48b88cf7f819931fd, type: 3}
@@ -25310,6 +25311,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a05d9a29cec54a43a59f7636d97d6d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &8915346366867611395 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5663906176862240481, guid: 464480d4e25456f4d8ad3306e751e021, type: 3}
+  m_PrefabInstance: {fileID: 8915346366867611392}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
