@@ -12,6 +12,7 @@ public class FirestoreService : MonoBehaviour
 
     private const string STUDENTS_COLLECTION = "students";
     private const string MOVEMENT_EXERCISE_ID = "reaction-movement";
+    private const string LIGHTS_EXERCISE_ID = "reaction-lights";
 
     // =========================================================
     // CURRENT STUDENT
@@ -277,6 +278,159 @@ public class FirestoreService : MonoBehaviour
         return session;
     }
 
+    // =========================================================
+    // LIGHTS SESSION
+    // =========================================================
+
+    public LightsSession CreateLightsSession()
+    {
+        return new LightsSession
+        {
+            exerciseId = LIGHTS_EXERCISE_ID,
+            levels = new List<LightsLevel>()
+        };
+    }
+
+    public LightsSession AddLightsLevelToSession(
+        LightsSession session,
+        LightsLevel levelData)
+    {
+        if (session == null ||
+            session.exerciseId != LIGHTS_EXERCISE_ID)
+        {
+            throw new Exception(
+                "La sesión de reacción por luces no es válida."
+            );
+        }
+
+        if (session.levels == null)
+        {
+            session.levels = new List<LightsLevel>();
+        }
+
+        if (session.levels.Count >= 3)
+        {
+            throw new Exception(
+                "La sesión ya tiene los tres niveles registrados."
+            );
+        }
+
+        if (levelData == null)
+        {
+            throw new Exception(
+                "Los datos del nivel no pueden ser nulos."
+            );
+        }
+
+        levelData.level = session.levels.Count + 1;
+
+        if (levelData.correctAnswers < 0)
+        {
+            throw new Exception(
+                "Los aciertos no pueden ser negativos."
+            );
+        }
+
+        if (float.IsNaN(levelData.accuracy) ||
+            float.IsInfinity(levelData.accuracy) ||
+            levelData.accuracy < 0f ||
+            levelData.accuracy > 100f)
+        {
+            throw new Exception(
+                "La precisión debe estar entre 0 y 100."
+            );
+        }
+
+        if (float.IsNaN(levelData.averageReaction) ||
+            float.IsInfinity(levelData.averageReaction) ||
+            levelData.averageReaction < 0f)
+        {
+            throw new Exception(
+                "El tiempo de reacción debe ser válido."
+            );
+        }
+
+        session.levels.Add(levelData);
+
+        return session;
+    }
+
+
+    // =========================================================
+    // SAVE LIGHTS ATTEMPT
+    // =========================================================
+
+    public async Task<string> SaveLightsAttempt(
+        string studentCode,
+        LightsSession session)
+    {
+        string normalizedCode =
+            NormalizeStudentCode(studentCode);
+
+        if (session == null ||
+            session.exerciseId != LIGHTS_EXERCISE_ID)
+        {
+            throw new Exception(
+                "La sesión no corresponde a reaction-lights."
+            );
+        }
+
+        if (session.levels == null ||
+            session.levels.Count != 3)
+        {
+            throw new Exception(
+                "La sesión debe tener exactamente tres niveles."
+            );
+        }
+
+        List<Dictionary<string, object>> levelsData =
+            new List<Dictionary<string, object>>();
+
+        foreach (LightsLevel level in session.levels)
+        {
+            if (level == null ||
+                level.level < 1 ||
+                level.level > 3)
+            {
+                throw new Exception(
+                    "Se encontró un nivel inválido."
+                );
+            }
+
+            levelsData.Add(
+                new Dictionary<string, object>
+                {
+                { "level", level.level },
+                { "correctAnswers", level.correctAnswers },
+                { "accuracy", level.accuracy },
+                { "averageReaction", level.averageReaction }
+                }
+            );
+        }
+
+        DocumentReference attemptRef =
+            db.Collection(STUDENTS_COLLECTION)
+              .Document(normalizedCode)
+              .Collection("attempts")
+              .Document();
+
+        Dictionary<string, object> data =
+            new Dictionary<string, object>
+            {
+            { "exerciseId", LIGHTS_EXERCISE_ID },
+            { "completedAt", Timestamp.GetCurrentTimestamp() },
+            { "levels", levelsData }
+            };
+
+        await attemptRef.SetAsync(data);
+
+        Debug.Log(
+            "[FIRESTORE] Intento de luces guardado. ID: " +
+            attemptRef.Id
+        );
+
+        return attemptRef.Id;
+    }
 
     // =========================================================
     // SAVE ATTEMPT
@@ -628,5 +782,23 @@ public class FirestoreService : MonoBehaviour
         public int rightHandCorrect;
 
         public int rightHandAttempts;
+    }
+
+    [Serializable]
+    public class LightsSession
+    {
+        public string exerciseId;
+
+        public List<LightsLevel> levels =
+            new List<LightsLevel>();
+    }
+
+    [Serializable]
+    public class LightsLevel
+    {
+        public int level;
+        public int correctAnswers;
+        public float accuracy;
+        public float averageReaction;
     }
 }

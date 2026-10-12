@@ -1,4 +1,5 @@
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -66,6 +67,7 @@ public class ReactionGameManager : MonoBehaviour
 
     // Bloquea nuevas reacciones mientras se muestra el feedback.
     private bool isResolvingReaction = false;
+    private bool resultsSaveStarted = false;
 
     // =========================================================
     // TARGETS
@@ -378,6 +380,7 @@ public class ReactionGameManager : MonoBehaviour
         if (gameRunning)
             return;
 
+
         // El modo entrenamiento permite registrar estadísticas.
         ReactionModeController.SetMode(
             ReactionModeController.ReactionMode.Training
@@ -387,6 +390,7 @@ public class ReactionGameManager : MonoBehaviour
 
         gameRunning = false;
         isResolvingReaction = false;
+        resultsSaveStarted = false;
 
         if (gameUI != null)
             gameUI.HideFinalResults();
@@ -667,6 +671,93 @@ public class ReactionGameManager : MonoBehaviour
             "PROMEDIO TOTAL: " +
             TotalAverageReactionTime.ToString("F3") + " s"
         );
+
+        // Guardar los resultados de los tres niveles.
+        SaveLightsResults();
+    }
+
+    // =========================================================
+    // GUARDAR RESULTADOS EN FIREBASE
+    // =========================================================
+
+    private async void SaveLightsResults()
+    {
+        if (resultsSaveStarted)
+            return;
+
+        FirestoreService firestore = FirestoreService.Instance;
+
+        if (firestore == null)
+        {
+            Debug.LogError(
+                "[LIGHTS FIREBASE] No existe una instancia de FirestoreService."
+            );
+            return;
+        }
+
+        if (!firestore.HasCurrentStudent)
+        {
+            Debug.LogError(
+                "[LIGHTS FIREBASE] No hay un estudiante identificado. " +
+                "No se guardaron los resultados."
+            );
+            return;
+        }
+
+        FirestoreService.LightsSession session =
+            firestore.CreateLightsSession();
+
+        // Construir la sesión con las estadísticas reales.
+        for (int level = 1; level <= 3; level++)
+        {
+            ReactionLightGameStats.LevelStats stats =
+                statsController.GetStats(level);
+
+            if (stats == null)
+            {
+                Debug.LogError(
+                    "[LIGHTS FIREBASE] No se encontraron estadísticas " +
+                    "para el nivel " + level + "."
+                );
+                return;
+            }
+
+            FirestoreService.LightsLevel levelData =
+                new FirestoreService.LightsLevel
+                {
+                    correctAnswers = stats.hits,
+                    accuracy = stats.Precision,
+                    averageReaction = stats.averageReactionTime
+                };
+
+            firestore.AddLightsLevelToSession(
+                session,
+                levelData
+            );
+        }
+
+        // Evitar que el mismo intento se envíe dos veces.
+        resultsSaveStarted = true;
+
+        try
+        {
+            string attemptId = await firestore.SaveLightsAttempt(
+                firestore.CurrentStudentCode,
+                session
+            );
+
+            Debug.Log(
+                "[LIGHTS FIREBASE] Intento guardado correctamente. " +
+                "ID: " + attemptId
+            );
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError(
+                "[LIGHTS FIREBASE] Error al guardar el intento: " +
+                exception
+            );
+        }
     }
 
     // =========================================================
@@ -683,6 +774,7 @@ public class ReactionGameManager : MonoBehaviour
 
         gameRunning = false;
         isResolvingReaction = false;
+        resultsSaveStarted = false;
         reactionsResolved = 0;
         activeTargets = null;
 
