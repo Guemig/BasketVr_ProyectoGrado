@@ -3,9 +3,6 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// Representa una imagen asociada a una dirección del escenario.
-/// </summary>
 [Serializable]
 public class LightTargetDirectionImage
 {
@@ -20,10 +17,6 @@ public class LightTargetDirectionImage
     public Color activeColor = Color.yellow;
 }
 
-/// <summary>
-/// Muestra las direcciones disponibles para cada nivel
-/// y resalta la dirección del target durante su aviso.
-/// </summary>
 public class LightTargetDirectionIndicator : MonoBehaviour
 {
     [Header("NIVEL 1")]
@@ -35,12 +28,11 @@ public class LightTargetDirectionIndicator : MonoBehaviour
     [Header("NIVEL 3")]
     [SerializeField] private LightTargetDirectionImage[] level3Directions;
 
+    [Header("TUTORIAL (opcional)")]
+    [SerializeField] private LightTargetDirectionImage[] tutorialDirections;
+
     private int currentLevel;
     private LightTargetDirectionImage[] currentDirections;
-
-    // =========================================================
-    // INICIAR NIVEL
-    // =========================================================
 
     public void SetLevel(int level)
     {
@@ -49,84 +41,111 @@ public class LightTargetDirectionIndicator : MonoBehaviour
         currentLevel = level;
         currentDirections = GetDirectionsForLevel(level);
 
+        ShowCurrentDirections();
+    }
+
+    // Se conserva para los lugares que ya llaman este método.
+    public void SetTutorialMode()
+    {
+        SetTutorialMode(1);
+    }
+
+    // Selecciona las imágenes del nivel del target tutorial.
+    public void SetTutorialMode(int level)
+    {
+        HideAllDirections();
+
+        currentLevel = level;
+
+        if (tutorialDirections != null &&
+            tutorialDirections.Length > 0)
+        {
+            currentDirections = tutorialDirections;
+        }
+        else
+        {
+            currentDirections = GetDirectionsForLevel(level);
+
+            // Respaldo para targets que no pertenecen
+            // a ninguno de los grupos de entrenamiento.
+            if (currentDirections == null)
+                currentDirections = level1Directions;
+        }
+
+        ShowCurrentDirections();
+    }
+
+    private void ShowCurrentDirections()
+    {
         if (currentDirections == null)
         {
             Debug.LogWarning(
-                "LightTargetDirectionIndicator: nivel inválido: " + level
+                "LightTargetDirectionIndicator: no hay direcciones configuradas."
             );
-
             return;
         }
 
-        foreach (LightTargetDirectionImage direction in currentDirections)
+        foreach (LightTargetDirectionImage item in currentDirections)
         {
-            if (direction == null || direction.image == null)
+            if (item == null || item.image == null)
                 continue;
 
-            direction.image.gameObject.SetActive(true);
-            direction.image.color = direction.normalColor;
+            item.image.gameObject.SetActive(true);
+            item.image.color = item.normalColor;
         }
     }
-
-    // =========================================================
-    // MOSTRAR DIRECCIÓN DEL TARGET
-    // =========================================================
 
     public void ShowDirection(LightTargetReaction.Direction direction)
     {
         if (currentDirections == null)
+        {
+            Debug.LogWarning(
+                "LightTargetDirectionIndicator: no se ha seleccionado " +
+                "un conjunto de direcciones."
+            );
             return;
+        }
 
-        // Primero, todas las flechas vuelven a su color normal.
         ClearDirection();
 
-        // Después, se resalta la dirección solicitada.
-        foreach (LightTargetDirectionImage directionImage in currentDirections)
+        foreach (LightTargetDirectionImage item in currentDirections)
         {
-            if (directionImage == null || directionImage.image == null)
+            if (item == null || item.image == null)
                 continue;
 
-            if (directionImage.direction == direction)
-            {
-                directionImage.image.color = directionImage.activeColor;
-                return;
-            }
+            if (item.direction != direction)
+                continue;
+
+            item.image.color = item.activeColor;
+            return;
         }
 
         Debug.LogWarning(
-            "LightTargetDirectionIndicator: no existe una imagen " +
-            "configurada para la dirección " + direction +
-            " en el nivel " + currentLevel + "."
+            "No existe una imagen configurada para la dirección " +
+            direction + " en el nivel " + currentLevel + "."
         );
     }
-
-    // =========================================================
-    // LIMPIAR RESALTADO
-    // =========================================================
 
     public void ClearDirection()
     {
         if (currentDirections == null)
             return;
 
-        foreach (LightTargetDirectionImage direction in currentDirections)
+        foreach (LightTargetDirectionImage item in currentDirections)
         {
-            if (direction == null || direction.image == null)
+            if (item == null || item.image == null)
                 continue;
 
-            direction.image.color = direction.normalColor;
+            item.image.color = item.normalColor;
         }
     }
-
-    // =========================================================
-    // OCULTAR TODAS LAS DIRECCIONES
-    // =========================================================
 
     public void HideAllDirections()
     {
         SetDirectionsActive(level1Directions, false);
         SetDirectionsActive(level2Directions, false);
         SetDirectionsActive(level3Directions, false);
+        SetDirectionsActive(tutorialDirections, false);
 
         currentDirections = null;
         currentLevel = 0;
@@ -139,35 +158,24 @@ public class LightTargetDirectionIndicator : MonoBehaviour
         if (directions == null)
             return;
 
-        foreach (LightTargetDirectionImage direction in directions)
+        foreach (LightTargetDirectionImage item in directions)
         {
-            if (direction == null || direction.image == null)
+            if (item == null || item.image == null)
                 continue;
 
-            direction.image.color = direction.normalColor;
-            direction.image.gameObject.SetActive(active);
+            item.image.color = item.normalColor;
+            item.image.gameObject.SetActive(active);
         }
     }
-
-    // =========================================================
-    // OBTENER DIRECCIONES DEL NIVEL
-    // =========================================================
 
     private LightTargetDirectionImage[] GetDirectionsForLevel(int level)
     {
         switch (level)
         {
-            case 1:
-                return level1Directions;
-
-            case 2:
-                return level2Directions;
-
-            case 3:
-                return level3Directions;
-
-            default:
-                return null;
+            case 1: return level1Directions;
+            case 2: return level2Directions;
+            case 3: return level3Directions;
+            default: return null;
         }
     }
 }

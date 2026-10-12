@@ -1,31 +1,65 @@
+
 using UnityEngine;
 
 public class LightMenuController : MonoBehaviour
 {
-    // =====================================================
-    // REFERENCIAS
-    // =====================================================
-
     [Header("Paneles")]
     [SerializeField] private GameObject startPanel;
     [SerializeField] private GameObject endPanel;
+    [SerializeField] private GameObject indicatorPanel;
 
     [Header("Gestor del ejercicio")]
     [SerializeField] private ReactionGameManager gameManager;
 
-    // =====================================================
-    // INICIALIZACIÓN
-    // =====================================================
-
     private void Start()
     {
-        // Mostrar el panel de inicio al entrar.
+        // El panel de entrenamiento no debe aparecer
+        // mientras se está ejecutando el tutorial.
+        bool isTutorialMode =
+            ReactionModeController.CurrentMode ==
+            ReactionModeController.ReactionMode.Tutorial;
+
+        if (startPanel != null)
+            startPanel.SetActive(!isTutorialMode);
+
+        if (endPanel != null)
+            endPanel.SetActive(false);
+
+        SetIndicatorVisible(false);
+    }
+
+    // =====================================================
+    // INDICADOR VISUAL
+    // =====================================================
+
+    public void SetIndicatorVisible(bool visible)
+    {
+        if (indicatorPanel != null)
+            indicatorPanel.SetActive(visible);
+    }
+
+    // =====================================================
+    // MOSTRAR MENÚ PARA INICIAR ENTRENAMIENTO
+    // =====================================================
+
+    public void ShowTrainingStartMenu()
+    {
+        // Cambiar al modo entrenamiento.
+        ReactionModeController.SetMode(
+            ReactionModeController.ReactionMode.Training
+        );
+
         if (startPanel != null)
             startPanel.SetActive(true);
 
-        // Ocultar el panel final.
         if (endPanel != null)
             endPanel.SetActive(false);
+
+        SetIndicatorVisible(false);
+
+        Debug.Log(
+            "Tutorial finalizado. Menú de entrenamiento disponible."
+        );
     }
 
     // =====================================================
@@ -34,15 +68,14 @@ public class LightMenuController : MonoBehaviour
 
     public void StartExercise()
     {
-        // Ocultar el panel de inicio.
         if (startPanel != null)
             startPanel.SetActive(false);
 
-        // Ocultar el panel final por seguridad.
         if (endPanel != null)
             endPanel.SetActive(false);
 
-        // Iniciar el ejercicio de luces.
+        SetIndicatorVisible(true);
+
         if (gameManager != null)
         {
             gameManager.StartExercise();
@@ -50,8 +83,7 @@ public class LightMenuController : MonoBehaviour
         else
         {
             Debug.LogError(
-                "LightMenuController: falta asignar " +
-                "ReactionGameManager."
+                "LightMenuController: falta asignar ReactionGameManager."
             );
         }
     }
@@ -62,13 +94,13 @@ public class LightMenuController : MonoBehaviour
 
     public void ShowEndMenu()
     {
-        // Ocultar el panel de inicio.
         if (startPanel != null)
             startPanel.SetActive(false);
 
-        // Mostrar el panel final.
         if (endPanel != null)
             endPanel.SetActive(true);
+
+        SetIndicatorVisible(false);
     }
 
     // =====================================================
@@ -82,5 +114,7 @@ public class LightMenuController : MonoBehaviour
 
         if (endPanel != null)
             endPanel.SetActive(false);
+
+        SetIndicatorVisible(false);
     }
 }

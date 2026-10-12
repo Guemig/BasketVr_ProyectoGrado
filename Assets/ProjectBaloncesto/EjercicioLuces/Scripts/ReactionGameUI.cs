@@ -4,42 +4,18 @@ using UnityEngine;
 
 public class ReactionGameUI : MonoBehaviour
 {
-    // =========================================================
-    // GAME MANAGER
-    // =========================================================
-
-    [Header("GAME MANAGER")]
+    [Header("REFERENCIAS")]
     [SerializeField] private ReactionGameManager gameManager;
-
-    // =========================================================
-    // UI DURANTE EL EJERCICIO
-    // =========================================================
-
-    [Header("UI DURANTE EL EJERCICIO")]
-    [SerializeField] private TMP_Text levelText;
-    [SerializeField] private TMP_Text reactionsText;
-
-    // =========================================================
-    // RESULTADOS NIVEL 1
-    // =========================================================
 
     [Header("RESULTADOS NIVEL 1")]
     [SerializeField] private TMP_Text level1HitsText;
     [SerializeField] private TMP_Text level1PrecisionText;
     [SerializeField] private TMP_Text level1AverageText;
 
-    // =========================================================
-    // RESULTADOS NIVEL 2
-    // =========================================================
-
     [Header("RESULTADOS NIVEL 2")]
     [SerializeField] private TMP_Text level2HitsText;
     [SerializeField] private TMP_Text level2PrecisionText;
     [SerializeField] private TMP_Text level2AverageText;
-
-    // =========================================================
-    // RESULTADOS NIVEL 3
-    // =========================================================
 
     [Header("RESULTADOS NIVEL 3")]
     [SerializeField] private TMP_Text level3HitsText;
@@ -47,158 +23,123 @@ public class ReactionGameUI : MonoBehaviour
     [SerializeField] private TMP_Text level3AverageText;
 
     // =========================================================
-    // UPDATE
+    // INICIALIZACIÓN
     // =========================================================
 
-    private void Update()
+    private void Start()
+    {
+        HideFinalResults();
+    }
+
+    // =========================================================
+    // MOSTRAR RESULTADOS FINALES
+    // =========================================================
+
+    public void ShowFinalResults()
     {
         if (gameManager == null)
+        {
+            Debug.LogWarning(
+                "ReactionGameUI: falta asignar ReactionGameManager."
+            );
+
             return;
+        }
 
-        UpdateGameUI();
-        UpdateFinalResults();
+        UpdateLevelResults(
+            gameManager.Level1Stats,
+            level1HitsText,
+            level1PrecisionText,
+            level1AverageText
+        );
+
+        UpdateLevelResults(
+            gameManager.Level2Stats,
+            level2HitsText,
+            level2PrecisionText,
+            level2AverageText
+        );
+
+        UpdateLevelResults(
+            gameManager.Level3Stats,
+            level3HitsText,
+            level3PrecisionText,
+            level3AverageText
+        );
+
+        Debug.Log("ReactionGameUI: resultados finales actualizados.");
     }
 
     // =========================================================
-    // UI DURANTE EL EJERCICIO
+    // ACTUALIZAR RESULTADOS POR NIVEL
     // =========================================================
 
-    private void UpdateGameUI()
+    private void UpdateLevelResults(
+        ReactionLightGameStats.LevelStats stats,
+        TMP_Text hitsText,
+        TMP_Text precisionText,
+        TMP_Text averageText)
     {
-        if (levelText != null)
+        if (stats == null)
         {
-            if (gameManager.CurrentLevel > 0)
-            {
-                levelText.text =
-                    "NIVEL " + gameManager.CurrentLevel;
-            }
-            else
-            {
-                levelText.text = "";
-            }
+            Debug.LogWarning(
+                "ReactionGameUI: no se encontraron estadísticas del nivel."
+            );
+
+            return;
+        }
+        if (hitsText != null)
+        {
+            hitsText.text = stats.hits + "/" + (stats.hits + stats.misses);
+        }
+        if (precisionText != null)
+        {
+            precisionText.text = stats.Precision.ToString("F1") + "%"; 
         }
 
-        if (reactionsText != null)
+        if (averageText != null)
         {
-            if (gameManager.GameRunning)
-            {
-                reactionsText.text =
-                    "REACCIONES: " +
-                    gameManager.ReactionsResolved +
-                    " / " +
-                    gameManager.RequiredReactions;
-            }
-            else
-            {
-                reactionsText.text = "";
-            }
-        }
-    }
-
-    // =========================================================
-    // RESULTADOS FINALES
-    // =========================================================
-
-    private void UpdateFinalResults()
-    {
-        UpdateLevel1Results();
-        UpdateLevel2Results();
-        UpdateLevel3Results();
-    }
-
-    // =========================================================
-    // NIVEL 1
-    // =========================================================
-
-    private void UpdateLevel1Results()
-    {
-        ReactionGameManager.LevelStats stats =
-            gameManager.Level1Stats;
-
-        if (level1HitsText != null)
-        {
-            level1HitsText.text =
-                "ACIERTOS: " + stats.hits;
-        }
-
-        if (level1PrecisionText != null)
-        {
-            level1PrecisionText.text =
-                "PRECISIÓN: " +
-                stats.Precision.ToString("F1") +
-                "%";
-        }
-
-        if (level1AverageText != null)
-        {
-            level1AverageText.text =
-                "TIEMPO PROMEDIO: " +
-                stats.averageReactionTime.ToString("F3") +
-                " s";
+            averageText.text = stats.averageReactionTime.ToString("F3") + " s";
         }
     }
 
     // =========================================================
-    // NIVEL 2
+    // OCULTAR RESULTADOS
     // =========================================================
 
-    private void UpdateLevel2Results()
+    public void HideFinalResults()
     {
-        ReactionGameManager.LevelStats stats =
-            gameManager.Level2Stats;
+        ClearLevelResults(
+            level1HitsText,
+            level1PrecisionText,
+            level1AverageText
+        );
 
-        if (level2HitsText != null)
-        {
-            level2HitsText.text =
-                "ACIERTOS: " + stats.hits;
-        }
+        ClearLevelResults(
+            level2HitsText,
+            level2PrecisionText,
+            level2AverageText
+        );
 
-        if (level2PrecisionText != null)
-        {
-            level2PrecisionText.text =
-                "PRECISIÓN: " +
-                stats.Precision.ToString("F1") +
-                "%";
-        }
-
-        if (level2AverageText != null)
-        {
-            level2AverageText.text =
-                "TIEMPO PROMEDIO: " +
-                stats.averageReactionTime.ToString("F3") +
-                " s";
-        }
+        ClearLevelResults(
+            level3HitsText,
+            level3PrecisionText,
+            level3AverageText
+        );
     }
 
-    // =========================================================
-    // NIVEL 3
-    // =========================================================
-
-    private void UpdateLevel3Results()
+    private void ClearLevelResults(
+        TMP_Text hitsText,
+        TMP_Text precisionText,
+        TMP_Text averageText)
     {
-        ReactionGameManager.LevelStats stats =
-            gameManager.Level3Stats;
+        if (hitsText != null)
+            hitsText.text = "";
 
-        if (level3HitsText != null)
-        {
-            level3HitsText.text =
-                "ACIERTOS: " + stats.hits;
-        }
+        if (precisionText != null)
+            precisionText.text = "";
 
-        if (level3PrecisionText != null)
-        {
-            level3PrecisionText.text =
-                "PRECISIÓN: " +
-                stats.Precision.ToString("F1") +
-                "%";
-        }
-
-        if (level3AverageText != null)
-        {
-            level3AverageText.text =
-                "TIEMPO PROMEDIO: " +
-                stats.averageReactionTime.ToString("F3") +
-                " s";
-        }
+        if (averageText != null)
+            averageText.text = "";
     }
 }

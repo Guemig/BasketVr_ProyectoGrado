@@ -3,10 +3,18 @@ using UnityEngine;
 
 public class LightTargetExerciseConfig : MonoBehaviour
 {
+    // =========================================================
+    // GRUPOS DE NIVELES
+    // =========================================================
+
     [Header("GRUPOS DE NIVELES")]
     [SerializeField] private GameObject level1Group;
     [SerializeField] private GameObject level2Group;
     [SerializeField] private GameObject level3Group;
+
+    // =========================================================
+    // CANTIDAD DE REACCIONES
+    // =========================================================
 
     [Header("CANTIDAD DE REACCIONES POR NIVEL")]
     [SerializeField]
@@ -15,12 +23,29 @@ public class LightTargetExerciseConfig : MonoBehaviour
         10, 15, 20
     };
 
-    [Header("TIEMPO DE AVISO POR NIVEL")]
+    // =========================================================
+    // TIEMPO TOTAL
+    // =========================================================
+
+    [Header("TIEMPO TOTAL DE REACCIÓN POR NIVEL")]
     [SerializeField]
-    private float[] warningTimeByLevel =
+    private float[] totalTimeByLevel =
     {
-        0.3f, 0.3f, 0.3f
+        1.5f, 1.2f, 1.0f
     };
+
+    // =========================================================
+    // PORCENTAJE DE AVISO
+    // =========================================================
+
+    [Header("PORCENTAJE DEL TIEMPO PARA EL AVISO")]
+    [Range(0f, 100f)]
+    [SerializeField]
+    private float warningPercentage = 20f;
+
+    // =========================================================
+    // ESPERA ENTRE TARGETS
+    // =========================================================
 
     [Header("ESPERA ENTRE TARGETS POR NIVEL")]
     [SerializeField]
@@ -29,16 +54,17 @@ public class LightTargetExerciseConfig : MonoBehaviour
         0.5f, 0.4f, 0.3f
     };
 
-    [Header("TIEMPO MÁXIMO DE REACCIÓN POR NIVEL")]
-    [SerializeField]
-    private float[] maxReactionTimeByLevel =
-    {
-        1.5f, 1.2f, 1.0f
-    };
+    // =========================================================
+    // PROPIEDADES PÚBLICAS
+    // =========================================================
 
     public GameObject Level1Group => level1Group;
     public GameObject Level2Group => level2Group;
     public GameObject Level3Group => level3Group;
+
+    // =========================================================
+    // CANTIDAD DE REACCIONES
+    // =========================================================
 
     public int GetRequiredReactions(int currentLevel)
     {
@@ -54,23 +80,60 @@ public class LightTargetExerciseConfig : MonoBehaviour
         return Mathf.Max(1, reactionsRequiredByLevel[index]);
     }
 
+    // =========================================================
+    // TIEMPO DE AVISO
+    // =========================================================
+
     public float GetWarningTime(int currentLevel)
     {
-        return GetTimeForLevel(
-            warningTimeByLevel, currentLevel, 0.3f);
+        float totalTime = GetTimeForLevel(
+            totalTimeByLevel,
+            currentLevel,
+            1.5f
+        );
+
+        float percentage = Mathf.Clamp(
+            warningPercentage, 0f, 100f
+        );
+
+        return totalTime * percentage / 100f;
     }
+
+    // =========================================================
+    // TIEMPO ACTIVO DEL TARGET
+    // =========================================================
+
+    public float GetMaxReactionTime(int currentLevel)
+    {
+        float totalTime = GetTimeForLevel(
+            totalTimeByLevel,
+            currentLevel,
+            1.5f
+        );
+
+        float percentage = Mathf.Clamp(
+            warningPercentage, 0f, 100f
+        );
+
+        return totalTime * (1f - percentage / 100f);
+    }
+
+    // =========================================================
+    // ESPERA ENTRE TARGETS
+    // =========================================================
 
     public float GetDelayBetweenTargets(int currentLevel)
     {
         return GetTimeForLevel(
-            delayBetweenTargetsByLevel, currentLevel, 0.5f);
+            delayBetweenTargetsByLevel,
+            currentLevel,
+            0.5f
+        );
     }
 
-    public float GetMaxReactionTime(int currentLevel)
-    {
-        return GetTimeForLevel(
-            maxReactionTimeByLevel, currentLevel, 1.5f);
-    }
+    // =========================================================
+    // OBTENER VALOR POR NIVEL
+    // =========================================================
 
     private float GetTimeForLevel(
         float[] values,
@@ -86,6 +149,6 @@ public class LightTargetExerciseConfig : MonoBehaviour
             return defaultValue;
         }
 
-        return values[index];
+        return Mathf.Max(0f, values[index]);
     }
 }

@@ -75,6 +75,8 @@ public class LightTargetReaction : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip successSound;
     [SerializeField] private AudioClip errorSound;
+    [SerializeField] private AudioClip warningSound;
+
 
     // =========================================================
     // FEEDBACK
@@ -97,6 +99,12 @@ public class LightTargetReaction : MonoBehaviour
 
     public LightState CurrentState => currentState;
     public bool IsActive => currentState == LightState.Active;
+
+    public event Action<LightTargetReaction> TutorialPoked;
+
+
+    public event Action<LightTargetReaction, bool>
+    TutorialFeedbackFinished;
 
     // =========================================================
     // AWAKE
@@ -154,6 +162,9 @@ public class LightTargetReaction : MonoBehaviour
             warningColor,
             warningEmissionColor
         );
+
+        PlaySound(warningSound);
+
     }
 
     // =========================================================
@@ -215,8 +226,15 @@ public class LightTargetReaction : MonoBehaviour
 
         Deactivate();
 
-        if (gameManager != null)
+        if (ReactionModeController.CurrentMode ==
+            ReactionModeController.ReactionMode.Tutorial)
+        {
+            TutorialFeedbackFinished?.Invoke(this, success);
+        }
+        else if (gameManager != null)
+        {
             gameManager.TargetFeedbackFinished(this);
+        }
     }
 
     // =========================================================
@@ -311,9 +329,18 @@ public class LightTargetReaction : MonoBehaviour
         if (currentState != LightState.Active)
             return;
 
+        if (ReactionModeController.CurrentMode ==
+            ReactionModeController.ReactionMode.Tutorial)
+        {
+            TutorialPoked?.Invoke(this);
+            return;
+        }
+
         if (gameManager == null)
             return;
 
         gameManager.TargetTouched(this);
     }
+
+
 }

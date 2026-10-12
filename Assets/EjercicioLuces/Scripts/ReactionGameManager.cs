@@ -4,69 +4,6 @@ using UnityEngine;
 
 public class ReactionGameManager : MonoBehaviour
 {
-    [System.Serializable]
-    public class LevelStats
-    {
-        public int hits;
-        public int misses;
-
-        public float averageReactionTime;
-        public float bestReactionTime;
-        public float worstReactionTime;
-        public float totalReactionTime;
-
-        public List<float> reactionTimes = new List<float>();
-
-        public float Precision
-        {
-            get
-            {
-                int totalAttempts = hits + misses;
-
-                if (totalAttempts == 0)
-                    return 0f;
-
-                return (float)hits / totalAttempts * 100f;
-            }
-        }
-
-        public void ResetStats()
-        {
-            hits = 0;
-            misses = 0;
-
-            averageReactionTime = 0f;
-            bestReactionTime = 0f;
-            worstReactionTime = 0f;
-            totalReactionTime = 0f;
-
-            reactionTimes.Clear();
-        }
-
-        public void AddReactionTime(float time)
-        {
-            reactionTimes.Add(time);
-            totalReactionTime += time;
-
-            if (reactionTimes.Count == 1)
-            {
-                bestReactionTime = time;
-                worstReactionTime = time;
-            }
-            else
-            {
-                if (time < bestReactionTime)
-                    bestReactionTime = time;
-
-                if (time > worstReactionTime)
-                    worstReactionTime = time;
-            }
-
-            averageReactionTime =
-                totalReactionTime / reactionTimes.Count;
-        }
-    }
-
     // =========================================================
     // CONFIGURACIÓN DEL EJERCICIO
     // =========================================================
@@ -75,11 +12,18 @@ public class ReactionGameManager : MonoBehaviour
     [SerializeField] private LightTargetExerciseConfig exerciseConfig;
 
     // =========================================================
-    // CANVAS FINAL
+    // ESTADÍSTICAS
     // =========================================================
 
-    [Header("CANVAS FINAL")]
-    [SerializeField] private GameObject finalCanvas;
+    [Header("ESTADÍSTICAS")]
+    [SerializeField] private ReactionLightGameStats statsController;
+
+    // =========================================================
+    // INTERFAZ
+    // =========================================================
+
+    [Header("INTERFAZ")]
+    [SerializeField] private ReactionGameUI gameUI;
 
     // =========================================================
     // TRANSICIÓN Y SECUENCIA
@@ -90,6 +34,13 @@ public class ReactionGameManager : MonoBehaviour
 
     [Header("SECUENCIA DE LUCES")]
     [SerializeField] private LightTargetSequence targetSequence;
+
+    // =========================================================
+    // TUTORIAL
+    // =========================================================
+
+    [Header("TUTORIAL")]
+    [SerializeField] private LightsTutoController lightsTutoController;
 
     // =========================================================
     // AUDIO DE INICIO
@@ -110,7 +61,6 @@ public class ReactionGameManager : MonoBehaviour
     [Header("PROGRESO DEL NIVEL")]
     [SerializeField] private int reactionsResolved = 0;
 
-
     [Header("MENÚ")]
     [SerializeField] private LightMenuController menuController;
 
@@ -128,21 +78,11 @@ public class ReactionGameManager : MonoBehaviour
     private List<LightTargetReaction> activeTargets;
 
     // =========================================================
-    // ESTADÍSTICAS
-    // =========================================================
-
-    private LevelStats level1Stats = new LevelStats();
-    private LevelStats level2Stats = new LevelStats();
-    private LevelStats level3Stats = new LevelStats();
-
-    // =========================================================
     // PROPIEDADES PÚBLICAS
     // =========================================================
 
     public int CurrentLevel => currentLevel;
-
     public bool GameRunning => gameRunning;
-
     public int ReactionsResolved => reactionsResolved;
 
     public int RequiredReactions =>
@@ -150,57 +90,33 @@ public class ReactionGameManager : MonoBehaviour
             ? exerciseConfig.GetRequiredReactions(currentLevel)
             : 0;
 
-    public LevelStats Level1Stats => level1Stats;
-    public LevelStats Level2Stats => level2Stats;
-    public LevelStats Level3Stats => level3Stats;
+    public ReactionLightGameStats.LevelStats Level1Stats =>
+        statsController != null ? statsController.Level1Stats : null;
+
+    public ReactionLightGameStats.LevelStats Level2Stats =>
+        statsController != null ? statsController.Level2Stats : null;
+
+    public ReactionLightGameStats.LevelStats Level3Stats =>
+        statsController != null ? statsController.Level3Stats : null;
 
     public int TotalHits =>
-        level1Stats.hits +
-        level2Stats.hits +
-        level3Stats.hits;
+        statsController != null ? statsController.TotalHits : 0;
 
     public int TotalMisses =>
-        level1Stats.misses +
-        level2Stats.misses +
-        level3Stats.misses;
+        statsController != null ? statsController.TotalMisses : 0;
 
-    public float TotalPrecision
-    {
-        get
-        {
-            int totalAttempts = TotalHits + TotalMisses;
+    public float TotalPrecision =>
+        statsController != null ? statsController.TotalPrecision : 0f;
 
-            if (totalAttempts == 0)
-                return 0f;
-
-            return (float)TotalHits / totalAttempts * 100f;
-        }
-    }
-
-    public float TotalAverageReactionTime
-    {
-        get
-        {
-            int totalReactions =
-                level1Stats.reactionTimes.Count +
-                level2Stats.reactionTimes.Count +
-                level3Stats.reactionTimes.Count;
-
-            if (totalReactions == 0)
-                return 0f;
-
-            float totalTime =
-                level1Stats.totalReactionTime +
-                level2Stats.totalReactionTime +
-                level3Stats.totalReactionTime;
-
-            return totalTime / totalReactions;
-        }
-    }
+    public float TotalAverageReactionTime =>
+        statsController != null
+            ? statsController.TotalAverageReactionTime
+            : 0f;
 
     // =========================================================
-    // START
+    // INICIALIZACIÓN
     // =========================================================
+
 
     private void Start()
     {
@@ -215,14 +131,21 @@ public class ReactionGameManager : MonoBehaviour
             return;
         }
 
+        if (statsController == null)
+        {
+            Debug.LogError(
+                "ReactionGameManager: falta asignar " +
+                "ReactionLightGameStats."
+            );
+
+            enabled = false;
+            return;
+        }
+
         if (targetSequence == null)
             targetSequence = GetComponent<LightTargetSequence>();
 
-        if (targetSequence != null)
-        {
-            targetSequence.Initialize(this);
-        }
-        else
+        if (targetSequence == null)
         {
             Debug.LogError(
                 "ReactionGameManager: falta asignar " +
@@ -233,14 +156,39 @@ public class ReactionGameManager : MonoBehaviour
             return;
         }
 
+        // Inicializar los sistemas compartidos.
+        targetSequence.Initialize(this);
+
         GetTargetsFromGroups();
         SetupTargets();
         DeactivateAllGroups();
 
-        if (finalCanvas != null)
-            finalCanvas.SetActive(false);
-
         ResetAllStats();
+
+        // Decidir qué experiencia iniciar.
+        if (ReactionModeController.CurrentMode ==
+            ReactionModeController.ReactionMode.Tutorial)
+        {
+            if (lightsTutoController == null)
+            {
+                Debug.LogError(
+                    "ReactionGameManager: el modo es Tutorial, " +
+                    "pero no se asignó LightsTutoController."
+                );
+
+                return;
+            }
+
+            Debug.Log("Iniciando directamente el tutorial.");
+
+            lightsTutoController.StartTutorial();
+        }
+        else
+        {
+            Debug.Log(
+                "Modo Training: esperando que el usuario pulse Iniciar."
+            );
+        }
     }
 
     // =========================================================
@@ -249,18 +197,12 @@ public class ReactionGameManager : MonoBehaviour
 
     private void GetTargetsFromGroups()
     {
-        level1Targets =
-            GetTargetsFromGroup(exerciseConfig.Level1Group);
-
-        level2Targets =
-            GetTargetsFromGroup(exerciseConfig.Level2Group);
-
-        level3Targets =
-            GetTargetsFromGroup(exerciseConfig.Level3Group);
+        level1Targets = GetTargetsFromGroup(exerciseConfig.Level1Group);
+        level2Targets = GetTargetsFromGroup(exerciseConfig.Level2Group);
+        level3Targets = GetTargetsFromGroup(exerciseConfig.Level3Group);
     }
 
-    private List<LightTargetReaction> GetTargetsFromGroup(
-        GameObject group)
+    private List<LightTargetReaction> GetTargetsFromGroup(GameObject group)
     {
         if (group == null)
         {
@@ -312,6 +254,122 @@ public class ReactionGameManager : MonoBehaviour
     }
 
     // =========================================================
+    // INICIAR TUTORIAL
+    // =========================================================
+
+    public void StartTutorial()
+    {
+        if (lightsTutoController == null)
+        {
+            Debug.LogError(
+                "ReactionGameManager: falta asignar " +
+                "LightsTutoController."
+            );
+
+            return;
+        }
+
+        // Detener cualquier secuencia del entrenamiento.
+        StopTargetSequence();
+
+        gameRunning = false;
+        isResolvingReaction = false;
+        reactionsResolved = 0;
+        activeTargets = null;
+
+        DeactivateAllGroups();
+
+        if (gameUI != null)
+            gameUI.HideFinalResults();
+
+        // El tutorial no debe registrar estadísticas del ejercicio.
+        ReactionModeController.SetMode(
+            ReactionModeController.ReactionMode.Tutorial
+        );
+
+        lightsTutoController.StartTutorial();
+    }
+
+    // =========================================================
+    // PREPARAR TARGET PARA EL TUTORIAL
+    // =========================================================
+
+    public void PrepareTutorialTarget(LightTargetReaction target)
+    {
+        if (target == null || exerciseConfig == null)
+            return;
+
+        // Asegurar que no quede activa la secuencia del entrenamiento.
+        StopTargetSequence();
+
+        gameRunning = false;
+        isResolvingReaction = false;
+        activeTargets = null;
+
+        // Apagar los grupos antes de activar el que contiene la luz.
+        DeactivateAllGroups();
+
+        GameObject targetGroup = GetGroupContainingTarget(target);
+
+        if (targetGroup != null)
+        {
+            targetGroup.SetActive(true);
+        }
+        else
+        {
+            Debug.LogWarning(
+                "ReactionGameManager: la luz '" + target.name +
+                "' no pertenece a ninguno de los grupos configurados " +
+                "en LightTargetExerciseConfig. Comprueba su jerarquía."
+            );
+
+            // Activar el objeto de la luz como alternativa.
+            // Si tiene un padre inactivo, también habrá que activar
+            // el grupo o padre correspondiente.
+            target.gameObject.SetActive(true);
+        }
+
+        // Evitar que las demás luces queden activas.
+        DeactivateTargetList(level1Targets);
+        DeactivateTargetList(level2Targets);
+        DeactivateTargetList(level3Targets);
+
+        target.Deactivate();
+    }
+
+    private GameObject GetGroupContainingTarget(
+        LightTargetReaction target)
+    {
+        if (target == null || exerciseConfig == null)
+            return null;
+
+        if (IsTargetInGroup(target, exerciseConfig.Level1Group))
+            return exerciseConfig.Level1Group;
+
+        if (IsTargetInGroup(target, exerciseConfig.Level2Group))
+            return exerciseConfig.Level2Group;
+
+        if (IsTargetInGroup(target, exerciseConfig.Level3Group))
+            return exerciseConfig.Level3Group;
+
+        return null;
+    }
+
+    private bool IsTargetInGroup(
+        LightTargetReaction target,
+        GameObject group)
+    {
+        if (target == null || group == null)
+            return false;
+
+        Transform targetTransform = target.transform;
+        Transform groupTransform = group.transform;
+
+        return targetTransform == groupTransform ||
+               targetTransform.IsChildOf(groupTransform);
+    }
+
+    // =========================================================
     // INICIAR EJERCICIO
     // =========================================================
 
@@ -320,25 +378,31 @@ public class ReactionGameManager : MonoBehaviour
         if (gameRunning)
             return;
 
+        // El modo entrenamiento permite registrar estadísticas.
+        ReactionModeController.SetMode(
+            ReactionModeController.ReactionMode.Training
+        );
+
         StopTargetSequence();
 
         gameRunning = false;
         isResolvingReaction = false;
 
+        if (gameUI != null)
+            gameUI.HideFinalResults();
+
         ResetAllStats();
 
         currentLevel = 1;
         reactionsResolved = 0;
-
-        if (finalCanvas != null)
-            finalCanvas.SetActive(false);
+        activeTargets = null;
 
         PlayStartSound();
         StartLevelWithTransition();
     }
 
     // =========================================================
-    // TRANSICIÓN
+    // TRANSICIÓN ENTRE NIVELES
     // =========================================================
 
     private void StartLevelWithTransition()
@@ -464,17 +528,13 @@ public class ReactionGameManager : MonoBehaviour
         targetSequence.CancelTimeout();
         targetSequence.ClearCurrentTarget(touchedTarget);
 
-        LevelStats stats = GetCurrentStats();
-
-        stats.hits++;
-        stats.AddReactionTime(reactionTime);
+        statsController.RegisterHit(currentLevel, reactionTime);
 
         Debug.Log(
             "NIVEL " + currentLevel +
             " | ACIERTO | " + reactionTime.ToString("F3") + " s"
         );
 
-        // El target gestiona su color y sonido de éxito.
         touchedTarget.ShowResult(true);
     }
 
@@ -489,24 +549,19 @@ public class ReactionGameManager : MonoBehaviour
 
         isResolvingReaction = true;
 
-        LevelStats stats = GetCurrentStats();
-        stats.misses++;
+        statsController.RegisterMiss(currentLevel);
 
         if (targetSequence != null)
             targetSequence.ClearCurrentTarget(target);
 
-        Debug.Log(
-            "NIVEL " + currentLevel + " | FALLO"
-        );
+        Debug.Log("NIVEL " + currentLevel + " | FALLO");
 
         if (target != null)
         {
-            // El target gestiona su color y sonido de error.
             target.ShowResult(false);
         }
         else
         {
-            // Si no hay target, no existe feedback que esperar.
             TargetFeedbackFinished(null);
         }
     }
@@ -524,7 +579,6 @@ public class ReactionGameManager : MonoBehaviour
 
         RegisterResolvedReaction();
 
-        // Solo continuar si el nivel no terminó.
         if (gameRunning && targetSequence != null)
             targetSequence.ScheduleNextTarget();
     }
@@ -559,7 +613,6 @@ public class ReactionGameManager : MonoBehaviour
         if (!gameRunning)
             return;
 
-        // Bloquea nuevas reacciones y detiene la secuencia.
         gameRunning = false;
         isResolvingReaction = false;
 
@@ -595,12 +648,11 @@ public class ReactionGameManager : MonoBehaviour
         StopTargetSequence();
         DeactivateAllGroups();
 
-        if (finalCanvas != null)
-            finalCanvas.SetActive(true);
-
-        // Mostrar el panel final del menú.
         if (menuController != null)
             menuController.ShowEndMenu();
+
+        if (gameUI != null)
+            gameUI.ShowFinalResults();
 
         Debug.Log("EJERCICIO FINALIZADO");
         Debug.Log("ACIERTOS TOTALES: " + TotalHits);
@@ -616,50 +668,46 @@ public class ReactionGameManager : MonoBehaviour
             TotalAverageReactionTime.ToString("F3") + " s"
         );
     }
+
     // =========================================================
     // REINICIAR EJERCICIO
     // =========================================================
 
     public void RestartExercise()
     {
+        ReactionModeController.SetMode(
+            ReactionModeController.ReactionMode.Training
+        );
+
         StopTargetSequence();
 
         gameRunning = false;
         isResolvingReaction = false;
         reactionsResolved = 0;
+        activeTargets = null;
 
         DeactivateAllGroups();
         ResetAllStats();
 
-        currentLevel = 1;
+        if (gameUI != null)
+            gameUI.HideFinalResults();
 
-        if (finalCanvas != null)
-            finalCanvas.SetActive(false);
+        currentLevel = 1;
 
         PlayStartSound();
         StartLevelWithTransition();
     }
 
     // =========================================================
-    // OBTENER ESTADÍSTICAS
+    // OBTENER ESTADÍSTICAS DEL NIVEL ACTUAL
     // =========================================================
 
-    private LevelStats GetCurrentStats()
+    private ReactionLightGameStats.LevelStats GetCurrentStats()
     {
-        switch (currentLevel)
-        {
-            case 1:
-                return level1Stats;
+        if (statsController == null)
+            return null;
 
-            case 2:
-                return level2Stats;
-
-            case 3:
-                return level3Stats;
-
-            default:
-                return level1Stats;
-        }
+        return statsController.GetStats(currentLevel);
     }
 
     // =========================================================
@@ -693,9 +741,8 @@ public class ReactionGameManager : MonoBehaviour
 
     private void ResetAllStats()
     {
-        level1Stats.ResetStats();
-        level2Stats.ResetStats();
-        level3Stats.ResetStats();
+        if (statsController != null)
+            statsController.ResetAllStats();
     }
 
     // =========================================================
@@ -753,13 +800,35 @@ public class ReactionGameManager : MonoBehaviour
             audioSource.PlayOneShot(startSound);
     }
 
+
+
+    public int GetTargetLevel(LightTargetReaction target)
+    {
+        if (target == null || exerciseConfig == null)
+            return 0;
+
+        if (IsTargetInGroup(target, exerciseConfig.Level1Group))
+            return 1;
+
+        if (IsTargetInGroup(target, exerciseConfig.Level2Group))
+            return 2;
+
+        if (IsTargetInGroup(target, exerciseConfig.Level3Group))
+            return 3;
+
+        return 0;
+    }
+
     // =========================================================
     // DEBUG ESTADÍSTICAS
     // =========================================================
 
     private void DebugLevelStats()
     {
-        LevelStats stats = GetCurrentStats();
+        ReactionLightGameStats.LevelStats stats = GetCurrentStats();
+
+        if (stats == null)
+            return;
 
         Debug.Log("NIVEL " + currentLevel + " TERMINADO");
         Debug.Log("Reacciones resueltas: " + reactionsResolved);
