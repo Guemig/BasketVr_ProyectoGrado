@@ -12,16 +12,16 @@ EditorBuildSettings:
     path: Assets/registro/Registro.unity
     guid: 36eaebd280ce0ea45b18d8b182ac12a7
   - enabled: 1
-    path: Assets/ReactionPass/ReactionPass.unity
+    path: Assets/ProjectBaloncesto/Scenes/ReactionPass.unity
     guid: 463bd8452d0574f4499415b8b356e10e
   - enabled: 1
-    path: Assets/ProjectBaloncesto/ReactionMovement/ReactionMovement.unity
+    path: Assets/ProjectBaloncesto/Scenes/ReactionMovement.unity
     guid: 960cb526729c0f743abb0c2ff3765376
   - enabled: 1
     path: Assets/ProjectBaloncesto/Scenes/Casilleros.unity
     guid: 16665dc74f1aa724fb2576465d0b11b1
   - enabled: 1
-    path: Assets/ProjectBaloncesto/EjercicioLuces/Luces.unity
+    path: Assets/ProjectBaloncesto/Scenes/Luces.unity
     guid: 1ec51c4d65507054e9c0f16680c782cc
   - enabled: 1
     path: Assets/DriblingReactivo/DriblingReactivo.unity
