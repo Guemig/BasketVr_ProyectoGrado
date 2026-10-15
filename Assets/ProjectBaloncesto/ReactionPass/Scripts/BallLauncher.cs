@@ -215,6 +215,7 @@ public class BallLauncher : MonoBehaviour
         prepareLaunchCoroutine = StartCoroutine(PrepareLaunch());
     }
 
+
     private IEnumerator PrepareLaunch()
     {
         Transform target = GetRandomTarget();
@@ -252,7 +253,7 @@ public class BallLauncher : MonoBehaviour
 
         float speed = GetRandomSpeed();
 
-        // Solicitar un balón al pool en lugar de instanciarlo.
+        // Solicitar un balón al pool.
         currentBall = ballPool.Get();
 
         if (currentBall == null)
@@ -272,14 +273,14 @@ public class BallLauncher : MonoBehaviour
             spawnPoint.rotation
         );
 
-        // Preparar el componente que registra las capturas.
-        ReactionPassBall reactionBall =
-            currentBall.GetComponent<ReactionPassBall>();
+        // Obtener el componente que gestiona las capturas.
+        ILaunchableBall reactionBall =
+            currentBall.GetComponent<ILaunchableBall>();
 
         if (reactionBall == null)
         {
             Debug.LogError(
-                "[BallLauncher] El prefab necesita ReactionPassBall.",
+                "[BallLauncher] El prefab necesita ILaunchableBall.",
                 currentBall
             );
 
@@ -289,13 +290,18 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
+        // Preparar el balón. Setup reinicia su física.
         reactionBall.Setup(gameManager, this);
 
-        // Reiniciar la física antes de iniciar la trayectoria.
+        // Asegurar el estado cinemático antes de la trayectoria.
         Rigidbody rb = currentBall.GetComponent<Rigidbody>();
 
         if (rb != null)
         {
+            // No asignar velocidades mientras sea cinemático.
+            if (rb.isKinematic)
+                rb.isKinematic = false;
+
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             rb.useGravity = false;
@@ -593,8 +599,8 @@ public class BallLauncher : MonoBehaviour
         // Devolver el balón al pool en lugar de destruirlo.
         if (currentBall != null)
         {
-            ReactionPassBall reactionBall =
-                currentBall.GetComponent<ReactionPassBall>();
+            ILaunchableBall reactionBall =
+                currentBall.GetComponent<ILaunchableBall>();
 
             if (reactionBall != null)
             {

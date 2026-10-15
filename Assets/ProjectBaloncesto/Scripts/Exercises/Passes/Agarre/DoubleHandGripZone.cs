@@ -63,19 +63,18 @@ public class DoubleHandGripZone : MonoBehaviour
     {
         gripReady = ready;
 
-        if (!ready)
-            ballCaught = false;
-
         if (gripVisual != null)
             gripVisual.SetActive(ready);
 
         if (zoneCollider != null)
             zoneCollider.enabled = ready;
 
-        if (ready)
-            ApplyColor(ballCaught ? caughtColor : readyColor);
-        else
-            ApplyColor(inactiveColor);
+        UpdateVisual();
+    }
+
+    public bool IsBallCaught()
+    {
+        return ballCaught;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -92,7 +91,30 @@ public class DoubleHandGripZone : MonoBehaviour
         if (ball.TryCatch(this))
         {
             ballCaught = true;
+            UpdateVisual();
+        }
+    }
+
+    // Llamar cuando el balón deja de estar agarrado.
+    public void ResetGrip()
+    {
+        ballCaught = false;
+        UpdateVisual();
+    }
+
+    private void UpdateVisual()
+    {
+        if (ballCaught)
+        {
             ApplyColor(caughtColor);
+        }
+        else if (gripReady)
+        {
+            ApplyColor(readyColor);
+        }
+        else
+        {
+            ApplyColor(inactiveColor);
         }
     }
 

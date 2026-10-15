@@ -2,7 +2,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class ReactionPassBall : MonoBehaviour, IPoolable
+public class ReactionPassBall : MonoBehaviour, IPoolable, ILaunchableBall
 {
     [Header("Tiempo de vida")]
     [SerializeField] private float catchDuration = 0.7f;

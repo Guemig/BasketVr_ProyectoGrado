@@ -2471,6 +2471,7 @@ GameObject:
   m_Component:
   - component: {fileID: 362345889}
   - component: {fileID: 362345888}
+  - component: {fileID: 362345890}
   m_Layer: 0
   m_Name: ZoneAgarre
   m_TagString: Untagged
@@ -2512,6 +2513,27 @@ Transform:
   - {fileID: 1107437469}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &362345890
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 362345887}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.14
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &368797045
 GameObject:
   m_ObjectHideFlags: 0
@@ -18539,6 +18561,10 @@ PrefabInstance:
       propertyPath: lowCenter
       value: 
       objectReference: {fileID: 319480230}
+    - target: {fileID: 617620907960254763, guid: 2bfc79f955191804c8c41d1693dfe195, type: 3}
+      propertyPath: ballPrefab
+      value: 
+      objectReference: {fileID: 7345636629230277528, guid: 2a2679bb762f188409a2ed327c5eda78, type: 3}
     - target: {fileID: 617620907960254763, guid: 2bfc79f955191804c8c41d1693dfe195, type: 3}
       propertyPath: highCenter
       value: 

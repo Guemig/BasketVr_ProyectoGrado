@@ -1,11 +1,10 @@
-
 using System.Collections;
 using UnityEngine;
 
-public class DoubleHandPassBall : MonoBehaviour, IPoolable
+public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
 {
     [Header("Tiempo de vida")]
-    [SerializeField] private float catchDuration = 0.7f;
+    [SerializeField] private float catchDuration = 0.3f;
     [SerializeField] private float maxLifeTime = 3f;
 
     private PassReactionGameManager gameManager;
@@ -14,6 +13,9 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable
 
     private Rigidbody rb;
     private Collider ballCollider;
+
+    // Zona responsable del agarre.
+    private DoubleHandGripZone currentGripZone;
 
     private bool resolved;
     private float launchTime;
@@ -48,6 +50,7 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable
 
         lifeCoroutine = null;
         catchCoroutine = null;
+        currentGripZone = null;
 
         gameManager = manager;
         launcher = ballLauncher;
@@ -60,14 +63,7 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable
         if (ballCollider != null)
             ballCollider.enabled = true;
 
-        if (rb != null)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-
-            rb.useGravity = false;
-            rb.isKinematic = true;
-        }
+        ResetRigidbody();
 
         lifeCoroutine = StartCoroutine(LifeTimer());
     }
@@ -81,31 +77,35 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable
         if (resolved || gripZone == null)
             return false;
 
-        CatchBall(gripZone.transform);
+        CatchBall(gripZone);
 
         return true;
     }
 
-    private void CatchBall(Transform gripAnchor)
+private void CatchBall(DoubleHandGripZone gripZone)
     {
-        if (resolved || gripAnchor == null)
+        if (resolved || gripZone == null)
             return;
 
         resolved = true;
+        currentGripZone = gripZone;
 
         StopLifeCoroutine();
 
         float reactionTime = Time.time - launchTime;
 
-        // Liberar el lanzador antes de registrar el resultado.
+        // Guardar la posición y rotación actuales de la zona
+        // justo en el instante en que se detecta el agarre.
+        Vector3 caughtPosition = gripZone.transform.position;
+        Quaternion caughtRotation = gripZone.transform.rotation;
+
+        // Liberar el lanzador inmediatamente.
         if (launcher != null)
             launcher.BallResolved();
 
+        // Detener la física sin modificar velocidades.
         if (rb != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-
             rb.useGravity = false;
             rb.isKinematic = true;
         }
@@ -113,15 +113,19 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable
         if (ballCollider != null)
             ballCollider.enabled = false;
 
-        // El balón sigue el punto medio de las dos manos.
-        transform.SetParent(gripAnchor, true);
+        // Colocar el balón en la última posición de la zona.
+        // No se establece ninguna relación padre-hijo.
+        transform.SetParent(null);
+        transform.SetPositionAndRotation(
+            caughtPosition,
+            caughtRotation
+        );
 
-        transform.localPosition = Vector3.zero;
-        transform.localRotation = Quaternion.identity;
-
+        // Registrar el acierto inmediatamente.
         if (gameManager != null)
             gameManager.RegisterCatch(reactionTime);
 
+        // Mantener el balón visible antes de devolverlo al pool.
         catchCoroutine = StartCoroutine(DestroyAfterCatch());
     }
 
@@ -206,19 +210,19 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable
         lifeCoroutine = null;
         catchCoroutine = null;
 
-        if (rb != null)
+        // Restablecer el estado visual de la zona.
+        if (currentGripZone != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-
-            rb.useGravity = false;
-            rb.isKinematic = true;
+            currentGripZone.ResetGrip();
+            currentGripZone = null;
         }
+
+        transform.SetParent(null);
 
         if (ballCollider != null)
             ballCollider.enabled = true;
 
-        transform.SetParent(null);
+        ResetRigidbody();
 
         if (pool != null)
         {
@@ -227,7 +231,7 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable
         else
         {
             Debug.LogError(
-                "[ReactionPassBall] No tiene un pool asignado.",
+                "[DoubleHandPassBall] No tiene un pool asignado.",
                 this
             );
 
@@ -242,5 +246,25 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable
 
         StopCoroutine(lifeCoroutine);
         lifeCoroutine = null;
+    }
+
+    // =====================================================
+    // REINICIAR FÍSICA
+    // =====================================================
+
+    private void ResetRigidbody()
+    {
+        if (rb == null)
+            return;
+
+        // Primero pasar a dinámico para poder limpiar
+        // las velocidades de forma segura.
+        rb.isKinematic = false;
+
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        rb.useGravity = false;
+        rb.isKinematic = true;
     }
 }
