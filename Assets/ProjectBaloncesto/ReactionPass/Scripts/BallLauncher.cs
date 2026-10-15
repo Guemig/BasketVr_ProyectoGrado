@@ -13,6 +13,7 @@ public class BallLauncher : MonoBehaviour
     [SerializeField] private Transform spawnPoint;
     [SerializeField] private PassReactionGameManager gameManager;
     [SerializeField] private Transform machineModel;
+    [SerializeField] private LauncherBallFeedEffect feedEffect;
 
     // =========================================================
     // OBJECT POOL
@@ -309,6 +310,11 @@ public class BallLauncher : MonoBehaviour
                 speed
             )
         );
+
+        if (feedEffect != null)
+        {
+            feedEffect.OnBallLaunched();
+        }
 
         prepareLaunchCoroutine = null;
     }

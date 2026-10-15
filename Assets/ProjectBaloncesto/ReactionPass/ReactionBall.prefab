@@ -133,7 +133,6 @@ GameObject:
   - component: {fileID: 4539443167806948779}
   - component: {fileID: 937496197108696098}
   - component: {fileID: 4248758367877713297}
-  - component: {fileID: 2122838981503062486}
   - component: {fileID: 4453853692000151569}
   m_Layer: 0
   m_Name: ReactionBall
@@ -299,21 +298,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 19.053297
   m_Center: {x: -0.00004959106, y: 0.0006999969, z: -0.00019931792}
---- !u!114 &2122838981503062486
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7345636629230277528}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91c5bfca37e447f41a93132ad2c4534a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  bounceEnergyLoss: 0.9
-  minBounceVelocity: 0.05
-  groundStickDelay: 0.15
 --- !u!114 &4453853692000151569
 MonoBehaviour:
   m_ObjectHideFlags: 0

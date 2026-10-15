@@ -31,6 +31,7 @@ public class PassReactionGameManager : MonoBehaviour
 
     [Header("Referencias")]
     [SerializeField] private BallLauncher ballLauncher;
+    [SerializeField] private LauncherBallFeedEffect feedEffect;
 
     [Header("Transiciones")]
     [SerializeField] private ReactionTransition reactionTransition;
@@ -42,8 +43,10 @@ public class PassReactionGameManager : MonoBehaviour
     // CONFIGURACIÓN DE LOS NIVELES
     // =====================================================
 
-    [Header("Duración")]
-    [SerializeField] private float gameDuration = 60f;
+    [Header("Cantidad de disparos por nivel")]
+    [SerializeField, Min(1)] private int level1Shots = 10;
+    [SerializeField, Min(1)] private int level2Shots = 12;
+    [SerializeField, Min(1)] private int level3Shots = 15;
 
     [Header("Tiempo entre pases")]
     [SerializeField] private float level1Delay = 1f;
@@ -57,9 +60,8 @@ public class PassReactionGameManager : MonoBehaviour
     [Header("Estado")]
     [SerializeField] private int currentLevel = 1;
     [SerializeField] private bool gameRunning = false;
-    [SerializeField] private bool timeExpired = false;
     [SerializeField] private bool exerciseFinished = false;
-    [SerializeField] private float timeRemaining = 0f;
+    [SerializeField] private int shotsLaunched = 0;
 
     [Header("Nivel actual")]
     [SerializeField] private int caughtBalls = 0;
@@ -118,7 +120,12 @@ public class PassReactionGameManager : MonoBehaviour
     public bool GameRunning => gameRunning;
     public bool ExerciseFinished => exerciseFinished;
     public int CurrentLevel => currentLevel;
-    public float TimeRemaining => timeRemaining;
+    // Se conserva esta propiedad por compatibilidad con otros scripts.
+    // El ejercicio ahora se controla por cantidad de disparos, no por tiempo.
+    public float TimeRemaining => 0f;
+
+    public int ShotsLaunched => shotsLaunched;
+    public int RequiredShots => GetCurrentLevelShots();
 
     public int CaughtBalls => caughtBalls;
     public int MissedBalls => missedBalls;
@@ -146,11 +153,10 @@ public class PassReactionGameManager : MonoBehaviour
         currentLevel = 1;
 
         gameRunning = false;
-        timeExpired = false;
         exerciseFinished = false;
         isTransitionPending = false;
         isFinishingLevel = false;
-        timeRemaining = 0f;
+        shotsLaunched = 0;
 
         if (ballLauncher != null)
         {
@@ -159,50 +165,6 @@ public class PassReactionGameManager : MonoBehaviour
         }
 
         OnInitialState?.Invoke();
-    }
-
-    // =====================================================
-    // ACTUALIZACIÓN DEL TIEMPO
-    // =====================================================
-
-    private void Update()
-    {
-        if (!gameRunning || timeExpired)
-            return;
-
-        timeRemaining -= Time.deltaTime;
-
-        if (timeRemaining > 0f)
-            return;
-
-        timeRemaining = 0f;
-        timeExpired = true;
-
-        Debug.Log(
-            "[PASSES] Tiempo terminado en nivel " +
-            currentLevel + "."
-        );
-
-        StopNextBallCoroutine();
-
-        // Impide que se generen más balones,
-        // incluso si el lanzador estaba preparando uno.
-        if (ballLauncher != null)
-            ballLauncher.StopLaunching();
-
-        // Si no queda balón activo, terminar inmediatamente.
-        if (ballLauncher == null ||
-            !ballLauncher.HasActiveBall())
-        {
-            FinishCurrentLevel();
-        }
-        else
-        {
-            Debug.Log(
-                "[PASSES] Esperando a que se resuelva " +
-                "el último balón."
-            );
-        }
     }
 
     // =====================================================
@@ -226,10 +188,9 @@ public class PassReactionGameManager : MonoBehaviour
         currentLevel = 1;
 
         gameRunning = false;
-        timeExpired = false;
         exerciseFinished = false;
         isFinishingLevel = false;
-        timeRemaining = 0f;
+        shotsLaunched = 0;
 
         ResetAllStats();
 
@@ -253,6 +214,11 @@ public class PassReactionGameManager : MonoBehaviour
         }
 
         isTransitionPending = true;
+
+        if (feedEffect != null)
+        {
+            feedEffect.InitializeForLevel(GetCurrentLevelShots());
+        }
 
         if (reactionTransition == null)
         {
@@ -296,21 +262,19 @@ public class PassReactionGameManager : MonoBehaviour
     {
         caughtBalls = 0;
         missedBalls = 0;
+        shotsLaunched = 0;
 
         totalReactionTime = 0f;
         averageReactionTime = 0f;
 
         currentReactionTimes.Clear();
 
-        timeRemaining = gameDuration;
-        timeExpired = false;
         gameRunning = true;
         isFinishingLevel = false;
 
         if (ballLauncher != null)
         {
             ballLauncher.SetLevel(currentLevel);
-            ballLauncher.LaunchBall();
         }
         else
         {
@@ -318,6 +282,9 @@ public class PassReactionGameManager : MonoBehaviour
                 "[PASSES] BallLauncher no está asignado."
             );
         }
+
+        // El primer disparo cuenta dentro del total configurado.
+        LaunchNextBall();
 
         OnLevelStarted?.Invoke(currentLevel);
 
@@ -369,16 +336,12 @@ public class PassReactionGameManager : MonoBehaviour
         if (!gameRunning || isFinishingLevel)
             return;
 
-        if (timeExpired)
-        {
-            // ReactionPassBall debe llamar a
-            // BallResolved() antes de registrar el resultado.
-            if (ballLauncher == null ||
-                !ballLauncher.HasActiveBall())
-            {
-                FinishCurrentLevel();
-            }
+        // Cada balón resuelto (atrapado o fallado) cuenta como un disparo.
+        int resolvedShots = caughtBalls + missedBalls;
 
+        if (resolvedShots >= GetCurrentLevelShots())
+        {
+            FinishCurrentLevel();
             return;
         }
 
@@ -391,11 +354,14 @@ public class PassReactionGameManager : MonoBehaviour
 
     private void ScheduleNextBall()
     {
-        if (!gameRunning || timeExpired || isFinishingLevel)
+        if (!gameRunning ||
+            isFinishingLevel ||
+            shotsLaunched >= GetCurrentLevelShots())
+        {
             return;
+        }
 
         StopNextBallCoroutine();
-
         nextBallCoroutine = StartCoroutine(NextBall());
     }
 
@@ -408,12 +374,42 @@ public class PassReactionGameManager : MonoBehaviour
         nextBallCoroutine = null;
 
         if (gameRunning &&
-            !timeExpired &&
             !isFinishingLevel &&
             ballLauncher != null)
         {
-            ballLauncher.LaunchBall();
+            LaunchNextBall();
         }
+    }
+
+    private void LaunchNextBall()
+    {
+        if (!gameRunning ||
+            isFinishingLevel ||
+            ballLauncher == null ||
+            shotsLaunched >= GetCurrentLevelShots())
+        {
+            return;
+        }
+
+        shotsLaunched++;
+        ballLauncher.LaunchBall();
+
+        Debug.Log(
+            "[PASSES] Disparo " + shotsLaunched +
+            "/" + GetCurrentLevelShots() +
+            " del nivel " + currentLevel + "."
+        );
+    }
+
+    private int GetCurrentLevelShots()
+    {
+        if (currentLevel == 1)
+            return Mathf.Max(1, level1Shots);
+
+        if (currentLevel == 2)
+            return Mathf.Max(1, level2Shots);
+
+        return Mathf.Max(1, level3Shots);
     }
 
     private float GetCurrentLevelDelay()
@@ -447,14 +443,16 @@ public class PassReactionGameManager : MonoBehaviour
 
         isFinishingLevel = true;
         gameRunning = false;
-        timeRemaining = 0f;
 
         StopNextBallCoroutine();
 
-        // Garantizar que no quede una pelota ni una
-        // corrutina del lanzador de este nivel.
+        // Detiene el lanzador y limpia la reserva visual,
+        // evitando balones congelados o atravesando el modelo.
         if (ballLauncher != null)
             ballLauncher.StopLauncher();
+
+        if (feedEffect != null)
+            feedEffect.ResetFeed();
 
         SaveCurrentLevelStats();
 
@@ -631,9 +629,8 @@ public class PassReactionGameManager : MonoBehaviour
         currentLevel = 1;
 
         gameRunning = false;
-        timeExpired = false;
         exerciseFinished = false;
-        timeRemaining = 0f;
+        shotsLaunched = 0;
 
         ResetAllStats();
 
