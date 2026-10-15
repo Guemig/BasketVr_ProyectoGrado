@@ -1056,7 +1056,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  fillOnStart: 1
+  fillDelay: 0.1
+  fillStartDistance: 0.25
 --- !u!1 &5530571539619708669
 GameObject:
   m_ObjectHideFlags: 0
@@ -2024,7 +2025,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23dbee8d05a2421498df6b4407b28d23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ballPrefab: {fileID: 7345636629230277528, guid: ce7531081ab3cec458710cf479407d7c, type: 3}
+  ballPrefab: {fileID: 7345636629230277528, guid: 2a2679bb762f188409a2ed327c5eda78, type: 3}
   spawnPoint: {fileID: 5902929421976973831}
   gameManager: {fileID: 0}
   machineModel: {fileID: 4637587283374328843}

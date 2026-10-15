@@ -94,16 +94,12 @@ private void CatchBall(DoubleHandGripZone gripZone)
 
         float reactionTime = Time.time - launchTime;
 
-        // Guardar la posición y rotación actuales de la zona
-        // justo en el instante en que se detecta el agarre.
         Vector3 caughtPosition = gripZone.transform.position;
         Quaternion caughtRotation = gripZone.transform.rotation;
 
-        // Liberar el lanzador inmediatamente.
         if (launcher != null)
             launcher.BallResolved();
 
-        // Detener la física sin modificar velocidades.
         if (rb != null)
         {
             rb.useGravity = false;
@@ -113,25 +109,18 @@ private void CatchBall(DoubleHandGripZone gripZone)
         if (ballCollider != null)
             ballCollider.enabled = false;
 
-        // Colocar el balón en la última posición de la zona.
-        // No se establece ninguna relación padre-hijo.
         transform.SetParent(null);
         transform.SetPositionAndRotation(
             caughtPosition,
             caughtRotation
         );
 
-        // Registrar el acierto inmediatamente.
         if (gameManager != null)
             gameManager.RegisterCatch(reactionTime);
 
-        // Mantener el balón visible antes de devolverlo al pool.
         catchCoroutine = StartCoroutine(DestroyAfterCatch());
     }
 
-    // =====================================================
-    // BALÓN FALLADO
-    // =====================================================
 
     public void Missed()
     {
@@ -151,9 +140,6 @@ private void CatchBall(DoubleHandGripZone gripZone)
         ReturnToPool();
     }
 
-    // =====================================================
-    // TEMPORIZADOR
-    // =====================================================
 
     private IEnumerator LifeTimer()
     {

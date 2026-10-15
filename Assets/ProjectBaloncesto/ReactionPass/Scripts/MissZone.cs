@@ -4,8 +4,8 @@ public class MissZone : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        ReactionPassBall ball =
-            other.GetComponent<ReactionPassBall>();
+        DoubleHandPassBall ball =
+            other.GetComponent<DoubleHandPassBall>();
 
         if (ball == null)
             return;

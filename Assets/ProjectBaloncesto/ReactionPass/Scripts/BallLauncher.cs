@@ -585,6 +585,20 @@ public class BallLauncher : MonoBehaviour
         }
     }
 
+    public void InitializeVisualFeed(int totalShots)
+    {
+        if (feedEffect == null) return;
+
+        feedEffect.InitializeForLevel(totalShots);
+    }
+
+    public void ResetVisualFeed()
+    {
+        if (feedEffect == null) return;
+
+        feedEffect.ResetFeed();
+    }
+
     public void StopLauncher()
     {
         // Impedir nuevos lanzamientos y cancelar la preparación.

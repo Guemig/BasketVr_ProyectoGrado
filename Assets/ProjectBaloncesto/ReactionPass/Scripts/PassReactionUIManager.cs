@@ -11,9 +11,6 @@ public class PassReactionUIManager : MonoBehaviour
     [Header("Gestor del ejercicio")]
     [SerializeField] private PassReactionGameManager gameManager;
 
-    [Header("Escena de salida")]
-    [SerializeField] private string exitSceneName = "MenuPrincipal";
-
     // =====================================================
     // INICIALIZACIÓN
     // =====================================================
@@ -95,14 +92,5 @@ public class PassReactionUIManager : MonoBehaviour
                 "PassReactionUIManager: falta asignar PassReactionGameManager."
             );
         }
-    }
-
-    // =====================================================
-    // SALIR DEL EJERCICIO
-    // =====================================================
-
-    public void ExitExercise()
-    {
-        SceneManager.LoadScene(exitSceneName);
     }
 }
