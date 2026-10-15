@@ -1,4 +1,3 @@
-
 using System.Collections;
 using UnityEngine;
 
@@ -58,7 +57,7 @@ public class BallLauncher : MonoBehaviour
     [SerializeField] private float spinSpeed = 700f;
 
     // =========================================================
-    // GIRO DE MÁQUINA
+    // GIRO DEL GRUPO COMPLETO
     // =========================================================
 
     [Header("Giro de máquina")]
@@ -84,6 +83,7 @@ public class BallLauncher : MonoBehaviour
     private Coroutine movementCoroutine;
     private Coroutine prepareLaunchCoroutine;
 
+    // Rotaciones mundiales del objeto raíz.
     private Quaternion machineCenterRotation;
     private Quaternion machineTargetRotation;
 
@@ -127,25 +127,30 @@ public class BallLauncher : MonoBehaviour
 
     private void Start()
     {
-        if (machineModel != null)
-        {
-            machineCenterRotation = machineModel.localRotation;
-            machineTargetRotation = machineCenterRotation;
-        }
+        // Orientación inicial del grupo completo.
+        machineCenterRotation = transform.rotation;
+        machineTargetRotation = machineCenterRotation;
     }
 
     private void Update()
     {
-        if (machineModel == null)
-            return;
-
-        machineModel.localRotation = Quaternion.Slerp(
-            machineModel.localRotation,
+        // Girar el objeto raíz completo para apuntar.
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
             machineTargetRotation,
             machineTurnSpeed * Time.deltaTime
         );
     }
 
+    // =========================================================
+    // CONFIGURACIÓN DE ORIENTACIÓN BASE
+    // =========================================================
+
+    public void SetMachineBaseRotation(Quaternion baseRotation)
+    {
+        machineCenterRotation = baseRotation;
+        machineTargetRotation = baseRotation;
+    }
     // =========================================================
     // CONFIGURACIÓN DEL NIVEL
     // =========================================================
@@ -361,6 +366,7 @@ public class BallLauncher : MonoBehaviour
                 "horizontalmente de la máquina.",
                 this
             );
+
             return false;
         }
 
@@ -391,22 +397,22 @@ public class BallLauncher : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Gira el objeto raíz que contiene este script.
+    /// No modifica machineModel directamente.
+    /// </summary>
     private void RotateMachineToTarget(Vector3 targetPosition)
     {
-        if (machineModel == null)
-            return;
-
-        Vector3 direction = targetPosition - machineModel.position;
+        Vector3 direction = targetPosition - transform.position;
         direction.y = 0f;
 
         if (direction.sqrMagnitude < 0.0001f)
             return;
 
-        Quaternion desiredWorldRotation =
-            Quaternion.LookRotation(direction.normalized, Vector3.up);
-
-        machineTargetRotation =
-            Quaternion.Inverse(transform.rotation) * desiredWorldRotation;
+        machineTargetRotation = Quaternion.LookRotation(
+            direction.normalized,
+            Vector3.up
+        );
     }
 
     // =========================================================
@@ -658,15 +664,17 @@ public class BallLauncher : MonoBehaviour
                 currentBall.GetComponent<ILaunchableBall>();
 
             if (reactionBall != null)
+            {
                 reactionBall.CancelAndReturnToPool();
+            }
             else if (ballPool != null)
+            {
                 ballPool.Return(currentBall);
+            }
 
             currentBall = null;
         }
 
-        if (machineModel != null)
-            machineTargetRotation = machineCenterRotation;
     }
 
     // =========================================================

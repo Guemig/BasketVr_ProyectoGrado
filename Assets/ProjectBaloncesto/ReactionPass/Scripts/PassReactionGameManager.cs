@@ -9,8 +9,8 @@ public class PassReactionGameManager : MonoBehaviour
     // REFERENCIAS
     // =====================================================
 
-    [Header("Referencias")]
-    [SerializeField] private BallLauncher ballLauncher;
+    [Header("Gestión de máquinas")]
+    [SerializeField] private PassMachineManager machineManager;
 
     [Header("Transiciones")]
     [SerializeField] private ReactionTransition reactionTransition;
@@ -30,9 +30,9 @@ public class PassReactionGameManager : MonoBehaviour
 
     [Header("Estado")]
     [SerializeField] private int currentLevel = 1;
-    [SerializeField] private bool gameRunning = false;
-    [SerializeField] private bool exerciseFinished = false;
-    [SerializeField] private int shotsLaunched = 0;
+    [SerializeField] private bool gameRunning;
+    [SerializeField] private bool exerciseFinished;
+    [SerializeField] private int shotsLaunched;
 
     private Coroutine nextBallCoroutine;
 
@@ -112,10 +112,10 @@ public class PassReactionGameManager : MonoBehaviour
         isFinishingLevel = false;
         shotsLaunched = 0;
 
-        if (ballLauncher != null)
+        if (machineManager != null)
         {
-            ballLauncher.StopLauncher();
-            ConfigureLauncherForLevel(1);
+            machineManager.ConfigureLevel(1);
+            machineManager.StopAllMachines();
         }
 
         if (statsManager == null)
@@ -147,7 +147,7 @@ public class PassReactionGameManager : MonoBehaviour
 
         StopNextBallCoroutine();
 
-        ballLauncher.StopLauncher();
+        machineManager.StopAllMachines();
 
         currentLevel = 1;
 
@@ -158,7 +158,8 @@ public class PassReactionGameManager : MonoBehaviour
 
         statsManager.ResetAllStats();
 
-        ConfigureLauncherForLevel(1);
+        if (!ConfigureMachinesForLevel(currentLevel))
+            return;
 
         BeginLevelTransition();
     }
@@ -181,10 +182,7 @@ public class PassReactionGameManager : MonoBehaviour
 
         isTransitionPending = true;
 
-        if (ballLauncher != null)
-        {
-            ballLauncher.InitializeVisualFeed(GetCurrentLevelShots());
-        }
+        machineManager.InitializeVisualFeeds(GetCurrentLevelShots());
 
         if (reactionTransition == null)
         {
@@ -228,21 +226,21 @@ public class PassReactionGameManager : MonoBehaviour
         if (!ValidateCurrentLevelConfig() || !ValidateReferences())
             return;
 
+        if (!ConfigureMachinesForLevel(currentLevel))
+            return;
+
         statsManager.BeginLevel();
 
         shotsLaunched = 0;
         gameRunning = true;
         isFinishingLevel = false;
 
-        ConfigureLauncherForLevel(currentLevel);
-
-        // El primer disparo cuenta dentro del total configurado.
         LaunchNextBall();
 
         OnLevelStarted?.Invoke(currentLevel);
 
         Debug.Log(
-            "[PASSES] Nivel " + currentLevel + " iniciado."
+            $"[PASSES] Nivel {currentLevel} iniciado."
         );
     }
 
@@ -252,11 +250,14 @@ public class PassReactionGameManager : MonoBehaviour
 
     public void RegisterCatch(float reactionTime)
     {
-        if (!gameRunning || isFinishingLevel || statsManager == null)
+        if (!gameRunning ||
+            isFinishingLevel ||
+            statsManager == null)
+        {
             return;
+        }
 
         statsManager.RegisterCatch(reactionTime);
-
         BallFinished();
     }
 
@@ -266,11 +267,14 @@ public class PassReactionGameManager : MonoBehaviour
 
     public void RegisterMiss()
     {
-        if (!gameRunning || isFinishingLevel || statsManager == null)
+        if (!gameRunning ||
+            isFinishingLevel ||
+            statsManager == null)
+        {
             return;
+        }
 
         statsManager.RegisterMiss();
-
         BallFinished();
     }
 
@@ -283,9 +287,7 @@ public class PassReactionGameManager : MonoBehaviour
         if (!gameRunning || isFinishingLevel)
             return;
 
-        int resolvedShots = statsManager.TotalBalls;
-
-        if (resolvedShots >= GetCurrentLevelShots())
+        if (statsManager.TotalBalls >= GetCurrentLevelShots())
         {
             FinishCurrentLevel();
             return;
@@ -317,63 +319,82 @@ public class PassReactionGameManager : MonoBehaviour
 
         nextBallCoroutine = null;
 
-        if (gameRunning &&
-            !isFinishingLevel &&
-            ballLauncher != null)
-        {
+        if (gameRunning && !isFinishingLevel)
             LaunchNextBall();
-        }
     }
+
+    // =====================================================
+    // LANZAR SIGUIENTE BALÓN
+    // =====================================================
 
     private void LaunchNextBall()
     {
         if (!gameRunning ||
             isFinishingLevel ||
-            ballLauncher == null ||
-            shotsLaunched >= GetCurrentLevelShots())
+            shotsLaunched >= GetCurrentLevelShots() ||
+            machineManager == null)
         {
             return;
         }
 
+        BallLauncher selectedLauncher =
+            machineManager.GetNextLauncher();
+
+        if (selectedLauncher == null)
+        {
+            Debug.LogError(
+                "[PASSES] No se pudo seleccionar una máquina.",
+                this
+            );
+
+            return;
+        }
+
+        // El contador aumenta únicamente cuando se solicita
+        // un lanzamiento a una máquina válida.
         shotsLaunched++;
-        ballLauncher.LaunchBall();
+
+        selectedLauncher.LaunchBall();
 
         Debug.Log(
-            "[PASSES] Disparo " + shotsLaunched +
-            "/" + GetCurrentLevelShots() +
-            " del nivel " + currentLevel + "."
+            $"[PASSES] Disparo {shotsLaunched}/" +
+            $"{GetCurrentLevelShots()} del nivel {currentLevel}. " +
+            $"Máquina: {selectedLauncher.name}.",
+            this
         );
     }
 
     // =====================================================
-    // CONSULTAR CONFIGURACIÓN DEL NIVEL
+    // CONFIGURACIÓN DE MÁQUINAS
     // =====================================================
+
+    private bool ConfigureMachinesForLevel(int level)
+    {
+        if (machineManager == null)
+        {
+            Debug.LogError(
+                "[PASSES] PassMachineManager no está asignado.",
+                this
+            );
+
+            return false;
+        }
+
+        return machineManager.ConfigureLevel(level);
+    }
 
     private int GetCurrentLevelShots()
     {
-        if (levelConfigManager == null)
-            return 0;
-
-        return levelConfigManager.GetRequiredShots(currentLevel);
+        return levelConfigManager != null
+            ? levelConfigManager.GetRequiredShots(currentLevel)
+            : 0;
     }
 
     private float GetCurrentLevelDelay()
     {
-        if (levelConfigManager == null)
-            return 0f;
-
-        return levelConfigManager.GetShotDelay(currentLevel);
-    }
-
-    private void ConfigureLauncherForLevel(int level)
-    {
-        if (ballLauncher == null || levelConfigManager == null)
-            return;
-
-        PassLevelConfigManager.LevelConfig config =
-            levelConfigManager.GetLevelConfigForLevel(level);
-
-        ballLauncher.SetLevel(level, config);
+        return levelConfigManager != null
+            ? levelConfigManager.GetShotDelay(currentLevel)
+            : 0f;
     }
 
     private bool ValidateCurrentLevelConfig()
@@ -388,11 +409,14 @@ public class PassReactionGameManager : MonoBehaviour
             return false;
         }
 
+        if (!levelConfigManager.ValidateLevelConfig(currentLevel))
+            return false;
+
         if (GetCurrentLevelShots() <= 0)
         {
             Debug.LogError(
-                "[PASSES] La cantidad de disparos del nivel " +
-                currentLevel + " no es válida.",
+                $"[PASSES] La cantidad de disparos del nivel " +
+                $"{currentLevel} no es válida.",
                 this
             );
 
@@ -404,10 +428,20 @@ public class PassReactionGameManager : MonoBehaviour
 
     private bool ValidateReferences()
     {
-        if (ballLauncher == null)
+        if (machineManager == null)
         {
             Debug.LogError(
-                "[PASSES] BallLauncher no está asignado.",
+                "[PASSES] PassMachineManager no está asignado.",
+                this
+            );
+
+            return false;
+        }
+
+        if (levelConfigManager == null)
+        {
+            Debug.LogError(
+                "[PASSES] PassLevelConfigManager no está asignado.",
                 this
             );
 
@@ -450,21 +484,18 @@ public class PassReactionGameManager : MonoBehaviour
 
         StopNextBallCoroutine();
 
-        if (ballLauncher != null)
-            ballLauncher.StopLauncher();
-
-        if (ballLauncher != null)
-            ballLauncher.ResetVisualFeed();
+        machineManager.StopAllMachines();
+        machineManager.ResetVisualFeeds();
 
         statsManager.SaveCurrentLevelStats(currentLevel);
 
         OnLevelFinished?.Invoke(currentLevel);
 
         Debug.Log(
-            "[PASSES] Nivel " + currentLevel + " finalizado."
+            $"[PASSES] Nivel {currentLevel} finalizado.",
+            this
         );
 
-        // ÚLTIMO NIVEL
         if (currentLevel >= 3)
         {
             exerciseFinished = true;
@@ -474,24 +505,14 @@ public class PassReactionGameManager : MonoBehaviour
 
             OnExerciseFinished?.Invoke();
 
-            Debug.Log(
-                "[PASSES] Ejercicio completado. " +
-                "Mostrando menú final."
-            );
-
             if (uiManager != null)
             {
                 uiManager.ShowEndMenu();
-
-                Debug.Log(
-                    "[PASSES] ShowEndMenu() ejecutado."
-                );
             }
             else
             {
                 Debug.LogError(
-                    "[PASSES] uiManager no está asignado " +
-                    "en el Inspector.",
+                    "[PASSES] uiManager no está asignado.",
                     this
                 );
             }
@@ -499,13 +520,11 @@ public class PassReactionGameManager : MonoBehaviour
             return;
         }
 
-        // SIGUIENTE NIVEL
         currentLevel++;
-
         isFinishingLevel = false;
 
-        if (ballLauncher != null)
-            ConfigureLauncherForLevel(currentLevel);
+        if (!ConfigureMachinesForLevel(currentLevel))
+            return;
 
         BeginLevelTransition();
     }
@@ -520,9 +539,7 @@ public class PassReactionGameManager : MonoBehaviour
             return;
 
         StopNextBallCoroutine();
-
-        if (ballLauncher != null)
-            ballLauncher.StopLauncher();
+        machineManager.StopAllMachines();
 
         isTransitionPending = false;
         isFinishingLevel = false;
@@ -535,7 +552,8 @@ public class PassReactionGameManager : MonoBehaviour
 
         statsManager.ResetAllStats();
 
-        ConfigureLauncherForLevel(1);
+        if (!ConfigureMachinesForLevel(1))
+            return;
 
         BeginLevelTransition();
     }

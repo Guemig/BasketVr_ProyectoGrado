@@ -29,11 +29,9 @@ public class PassLevelConfigManager : MonoBehaviour
     {
         requiredShots = 10,
         shotDelay = 1f,
-
         slowSpeed = 8f,
         mediumSpeed = 11f,
         fastSpeed = 14f,
-
         slowWeight = 1f,
         mediumWeight = 0f,
         fastWeight = 0f
@@ -45,11 +43,9 @@ public class PassLevelConfigManager : MonoBehaviour
     {
         requiredShots = 12,
         shotDelay = 0.7f,
-
         slowSpeed = 8f,
         mediumSpeed = 11f,
         fastSpeed = 14f,
-
         slowWeight = 0.3f,
         mediumWeight = 0.7f,
         fastWeight = 0f
@@ -61,15 +57,17 @@ public class PassLevelConfigManager : MonoBehaviour
     {
         requiredShots = 15,
         shotDelay = 0.5f,
-
         slowSpeed = 8f,
         mediumSpeed = 11f,
         fastSpeed = 14f,
-
         slowWeight = 0.10f,
         mediumWeight = 0.35f,
         fastWeight = 0.55f
     };
+
+    // =====================================================
+    // CONSULTAS
+    // =====================================================
 
     public int GetRequiredShots(int level)
     {
@@ -110,5 +108,57 @@ public class PassLevelConfigManager : MonoBehaviour
 
                 return null;
         }
+    }
+
+    // =====================================================
+    // VALIDACIÓN
+    // =====================================================
+
+    public bool ValidateLevelConfig(int level)
+    {
+        LevelConfig config = GetLevelConfigForLevel(level);
+
+        if (config == null)
+            return false;
+
+        if (config.requiredShots < 1)
+        {
+            Debug.LogError(
+                $"[PASSES] El nivel {level} debe tener al menos un disparo.",
+                this
+            );
+
+            return false;
+        }
+
+        if (config.slowSpeed < 0f ||
+            config.mediumSpeed < 0f ||
+            config.fastSpeed < 0f)
+        {
+            Debug.LogError(
+                $"[PASSES] Hay velocidades negativas en el nivel {level}.",
+                this
+            );
+
+            return false;
+        }
+
+        float totalWeight =
+            Mathf.Max(0f, config.slowWeight) +
+            Mathf.Max(0f, config.mediumWeight) +
+            Mathf.Max(0f, config.fastWeight);
+
+        if (totalWeight <= 0f)
+        {
+            Debug.LogError(
+                $"[PASSES] Los pesos de velocidad del nivel {level} " +
+                "no pueden ser todos cero.",
+                this
+            );
+
+            return false;
+        }
+
+        return true;
     }
 }

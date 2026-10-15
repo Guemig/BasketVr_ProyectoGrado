@@ -2034,11 +2034,8 @@ MonoBehaviour:
   playerTargetCenter: {fileID: 0}
   poolContainer: {fileID: 0}
   initialPoolSize: 10
-  horizontalOffset: 0.55
+  horizontalOffset: 0.6
   verticalOffset: 0.5
-  slowSpeed: 8
-  mediumSpeed: 10
-  fastSpeed: 12
   curveHeight: 0.7
   curvePoint: 0.75
   spinSpeed: 333
