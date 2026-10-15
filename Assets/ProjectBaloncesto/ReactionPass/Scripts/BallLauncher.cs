@@ -15,6 +15,13 @@ public class BallLauncher : MonoBehaviour
     [SerializeField] private Transform machineModel;
     [SerializeField] private LauncherBallFeedEffect feedEffect;
 
+    [Header("Objetivos")]
+    [Tooltip("Objeto situado delante de la máquina que define su dirección.")]
+    [SerializeField] private Transform shotDirectionTarget;
+
+    [Tooltip("Centro del objetivo que sigue al jugador.")]
+    [SerializeField] private Transform playerTargetCenter;
+
     // =========================================================
     // OBJECT POOL
     // =========================================================
@@ -26,40 +33,12 @@ public class BallLauncher : MonoBehaviour
     private ObjectPool ballPool;
 
     // =========================================================
-    // TARGETS ALTOS
+    // OFFSETS
     // =========================================================
 
-    [Header("Targets Altos")]
-    [SerializeField] private Transform highLeft;
-    [SerializeField] private Transform highCenter;
-    [SerializeField] private Transform highRight;
-
-    // =========================================================
-    // TARGETS MEDIOS
-    // =========================================================
-
-    [Header("Targets Medios")]
-    [SerializeField] private Transform middleLeft;
-    [SerializeField] private Transform middleCenter;
-    [SerializeField] private Transform middleRight;
-
-    // =========================================================
-    // TARGETS BAJOS
-    // =========================================================
-
-    [Header("Targets Bajos")]
-    [SerializeField] private Transform lowLeft;
-    [SerializeField] private Transform lowCenter;
-    [SerializeField] private Transform lowRight;
-
-    // =========================================================
-    // VELOCIDADES
-    // =========================================================
-
-    [Header("Velocidades")]
-    [SerializeField] private float slowSpeed = 8f;
-    [SerializeField] private float mediumSpeed = 11f;
-    [SerializeField] private float fastSpeed = 14f;
+    [Header("Offsets del objetivo")]
+    [SerializeField, Min(0f)] private float horizontalOffset = 0.75f;
+    [SerializeField, Min(0f)] private float verticalOffset = 0.75f;
 
     // =========================================================
     // TRAYECTORIA
@@ -75,24 +54,25 @@ public class BallLauncher : MonoBehaviour
     // GIRO DEL BALÓN
     // =========================================================
 
-    [Header("Giro del Balón")]
+    [Header("Giro del balón")]
     [SerializeField] private float spinSpeed = 700f;
 
     // =========================================================
     // GIRO DE MÁQUINA
     // =========================================================
 
-    [Header("Giro de Máquina")]
-    [SerializeField] private float machineTurnAngle = 15f;
+    [Header("Giro de máquina")]
     [SerializeField] private float machineTurnSpeed = 8f;
     [SerializeField] private float launchDelay = 0.15f;
 
     // =========================================================
-    // NIVEL
+    // NIVEL Y CONFIGURACIÓN
     // =========================================================
 
     [Header("Nivel")]
-    [SerializeField] private int currentLevel = 1;
+    [SerializeField, Range(1, 3)] private int currentLevel = 1;
+
+    private PassLevelConfigManager.LevelConfig currentLevelConfig;
 
     // =========================================================
     // ESTADO INTERNO
@@ -108,6 +88,15 @@ public class BallLauncher : MonoBehaviour
     private Quaternion machineTargetRotation;
 
     // =========================================================
+    // GIZMOS
+    // =========================================================
+
+    [Header("Gizmos")]
+    [SerializeField] private bool showGizmos = true;
+    [SerializeField, Min(0.01f)] private float gizmoRadius = 0.12f;
+    [SerializeField, Min(0.1f)] private float directionLineLength = 1.5f;
+
+    // =========================================================
     // INICIALIZACIÓN
     // =========================================================
 
@@ -119,21 +108,16 @@ public class BallLauncher : MonoBehaviour
                 "[BallLauncher] No se ha asignado el prefab del balón.",
                 this
             );
-
             return;
         }
 
-        // Si no se asignó un contenedor desde el Inspector,
-        // se crea uno como hijo de este lanzador.
         if (poolContainer == null)
         {
             GameObject containerObject = new GameObject("BallPool");
             containerObject.transform.SetParent(transform, false);
-
             poolContainer = containerObject.transform;
         }
 
-        // Crear el pool y precargar los balones.
         ballPool = new ObjectPool(
             ballPrefab,
             initialPoolSize,
@@ -166,12 +150,21 @@ public class BallLauncher : MonoBehaviour
     // CONFIGURACIÓN DEL NIVEL
     // =========================================================
 
-    public void SetLevel(int level)
+    public void SetLevel(
+        int level,
+        PassLevelConfigManager.LevelConfig config)
     {
         currentLevel = Mathf.Clamp(level, 1, 3);
-
-        // Permitir lanzamientos en el nuevo nivel.
+        currentLevelConfig = config;
         launchAllowed = true;
+
+        if (currentLevelConfig == null)
+        {
+            Debug.LogError(
+                "[BallLauncher] No se recibió la configuración del nivel.",
+                this
+            );
+        }
     }
 
     // =========================================================
@@ -189,17 +182,13 @@ public class BallLauncher : MonoBehaviour
                 "[BallLauncher] El pool no está inicializado.",
                 this
             );
-
             return;
         }
 
         if (gameManager == null || !gameManager.GameRunning)
             return;
 
-        if (currentBall != null)
-            return;
-
-        if (prepareLaunchCoroutine != null)
+        if (currentBall != null || prepareLaunchCoroutine != null)
             return;
 
         if (spawnPoint == null)
@@ -208,22 +197,36 @@ public class BallLauncher : MonoBehaviour
                 "[BallLauncher] No se ha asignado el Spawn Point.",
                 this
             );
+            return;
+        }
 
+        if (shotDirectionTarget == null || playerTargetCenter == null)
+        {
+            Debug.LogError(
+                "[BallLauncher] Asigna Shot Direction Target y Player Target Center.",
+                this
+            );
+            return;
+        }
+
+        if (currentLevelConfig == null)
+        {
+            Debug.LogError(
+                "[BallLauncher] No hay configuración para el nivel actual.",
+                this
+            );
             return;
         }
 
         prepareLaunchCoroutine = StartCoroutine(PrepareLaunch());
     }
 
-
     private IEnumerator PrepareLaunch()
     {
-        Transform target = GetRandomTarget();
-
-        if (target == null)
+        if (!TryGetRandomOffset(out float horizontal, out float vertical))
         {
             Debug.LogWarning(
-                "[BallLauncher] No hay un target válido para este nivel.",
+                "[BallLauncher] No se pudo seleccionar un offset.",
                 this
             );
 
@@ -231,29 +234,48 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // Orientar la máquina hacia el objetivo.
-        RotateMachineToTarget(target);
+        if (!TryCalculateTargetPosition(
+                horizontal,
+                vertical,
+                out Vector3 targetPosition))
+        {
+            prepareLaunchCoroutine = null;
+            yield break;
+        }
+
+        RotateMachineToTarget(targetPosition);
 
         yield return new WaitForSeconds(launchDelay);
 
-        // Verificar que el ejercicio siga activo.
         if (!launchAllowed ||
             gameManager == null ||
-            !gameManager.GameRunning)
+            !gameManager.GameRunning ||
+            currentBall != null)
         {
             prepareLaunchCoroutine = null;
             yield break;
         }
 
-        if (currentBall != null)
+        // Actualizar el destino por si el jugador se ha movido.
+        if (!TryCalculateTargetPosition(
+                horizontal,
+                vertical,
+                out targetPosition))
         {
             prepareLaunchCoroutine = null;
             yield break;
         }
+
+        RotateMachineToTarget(targetPosition);
 
         float speed = GetRandomSpeed();
 
-        // Solicitar un balón al pool.
+        if (speed <= 0f)
+        {
+            prepareLaunchCoroutine = null;
+            yield break;
+        }
+
         currentBall = ballPool.Get();
 
         if (currentBall == null)
@@ -267,13 +289,11 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // Colocar el balón en el punto de lanzamiento.
         currentBall.transform.SetPositionAndRotation(
             spawnPoint.position,
             spawnPoint.rotation
         );
 
-        // Obtener el componente que gestiona las capturas.
         ILaunchableBall reactionBall =
             currentBall.GetComponent<ILaunchableBall>();
 
@@ -290,15 +310,12 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // Preparar el balón. Setup reinicia su física.
         reactionBall.Setup(gameManager, this);
 
-        // Asegurar el estado cinemático antes de la trayectoria.
         Rigidbody rb = currentBall.GetComponent<Rigidbody>();
 
         if (rb != null)
         {
-            // No asignar velocidades mientras sea cinemático.
             if (rb.isKinematic)
                 rb.isKinematic = false;
 
@@ -308,51 +325,134 @@ public class BallLauncher : MonoBehaviour
             rb.isKinematic = true;
         }
 
-        // Ejecutar la trayectoria original.
         movementCoroutine = StartCoroutine(
-            MoveBall(
-                currentBall,
-                target.position,
-                speed
-            )
+            MoveBall(currentBall, targetPosition, speed)
         );
 
         if (feedEffect != null)
-        {
             feedEffect.OnBallLaunched();
-        }
 
         prepareLaunchCoroutine = null;
     }
 
     // =========================================================
-    // ORIENTACIÓN DE LA MÁQUINA
+    // CÁLCULO DE ORIENTACIÓN Y OBJETIVO
     // =========================================================
 
-    private void RotateMachineToTarget(Transform target)
+    private bool TryGetShotAxes(
+        out Vector3 forward,
+        out Vector3 right)
+    {
+        forward = Vector3.zero;
+        right = Vector3.zero;
+
+        if (shotDirectionTarget == null)
+            return false;
+
+        Vector3 direction =
+            shotDirectionTarget.position - transform.position;
+
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            Debug.LogWarning(
+                "[BallLauncher] Shot Direction Target debe estar separado " +
+                "horizontalmente de la máquina.",
+                this
+            );
+            return false;
+        }
+
+        forward = direction.normalized;
+        right = Vector3.Cross(Vector3.up, forward).normalized;
+
+        return true;
+    }
+
+    private bool TryCalculateTargetPosition(
+        float horizontal,
+        float vertical,
+        out Vector3 targetPosition)
+    {
+        targetPosition = Vector3.zero;
+
+        if (playerTargetCenter == null)
+            return false;
+
+        if (!TryGetShotAxes(out _, out Vector3 right))
+            return false;
+
+        targetPosition =
+            playerTargetCenter.position +
+            right * horizontal +
+            Vector3.up * vertical;
+
+        return true;
+    }
+
+    private void RotateMachineToTarget(Vector3 targetPosition)
     {
         if (machineModel == null)
             return;
 
-        float angle = 0f;
+        Vector3 direction = targetPosition - machineModel.position;
+        direction.y = 0f;
 
-        if (target == highLeft ||
-            target == middleLeft ||
-            target == lowLeft)
-        {
-            angle = machineTurnAngle;
-        }
-        else if (
-            target == highRight ||
-            target == middleRight ||
-            target == lowRight)
-        {
-            angle = -machineTurnAngle;
-        }
+        if (direction.sqrMagnitude < 0.0001f)
+            return;
+
+        Quaternion desiredWorldRotation =
+            Quaternion.LookRotation(direction.normalized, Vector3.up);
 
         machineTargetRotation =
-            machineCenterRotation *
-            Quaternion.Euler(0f, angle, 0f);
+            Quaternion.Inverse(transform.rotation) * desiredWorldRotation;
+    }
+
+    // =========================================================
+    // SELECCIÓN ALEATORIA DE OFFSETS POR NIVEL
+    // =========================================================
+
+    private bool TryGetRandomOffset(
+        out float horizontal,
+        out float vertical)
+    {
+        horizontal = 0f;
+        vertical = 0f;
+
+        int heightCount = currentLevel == 1 ? 1 :
+                          currentLevel == 2 ? 2 : 3;
+
+        int heightIndex = Random.Range(0, heightCount);
+
+        if (currentLevel == 1)
+        {
+            vertical = 0f;
+        }
+        else if (currentLevel == 2)
+        {
+            vertical = heightIndex == 0 ? 0f : verticalOffset;
+        }
+        else
+        {
+            vertical = heightIndex switch
+            {
+                0 => -verticalOffset,
+                1 => 0f,
+                _ => verticalOffset
+            };
+        }
+
+        int horizontalIndex = Random.Range(0, 3);
+
+        horizontal = horizontalIndex switch
+        {
+            0 => -horizontalOffset,
+            1 => 0f,
+            _ => horizontalOffset
+        };
+
+        return true;
     }
 
     // =========================================================
@@ -371,10 +471,7 @@ public class BallLauncher : MonoBehaviour
             targetPosition
         );
 
-        float duration = distance / speed;
-
-        if (duration < 0.05f)
-            duration = 0.05f;
+        float duration = Mathf.Max(distance / speed, 0.05f);
 
         Vector3 controlPoint = Vector3.Lerp(
             startPosition,
@@ -396,7 +493,6 @@ public class BallLauncher : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / duration);
             float oneMinusT = 1f - t;
 
-            // Curva de Bézier cuadrática.
             Vector3 position =
                 oneMinusT * oneMinusT * startPosition +
                 2f * oneMinusT * t * controlPoint +
@@ -446,112 +542,61 @@ public class BallLauncher : MonoBehaviour
         Vector3 control,
         Vector3 end)
     {
-        Vector3 direction = 2f * (end - control);
-        return direction.normalized;
+        return (end - control).normalized;
     }
 
     // =========================================================
-    // SELECCIÓN DE TARGETS
-    // =========================================================
-
-    private Transform GetRandomTarget()
-    {
-        Transform[] targets;
-
-        if (currentLevel == 1)
-        {
-            targets = new Transform[]
-            {
-                middleLeft,
-                middleCenter,
-                middleRight
-            };
-        }
-        else if (currentLevel == 2)
-        {
-            targets = new Transform[]
-            {
-                highLeft,
-                highCenter,
-                highRight,
-                middleLeft,
-                middleCenter,
-                middleRight
-            };
-        }
-        else
-        {
-            targets = new Transform[]
-            {
-                highLeft,
-                highCenter,
-                highRight,
-                middleLeft,
-                middleCenter,
-                middleRight,
-                lowLeft,
-                lowCenter,
-                lowRight
-            };
-        }
-
-        // Evitar seleccionar una referencia vacía.
-        int validCount = 0;
-
-        foreach (Transform candidate in targets)
-        {
-            if (candidate != null)
-                validCount++;
-        }
-
-        if (validCount == 0)
-            return null;
-
-        int randomIndex = Random.Range(0, validCount);
-
-        foreach (Transform candidate in targets)
-        {
-            if (candidate == null)
-                continue;
-
-            if (randomIndex == 0)
-                return candidate;
-
-            randomIndex--;
-        }
-
-        return null;
-    }
-
-    // =========================================================
-    // VELOCIDAD ALEATORIA POR NIVEL
+    // VELOCIDAD ALEATORIA SEGÚN CONFIGURACIÓN DEL NIVEL
     // =========================================================
 
     private float GetRandomSpeed()
     {
-        float random = Random.value;
-
-        // NIVEL 1: 100 % lentas.
-        if (currentLevel == 1)
-            return slowSpeed;
-
-        // NIVEL 2: 30 % lentas, 70 % medias.
-        if (currentLevel == 2)
+        if (currentLevelConfig == null)
         {
-            if (random < 0.30f)
-                return slowSpeed;
+            Debug.LogError(
+                "[BallLauncher] No hay configuración de velocidad.",
+                this
+            );
 
-            return mediumSpeed;
+            return 0f;
         }
 
-        // NIVEL 3: 10 % lentas, 35 % medias, 55 % rápidas.
-        if (random < 0.10f)
-            return slowSpeed;
+        float slowWeight = Mathf.Max(
+            0f, currentLevelConfig.slowWeight
+        );
 
-        if (random < 0.45f)
-            return mediumSpeed;
+        float mediumWeight = Mathf.Max(
+            0f, currentLevelConfig.mediumWeight
+        );
 
-        return fastSpeed;
+        float fastWeight = Mathf.Max(
+            0f, currentLevelConfig.fastWeight
+        );
+
+        float totalWeight =
+            slowWeight + mediumWeight + fastWeight;
+
+        if (totalWeight <= 0f)
+        {
+            Debug.LogError(
+                "[BallLauncher] Los pesos de velocidad no pueden ser todos cero.",
+                this
+            );
+
+            return 0f;
+        }
+
+        float random = Random.value * totalWeight;
+
+        if (random < slowWeight)
+            return currentLevelConfig.slowSpeed;
+
+        random -= slowWeight;
+
+        if (random < mediumWeight)
+            return currentLevelConfig.mediumSpeed;
+
+        return currentLevelConfig.fastSpeed;
     }
 
     // =========================================================
@@ -587,21 +632,18 @@ public class BallLauncher : MonoBehaviour
 
     public void InitializeVisualFeed(int totalShots)
     {
-        if (feedEffect == null) return;
-
-        feedEffect.InitializeForLevel(totalShots);
+        if (feedEffect != null)
+            feedEffect.InitializeForLevel(totalShots);
     }
 
     public void ResetVisualFeed()
     {
-        if (feedEffect == null) return;
-
-        feedEffect.ResetFeed();
+        if (feedEffect != null)
+            feedEffect.ResetFeed();
     }
 
     public void StopLauncher()
     {
-        // Impedir nuevos lanzamientos y cancelar la preparación.
         StopLaunching();
 
         if (movementCoroutine != null)
@@ -610,28 +652,156 @@ public class BallLauncher : MonoBehaviour
             movementCoroutine = null;
         }
 
-        // Devolver el balón al pool en lugar de destruirlo.
         if (currentBall != null)
         {
             ILaunchableBall reactionBall =
                 currentBall.GetComponent<ILaunchableBall>();
 
             if (reactionBall != null)
-            {
                 reactionBall.CancelAndReturnToPool();
-            }
             else if (ballPool != null)
-            {
                 ballPool.Return(currentBall);
-            }
 
             currentBall = null;
         }
 
-        // Devolver la máquina a su orientación inicial.
         if (machineModel != null)
-        {
             machineTargetRotation = machineCenterRotation;
+    }
+
+    // =========================================================
+    // GIZMOS DE VISUALIZACIÓN
+    // =========================================================
+
+    private void OnDrawGizmos()
+    {
+        if (!showGizmos)
+            return;
+
+        // 1. Spawn Point.
+        if (spawnPoint != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(spawnPoint.position, gizmoRadius);
+
+            Gizmos.DrawLine(
+                spawnPoint.position,
+                spawnPoint.position +
+                spawnPoint.forward * directionLineLength
+            );
         }
+
+        // 2. Dirección frontal de la máquina.
+        if (shotDirectionTarget != null)
+        {
+            Gizmos.color = Color.blue;
+
+            Gizmos.DrawWireSphere(
+                shotDirectionTarget.position,
+                gizmoRadius
+            );
+
+            Gizmos.DrawLine(
+                transform.position,
+                shotDirectionTarget.position
+            );
+
+            Vector3 direction =
+                shotDirectionTarget.position - transform.position;
+
+            direction.y = 0f;
+
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                direction.Normalize();
+
+                Vector3 arrowRight = Vector3.Cross(
+                    Vector3.up,
+                    direction
+                ).normalized;
+
+                Vector3 tip =
+                    transform.position +
+                    direction * directionLineLength;
+
+                Gizmos.DrawLine(transform.position, tip);
+
+                Gizmos.DrawLine(
+                    tip,
+                    tip - direction * 0.25f +
+                    arrowRight * 0.12f
+                );
+
+                Gizmos.DrawLine(
+                    tip,
+                    tip - direction * 0.25f -
+                    arrowRight * 0.12f
+                );
+            }
+        }
+
+        // 3. Centro del jugador y destinos posibles.
+        if (playerTargetCenter == null)
+            return;
+
+        Gizmos.color = Color.green;
+
+        Gizmos.DrawWireSphere(
+            playerTargetCenter.position,
+            gizmoRadius * 1.5f
+        );
+
+        if (!TryGetShotAxes(out _, out Vector3 right))
+            return;
+
+        Vector3 center = playerTargetCenter.position;
+
+        Vector3 left = center - right * horizontalOffset;
+        Vector3 middle = center;
+        Vector3 rightTarget = center + right * horizontalOffset;
+
+        DrawTargetGizmo(left, Color.yellow);
+        DrawTargetGizmo(middle, Color.yellow);
+        DrawTargetGizmo(rightTarget, Color.yellow);
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawLine(left, middle);
+        Gizmos.DrawLine(middle, rightTarget);
+
+        // 4. Destinos altos y bajos.
+        Vector3 leftHigh = left + Vector3.up * verticalOffset;
+        Vector3 middleHigh = middle + Vector3.up * verticalOffset;
+        Vector3 rightHigh = rightTarget + Vector3.up * verticalOffset;
+
+        Vector3 leftLow = left - Vector3.up * verticalOffset;
+        Vector3 middleLow = middle - Vector3.up * verticalOffset;
+        Vector3 rightLow = rightTarget - Vector3.up * verticalOffset;
+
+        DrawTargetGizmo(leftHigh, Color.red);
+        DrawTargetGizmo(middleHigh, Color.red);
+        DrawTargetGizmo(rightHigh, Color.red);
+
+        DrawTargetGizmo(leftLow, Color.magenta);
+        DrawTargetGizmo(middleLow, Color.magenta);
+        DrawTargetGizmo(rightLow, Color.magenta);
+
+        // 5. Líneas de referencia desde el Spawn Point.
+        if (spawnPoint != null)
+        {
+            Gizmos.color = new Color(1f, 1f, 0f, 0.35f);
+            Gizmos.DrawLine(spawnPoint.position, middle);
+
+            Gizmos.color = new Color(1f, 0f, 0f, 0.35f);
+            Gizmos.DrawLine(spawnPoint.position, middleHigh);
+
+            Gizmos.color = new Color(1f, 0f, 1f, 0.35f);
+            Gizmos.DrawLine(spawnPoint.position, middleLow);
+        }
+    }
+
+    private void DrawTargetGizmo(Vector3 position, Color color)
+    {
+        Gizmos.color = color;
+        Gizmos.DrawWireSphere(position, gizmoRadius);
     }
 }

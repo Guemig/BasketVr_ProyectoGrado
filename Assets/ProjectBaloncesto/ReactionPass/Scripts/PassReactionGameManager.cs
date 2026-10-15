@@ -115,7 +115,7 @@ public class PassReactionGameManager : MonoBehaviour
         if (ballLauncher != null)
         {
             ballLauncher.StopLauncher();
-            ballLauncher.SetLevel(1);
+            ConfigureLauncherForLevel(1);
         }
 
         if (statsManager == null)
@@ -158,7 +158,7 @@ public class PassReactionGameManager : MonoBehaviour
 
         statsManager.ResetAllStats();
 
-        ballLauncher.SetLevel(1);
+        ConfigureLauncherForLevel(1);
 
         BeginLevelTransition();
     }
@@ -234,7 +234,7 @@ public class PassReactionGameManager : MonoBehaviour
         gameRunning = true;
         isFinishingLevel = false;
 
-        ballLauncher.SetLevel(currentLevel);
+        ConfigureLauncherForLevel(currentLevel);
 
         // El primer disparo cuenta dentro del total configurado.
         LaunchNextBall();
@@ -363,6 +363,17 @@ public class PassReactionGameManager : MonoBehaviour
             return 0f;
 
         return levelConfigManager.GetShotDelay(currentLevel);
+    }
+
+    private void ConfigureLauncherForLevel(int level)
+    {
+        if (ballLauncher == null || levelConfigManager == null)
+            return;
+
+        PassLevelConfigManager.LevelConfig config =
+            levelConfigManager.GetLevelConfigForLevel(level);
+
+        ballLauncher.SetLevel(level, config);
     }
 
     private bool ValidateCurrentLevelConfig()
@@ -494,7 +505,7 @@ public class PassReactionGameManager : MonoBehaviour
         isFinishingLevel = false;
 
         if (ballLauncher != null)
-            ballLauncher.SetLevel(currentLevel);
+            ConfigureLauncherForLevel(currentLevel);
 
         BeginLevelTransition();
     }
@@ -524,7 +535,7 @@ public class PassReactionGameManager : MonoBehaviour
 
         statsManager.ResetAllStats();
 
-        ballLauncher.SetLevel(1);
+        ConfigureLauncherForLevel(1);
 
         BeginLevelTransition();
     }

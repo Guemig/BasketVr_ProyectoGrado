@@ -11,33 +11,69 @@ public class PassLevelConfigManager : MonoBehaviour
 
         [Header("Tiempo entre disparos")]
         [Min(0f)] public float shotDelay = 1f;
+
+        [Header("Velocidades de lanzamiento")]
+        [Min(0f)] public float slowSpeed = 8f;
+        [Min(0f)] public float mediumSpeed = 11f;
+        [Min(0f)] public float fastSpeed = 14f;
+
+        [Header("Probabilidad relativa de cada velocidad")]
+        [Min(0f)] public float slowWeight = 1f;
+        [Min(0f)] public float mediumWeight = 0f;
+        [Min(0f)] public float fastWeight = 0f;
     }
 
-    [Header("Configuración de niveles")]
+    [Header("Configuración del nivel 1")]
     [SerializeField]
     private LevelConfig level1 = new LevelConfig
     {
         requiredShots = 10,
-        shotDelay = 1f
+        shotDelay = 1f,
+
+        slowSpeed = 8f,
+        mediumSpeed = 11f,
+        fastSpeed = 14f,
+
+        slowWeight = 1f,
+        mediumWeight = 0f,
+        fastWeight = 0f
     };
 
+    [Header("Configuración del nivel 2")]
     [SerializeField]
     private LevelConfig level2 = new LevelConfig
     {
         requiredShots = 12,
-        shotDelay = 0.7f
+        shotDelay = 0.7f,
+
+        slowSpeed = 8f,
+        mediumSpeed = 11f,
+        fastSpeed = 14f,
+
+        slowWeight = 0.3f,
+        mediumWeight = 0.7f,
+        fastWeight = 0f
     };
 
+    [Header("Configuración del nivel 3")]
     [SerializeField]
     private LevelConfig level3 = new LevelConfig
     {
         requiredShots = 15,
-        shotDelay = 0.5f
+        shotDelay = 0.5f,
+
+        slowSpeed = 8f,
+        mediumSpeed = 11f,
+        fastSpeed = 14f,
+
+        slowWeight = 0.10f,
+        mediumWeight = 0.35f,
+        fastWeight = 0.55f
     };
 
     public int GetRequiredShots(int level)
     {
-        LevelConfig config = GetLevelConfig(level);
+        LevelConfig config = GetLevelConfigForLevel(level);
 
         return config != null
             ? Mathf.Max(1, config.requiredShots)
@@ -46,14 +82,14 @@ public class PassLevelConfigManager : MonoBehaviour
 
     public float GetShotDelay(int level)
     {
-        LevelConfig config = GetLevelConfig(level);
+        LevelConfig config = GetLevelConfigForLevel(level);
 
         return config != null
             ? Mathf.Max(0f, config.shotDelay)
             : 0f;
     }
 
-    private LevelConfig GetLevelConfig(int level)
+    public LevelConfig GetLevelConfigForLevel(int level)
     {
         switch (level)
         {

@@ -2030,24 +2030,21 @@ MonoBehaviour:
   gameManager: {fileID: 0}
   machineModel: {fileID: 4637587283374328843}
   feedEffect: {fileID: 4840791091127064542}
+  shotDirectionTarget: {fileID: 0}
+  playerTargetCenter: {fileID: 0}
   poolContainer: {fileID: 0}
   initialPoolSize: 10
-  highLeft: {fileID: 0}
-  highCenter: {fileID: 0}
-  highRight: {fileID: 0}
-  middleLeft: {fileID: 0}
-  middleCenter: {fileID: 0}
-  middleRight: {fileID: 0}
-  lowLeft: {fileID: 0}
-  lowCenter: {fileID: 0}
-  lowRight: {fileID: 0}
+  horizontalOffset: 0.55
+  verticalOffset: 0.5
   slowSpeed: 8
   mediumSpeed: 10
   fastSpeed: 12
   curveHeight: 0.7
   curvePoint: 0.75
   spinSpeed: 333
-  machineTurnAngle: 15
   machineTurnSpeed: 8
   launchDelay: 0.15
   currentLevel: 1
+  showGizmos: 1
+  gizmoRadius: 0.12
+  directionLineLength: 1.5
