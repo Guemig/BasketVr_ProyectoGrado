@@ -10858,8 +10858,13 @@ MonoBehaviour:
   dribbleBall: {fileID: 1743406011}
   impulseMultiplier: 0.65
   maximumSpeed: 3
-  maximumDistance: 1.2
-  gravity: 4
+  horizontalDrag: 0.35
+  gravity: 5
+  floorY: 0.2
+  bounceStrength: 0.93
+  minimumBounceUpSpeed: 3.5
+  bounceHorizontalDamping: 0.96
+  minimumBounceVelocity: 0.25
 --- !u!54 &1743406021
 Rigidbody:
   m_ObjectHideFlags: 0
