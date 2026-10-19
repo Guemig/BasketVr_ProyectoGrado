@@ -7,13 +7,19 @@ public class DribbleBallFreeMovement : MonoBehaviour
     [Header("Movimiento libre")]
     [SerializeField] private float impulseMultiplier = 0.65f;
     [SerializeField] private float maximumSpeed = 3f;
-    [SerializeField] private float maximumDistance = 1.2f;
+    [SerializeField] private float horizontalDrag = 0.35f;
 
     [Header("Caída")]
-    [SerializeField] private float gravity = 4f;
+    [SerializeField] private float gravity = 5f;
+    [SerializeField] private float floorY = 0.2f;
+
+    [Header("Rebote libre")]
+    [SerializeField] private float bounceStrength = 0.9f;
+    [SerializeField] private float minimumBounceUpSpeed = 4.5f;
+    [SerializeField] private float bounceHorizontalDamping = 0.96f;
+    [SerializeField] private float minimumBounceVelocity = 0.25f;
 
     private Vector3 velocity;
-    private Vector3 releasePosition;
     private bool movingFreely;
 
     public bool MovingFreely => movingFreely;
@@ -29,6 +35,10 @@ public class DribbleBallFreeMovement : MonoBehaviour
             return;
         }
 
+        velocity.y -=
+            gravity *
+            Time.deltaTime;
+
         Vector3 horizontalVelocity =
             new Vector3(
                 velocity.x,
@@ -36,42 +46,59 @@ public class DribbleBallFreeMovement : MonoBehaviour
                 velocity.z
             );
 
-        float distance =
-            Vector3.Distance(
-                new Vector3(
-                    transform.position.x,
-                    0f,
-                    transform.position.z
-                ),
-                new Vector3(
-                    releasePosition.x,
-                    0f,
-                    releasePosition.z
-                )
+        horizontalVelocity =
+            Vector3.MoveTowards(
+                horizontalVelocity,
+                Vector3.zero,
+                horizontalDrag * Time.deltaTime
             );
 
-        if (distance >= maximumDistance)
-        {
-            horizontalVelocity = Vector3.zero;
-        }
+        velocity.x =
+            horizontalVelocity.x;
 
-        velocity.x = horizontalVelocity.x;
-        velocity.z = horizontalVelocity.z;
+        velocity.z =
+            horizontalVelocity.z;
 
-        velocity.y -=
-            gravity *
-            Time.deltaTime;
-
-        transform.position +=
+        Vector3 newPosition =
+            transform.position +
             velocity *
             Time.deltaTime;
+
+        if (newPosition.y <= floorY)
+        {
+            newPosition.y = floorY;
+
+            float bounceVelocity =
+                Mathf.Abs(velocity.y) *
+                bounceStrength;
+
+            if (bounceVelocity >
+                minimumBounceVelocity)
+            {
+                velocity.y =
+                    Mathf.Max(
+                        bounceVelocity,
+                        minimumBounceUpSpeed
+                    );
+
+                velocity.x *=
+                    bounceHorizontalDamping;
+
+                velocity.z *=
+                    bounceHorizontalDamping;
+            }
+            else
+            {
+                velocity.y = 0f;
+            }
+        }
+
+        transform.position =
+            newPosition;
     }
 
     public void Launch(Vector3 handVelocity)
     {
-        releasePosition =
-            transform.position;
-
         Vector3 horizontalImpulse =
             new Vector3(
                 handVelocity.x,
