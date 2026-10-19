@@ -170,3 +170,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   catchDuration: 0.3
   maxLifeTime: 3
+  activationDistancePercent: 0.6

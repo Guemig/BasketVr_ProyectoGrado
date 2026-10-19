@@ -1,8 +1,17 @@
+
+using System;
 using System.Collections;
 using UnityEngine;
 
 public class BallLauncher : MonoBehaviour
 {
+    public enum LaunchState
+    {
+        Idle,
+        Warning,
+        Firing
+    }
+
     // =========================================================
     // REFERENCIAS
     // =========================================================
@@ -18,7 +27,7 @@ public class BallLauncher : MonoBehaviour
     [Tooltip("Objeto situado delante de la máquina que define su dirección.")]
     [SerializeField] private Transform shotDirectionTarget;
 
-    [Tooltip("Centro del objetivo que sigue al jugador.")]
+    [Tooltip("Centro de referencia del jugador.")]
     [SerializeField] private Transform playerTargetCenter;
 
     // =========================================================
@@ -57,12 +66,25 @@ public class BallLauncher : MonoBehaviour
     [SerializeField] private float spinSpeed = 700f;
 
     // =========================================================
-    // GIRO DEL GRUPO COMPLETO
+    // GIRO DE MÁQUINA
     // =========================================================
 
     [Header("Giro de máquina")]
     [SerializeField] private float machineTurnSpeed = 8f;
-    [SerializeField] private float launchDelay = 0.15f;
+
+    [SerializeField, Min(0f)]
+    private float warningDuration = 0.6f;
+
+    // =========================================================
+    // TIPO DE ESTÍMULO
+    // =========================================================
+
+    [Header("Tipo de estímulo")]
+    [Tooltip("Probabilidad de que el balón deba atraparse.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float catchBallProbability = 0.7f;
+
+    private DoubleHandPassBall.BallAction nextBallAction;
 
     // =========================================================
     // NIVEL Y CONFIGURACIÓN
@@ -72,6 +94,16 @@ public class BallLauncher : MonoBehaviour
     [SerializeField, Range(1, 3)] private int currentLevel = 1;
 
     private PassLevelConfigManager.LevelConfig currentLevelConfig;
+
+    public event Action<BallLauncher, LaunchState> OnLaunchStateChanged;
+
+    public event Action<
+        BallLauncher,
+        DoubleHandPassBall.BallState
+    > OnNextBallStateChanged;
+
+    public LaunchState CurrentLaunchState { get; private set; }
+        = LaunchState.Idle;
 
     // =========================================================
     // ESTADO INTERNO
@@ -83,7 +115,6 @@ public class BallLauncher : MonoBehaviour
     private Coroutine movementCoroutine;
     private Coroutine prepareLaunchCoroutine;
 
-    // Rotaciones mundiales del objeto raíz.
     private Quaternion machineCenterRotation;
     private Quaternion machineTargetRotation;
 
@@ -127,14 +158,12 @@ public class BallLauncher : MonoBehaviour
 
     private void Start()
     {
-        // Orientación inicial del grupo completo.
         machineCenterRotation = transform.rotation;
         machineTargetRotation = machineCenterRotation;
     }
 
     private void Update()
     {
-        // Girar el objeto raíz completo para apuntar.
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
             machineTargetRotation,
@@ -151,6 +180,7 @@ public class BallLauncher : MonoBehaviour
         machineCenterRotation = baseRotation;
         machineTargetRotation = baseRotation;
     }
+
     // =========================================================
     // CONFIGURACIÓN DEL NIVEL
     // =========================================================
@@ -226,15 +256,61 @@ public class BallLauncher : MonoBehaviour
         prepareLaunchCoroutine = StartCoroutine(PrepareLaunch());
     }
 
+
+    private void HandleCorrectCatch(float reactionTime)
+    {
+        if (gameManager != null)
+            gameManager.RegisterCatch(reactionTime);
+    }
+
+    private void HandleWrongCatch()
+    {
+        if (gameManager != null)
+            gameManager.RegisterWrongCatch();
+    }
+
+    private void HandleMiss()
+    {
+        if (gameManager != null)
+            gameManager.RegisterMiss();
+    }
+
+    private void HandleCorrectPass()
+    {
+        if (gameManager != null)
+            gameManager.RegisterCorrectPass();
+    }
+
+    private void SubscribeBallEvents(DoubleHandPassBall ball)
+    {
+        if (ball == null)
+            return;
+
+        UnsubscribeBallEvents(ball);
+
+        ball.OnCorrectCatch += HandleCorrectCatch;
+        ball.OnWrongCatch += HandleWrongCatch;
+        ball.OnMiss += HandleMiss;
+        ball.OnCorrectPass += HandleCorrectPass;
+    }
+
+    private void UnsubscribeBallEvents(DoubleHandPassBall ball)
+    {
+        if (ball == null)
+            return;
+
+        ball.OnCorrectCatch -= HandleCorrectCatch;
+        ball.OnWrongCatch -= HandleWrongCatch;
+        ball.OnMiss -= HandleMiss;
+        ball.OnCorrectPass -= HandleCorrectPass;
+    }
+
     private IEnumerator PrepareLaunch()
     {
-        if (!TryGetRandomOffset(out float horizontal, out float vertical))
+        if (!TryGetRandomOffset(
+                out float horizontal,
+                out float vertical))
         {
-            Debug.LogWarning(
-                "[BallLauncher] No se pudo seleccionar un offset.",
-                this
-            );
-
             prepareLaunchCoroutine = null;
             yield break;
         }
@@ -248,25 +324,45 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
+        // 1. La máquina determina la acción del próximo balón.
+        nextBallAction = UnityEngine.Random.value < catchBallProbability
+            ? DoubleHandPassBall.BallAction.Catch
+            : DoubleHandPassBall.BallAction.LetPass;
+
+        // 2. Notificar el estado antes del aviso visual.
+        DoubleHandPassBall.BallState nextState =
+            nextBallAction == DoubleHandPassBall.BallAction.Catch
+                ? DoubleHandPassBall.BallState.ActiveCatch
+                : DoubleHandPassBall.BallState.ActiveLetPass;
+
+        OnNextBallStateChanged?.Invoke(this, nextState);
+
+        // 3. Avisar que esta máquina va a disparar.
+        SetLaunchState(LaunchState.Warning);
+
+        // 4. Orientar la máquina hacia el destino.
         RotateMachineToTarget(targetPosition);
 
-        yield return new WaitForSeconds(launchDelay);
+        // 5. Esperar el tiempo de aviso.
+        yield return new WaitForSeconds(warningDuration);
 
         if (!launchAllowed ||
             gameManager == null ||
             !gameManager.GameRunning ||
             currentBall != null)
         {
+            SetLaunchState(LaunchState.Idle);
             prepareLaunchCoroutine = null;
             yield break;
         }
 
-        // Actualizar el destino por si el jugador se ha movido.
+        // 6. Actualizar el destino por si el jugador se movió.
         if (!TryCalculateTargetPosition(
                 horizontal,
                 vertical,
                 out targetPosition))
         {
+            SetLaunchState(LaunchState.Idle);
             prepareLaunchCoroutine = null;
             yield break;
         }
@@ -277,10 +373,12 @@ public class BallLauncher : MonoBehaviour
 
         if (speed <= 0f)
         {
+            SetLaunchState(LaunchState.Idle);
             prepareLaunchCoroutine = null;
             yield break;
         }
 
+        // 7. Obtener un balón del pool.
         currentBall = ballPool.Get();
 
         if (currentBall == null)
@@ -290,6 +388,7 @@ public class BallLauncher : MonoBehaviour
                 this
             );
 
+            SetLaunchState(LaunchState.Idle);
             prepareLaunchCoroutine = null;
             yield break;
         }
@@ -302,33 +401,50 @@ public class BallLauncher : MonoBehaviour
         ILaunchableBall reactionBall =
             currentBall.GetComponent<ILaunchableBall>();
 
-        if (reactionBall == null)
+        DoubleHandPassBall passBall =
+            currentBall.GetComponent<DoubleHandPassBall>();
+
+        if (reactionBall == null || passBall == null)
         {
             Debug.LogError(
-                "[BallLauncher] El prefab necesita ILaunchableBall.",
+                "[BallLauncher] El prefab necesita ILaunchableBall " +
+                "y DoubleHandPassBall.",
                 currentBall
             );
 
             ballPool.Return(currentBall);
             currentBall = null;
+
+            SetLaunchState(LaunchState.Idle);
             prepareLaunchCoroutine = null;
             yield break;
         }
 
+        // 8. Transmitir acción y referencias espaciales.
+        // Se guarda una posición estable del jugador para este lanzamiento.
+        passBall.SetLaunchData(
+            nextBallAction,
+            playerTargetCenter.position,
+            targetPosition
+        );
+
+
+        // 9. Preparar el balón sin activar todavía su estado de reacción.
         reactionBall.Setup(gameManager, this);
+        SubscribeBallEvents(passBall);
 
         Rigidbody rb = currentBall.GetComponent<Rigidbody>();
 
         if (rb != null)
         {
-            if (rb.isKinematic)
-                rb.isKinematic = false;
-
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             rb.useGravity = false;
             rb.isKinematic = true;
         }
+
+        // 10. Finalizar el aviso e iniciar el movimiento.
+        SetLaunchState(LaunchState.Firing);
 
         movementCoroutine = StartCoroutine(
             MoveBall(currentBall, targetPosition, speed)
@@ -397,10 +513,6 @@ public class BallLauncher : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Gira el objeto raíz que contiene este script.
-    /// No modifica machineModel directamente.
-    /// </summary>
     private void RotateMachineToTarget(Vector3 targetPosition)
     {
         Vector3 direction = targetPosition - transform.position;
@@ -416,7 +528,7 @@ public class BallLauncher : MonoBehaviour
     }
 
     // =========================================================
-    // SELECCIÓN ALEATORIA DE OFFSETS POR NIVEL
+    // SELECCIÓN ALEATORIA DE OFFSETS
     // =========================================================
 
     private bool TryGetRandomOffset(
@@ -426,37 +538,39 @@ public class BallLauncher : MonoBehaviour
         horizontal = 0f;
         vertical = 0f;
 
-        int heightCount = currentLevel == 1 ? 1 :
-                          currentLevel == 2 ? 2 : 3;
+        int heightIndex = UnityEngine.Random.Range(0, 3);
 
-        int heightIndex = Random.Range(0, heightCount);
+        switch (heightIndex)
+        {
+            case 0:
+                vertical = -verticalOffset;
+                break;
 
-        if (currentLevel == 1)
-        {
-            vertical = 0f;
-        }
-        else if (currentLevel == 2)
-        {
-            vertical = heightIndex == 0 ? 0f : verticalOffset;
-        }
-        else
-        {
-            vertical = heightIndex switch
-            {
-                0 => -verticalOffset,
-                1 => 0f,
-                _ => verticalOffset
-            };
+            case 1:
+                vertical = 0f;
+                break;
+
+            case 2:
+                vertical = verticalOffset;
+                break;
         }
 
-        int horizontalIndex = Random.Range(0, 3);
+        int horizontalIndex = UnityEngine.Random.Range(0, 3);
 
-        horizontal = horizontalIndex switch
+        switch (horizontalIndex)
         {
-            0 => -horizontalOffset,
-            1 => 0f,
-            _ => horizontalOffset
-        };
+            case 0:
+                horizontal = -horizontalOffset;
+                break;
+
+            case 1:
+                horizontal = 0f;
+                break;
+
+            case 2:
+                horizontal = horizontalOffset;
+                break;
+        }
 
         return true;
     }
@@ -552,7 +666,7 @@ public class BallLauncher : MonoBehaviour
     }
 
     // =========================================================
-    // VELOCIDAD ALEATORIA SEGÚN CONFIGURACIÓN DEL NIVEL
+    // VELOCIDAD ALEATORIA SEGÚN EL NIVEL
     // =========================================================
 
     private float GetRandomSpeed()
@@ -592,7 +706,7 @@ public class BallLauncher : MonoBehaviour
             return 0f;
         }
 
-        float random = Random.value * totalWeight;
+        float random = UnityEngine.Random.value * totalWeight;
 
         if (random < slowWeight)
             return currentLevelConfig.slowSpeed;
@@ -623,10 +737,23 @@ public class BallLauncher : MonoBehaviour
             StopCoroutine(prepareLaunchCoroutine);
             prepareLaunchCoroutine = null;
         }
+
+        SetLaunchState(LaunchState.Idle);
+    }
+
+    private void SetLaunchState(LaunchState newState)
+    {
+        if (CurrentLaunchState == newState)
+            return;
+
+        CurrentLaunchState = newState;
+        OnLaunchStateChanged?.Invoke(this, newState);
     }
 
     public void BallResolved()
     {
+        SetLaunchState(LaunchState.Idle);
+
         currentBall = null;
 
         if (movementCoroutine != null)
@@ -650,6 +777,8 @@ public class BallLauncher : MonoBehaviour
 
     public void StopLauncher()
     {
+        SetLaunchState(LaunchState.Idle);
+
         StopLaunching();
 
         if (movementCoroutine != null)
@@ -674,11 +803,10 @@ public class BallLauncher : MonoBehaviour
 
             currentBall = null;
         }
-
     }
 
     // =========================================================
-    // GIZMOS DE VISUALIZACIÓN
+    // GIZMOS
     // =========================================================
 
     private void OnDrawGizmos()
@@ -686,7 +814,6 @@ public class BallLauncher : MonoBehaviour
         if (!showGizmos)
             return;
 
-        // 1. Spawn Point.
         if (spawnPoint != null)
         {
             Gizmos.color = Color.cyan;
@@ -699,7 +826,6 @@ public class BallLauncher : MonoBehaviour
             );
         }
 
-        // 2. Dirección frontal de la máquina.
         if (shotDirectionTarget != null)
         {
             Gizmos.color = Color.blue;
@@ -748,7 +874,6 @@ public class BallLauncher : MonoBehaviour
             }
         }
 
-        // 3. Centro del jugador y destinos posibles.
         if (playerTargetCenter == null)
             return;
 
@@ -776,7 +901,6 @@ public class BallLauncher : MonoBehaviour
         Gizmos.DrawLine(left, middle);
         Gizmos.DrawLine(middle, rightTarget);
 
-        // 4. Destinos altos y bajos.
         Vector3 leftHigh = left + Vector3.up * verticalOffset;
         Vector3 middleHigh = middle + Vector3.up * verticalOffset;
         Vector3 rightHigh = rightTarget + Vector3.up * verticalOffset;
@@ -793,7 +917,6 @@ public class BallLauncher : MonoBehaviour
         DrawTargetGizmo(middleLow, Color.magenta);
         DrawTargetGizmo(rightLow, Color.magenta);
 
-        // 5. Líneas de referencia desde el Spawn Point.
         if (spawnPoint != null)
         {
             Gizmos.color = new Color(1f, 1f, 0f, 0.35f);

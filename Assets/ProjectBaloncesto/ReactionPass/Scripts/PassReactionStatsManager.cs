@@ -15,16 +15,21 @@ public class PassReactionStatsManager : MonoBehaviour
 
         public int caught;
         public int missed;
+        public int wrongCaught;
+        public int correctPasses;
 
         public float accuracy;
-
         public float averageReaction;
         public float fastestReaction;
         public float slowestReaction;
 
         public List<float> reactionTimes = new List<float>();
 
-        public int Total => caught + missed;
+        public int Total =>
+            caught + missed + wrongCaught + correctPasses;
+
+        public int CorrectDecisions =>
+            caught + correctPasses;
     }
 
     [Header("Resultados por nivel")]
@@ -39,7 +44,10 @@ public class PassReactionStatsManager : MonoBehaviour
     [Header("Resultados generales")]
     [SerializeField] private int totalCaught;
     [SerializeField] private int totalMissed;
+    [SerializeField] private int totalWrongCaught;
+    [SerializeField] private int totalCorrectPasses;
     [SerializeField] private int totalPasses;
+
     [SerializeField] private float totalAccuracy;
     [SerializeField] private float globalAverageReaction;
 
@@ -49,6 +57,8 @@ public class PassReactionStatsManager : MonoBehaviour
 
     private int caughtBalls;
     private int missedBalls;
+    private int wrongCaughtBalls;
+    private int correctPasses;
 
     private float totalReactionTime;
     private float averageReactionTime;
@@ -62,7 +72,11 @@ public class PassReactionStatsManager : MonoBehaviour
 
     public int CaughtBalls => caughtBalls;
     public int MissedBalls => missedBalls;
-    public int TotalBalls => caughtBalls + missedBalls;
+    public int WrongCaughtBalls => wrongCaughtBalls;
+    public int CorrectPasses => correctPasses;
+
+    public int TotalBalls =>
+        caughtBalls + missedBalls + wrongCaughtBalls + correctPasses;
 
     public float AverageReactionTime => averageReactionTime;
 
@@ -72,6 +86,8 @@ public class PassReactionStatsManager : MonoBehaviour
 
     public int TotalCaught => totalCaught;
     public int TotalMissed => totalMissed;
+    public int TotalWrongCaught => totalWrongCaught;
+    public int TotalCorrectPasses => totalCorrectPasses;
     public int TotalPasses => totalPasses;
 
     public float TotalAccuracy => totalAccuracy;
@@ -85,6 +101,8 @@ public class PassReactionStatsManager : MonoBehaviour
     {
         caughtBalls = 0;
         missedBalls = 0;
+        wrongCaughtBalls = 0;
+        correctPasses = 0;
 
         totalReactionTime = 0f;
         averageReactionTime = 0f;
@@ -93,27 +111,47 @@ public class PassReactionStatsManager : MonoBehaviour
     }
 
     // =====================================================
-    // REGISTRAR ATRAPADA
+    // ATRAPADA CORRECTA
     // =====================================================
 
     public void RegisterCatch(float reactionTime)
     {
         caughtBalls++;
 
+        reactionTime = Mathf.Max(0f, reactionTime);
+
         totalReactionTime += reactionTime;
         currentReactionTimes.Add(reactionTime);
 
         averageReactionTime =
-            totalReactionTime / caughtBalls;
+            totalReactionTime / currentReactionTimes.Count;
     }
 
     // =====================================================
-    // REGISTRAR FALLO
+    // OMISIÓN: NO ATRAPÓ UN BALÓN QUE DEBÍA ATRAPAR
     // =====================================================
 
     public void RegisterMiss()
     {
         missedBalls++;
+    }
+
+    // =====================================================
+    // ATRAPADA INCORRECTA: ATRAPÓ UN BALÓN QUE DEBÍA DEJAR PASAR
+    // =====================================================
+
+    public void RegisterWrongCatch()
+    {
+        wrongCaughtBalls++;
+    }
+
+    // =====================================================
+    // PASE CORRECTO: DEJÓ PASAR EL BALÓN
+    // =====================================================
+
+    public void RegisterCorrectPass()
+    {
+        correctPasses++;
     }
 
     // =====================================================
@@ -127,12 +165,14 @@ public class PassReactionStatsManager : MonoBehaviour
             level = level,
             caught = caughtBalls,
             missed = missedBalls,
+            wrongCaught = wrongCaughtBalls,
+            correctPasses = correctPasses,
             averageReaction = averageReactionTime,
             reactionTimes = new List<float>(currentReactionTimes)
         };
 
         stats.accuracy = stats.Total > 0
-            ? (float)stats.caught / stats.Total * 100f
+            ? (float)stats.CorrectDecisions / stats.Total * 100f
             : 0f;
 
         if (currentReactionTimes.Count > 0)
@@ -166,8 +206,7 @@ public class PassReactionStatsManager : MonoBehaviour
 
             default:
                 Debug.LogError(
-                    "[PASSES] No se pueden guardar resultados " +
-                    "para el nivel " + level + ".",
+                    $"[PASSES] No se pueden guardar resultados para el nivel {level}.",
                     this
                 );
                 break;
@@ -190,10 +229,27 @@ public class PassReactionStatsManager : MonoBehaviour
             level2Stats.missed +
             level3Stats.missed;
 
-        totalPasses = totalCaught + totalMissed;
+        totalWrongCaught =
+            level1Stats.wrongCaught +
+            level2Stats.wrongCaught +
+            level3Stats.wrongCaught;
+
+        totalCorrectPasses =
+            level1Stats.correctPasses +
+            level2Stats.correctPasses +
+            level3Stats.correctPasses;
+
+        totalPasses =
+            totalCaught +
+            totalMissed +
+            totalWrongCaught +
+            totalCorrectPasses;
+
+        int correctDecisions =
+            totalCaught + totalCorrectPasses;
 
         totalAccuracy = totalPasses > 0
-            ? (float)totalCaught / totalPasses * 100f
+            ? (float)correctDecisions / totalPasses * 100f
             : 0f;
 
         float reactionSum = 0f;
@@ -235,6 +291,8 @@ public class PassReactionStatsManager : MonoBehaviour
 
         totalCaught = 0;
         totalMissed = 0;
+        totalWrongCaught = 0;
+        totalCorrectPasses = 0;
         totalPasses = 0;
 
         totalAccuracy = 0f;

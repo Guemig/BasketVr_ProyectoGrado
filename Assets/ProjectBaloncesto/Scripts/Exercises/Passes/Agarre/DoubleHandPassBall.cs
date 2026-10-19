@@ -1,11 +1,49 @@
+
+using System;
 using System.Collections;
 using UnityEngine;
 
 public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
 {
+    public enum BallState
+    {
+        Inactive,
+        ActiveCatch,
+        ActiveLetPass,
+        Correct,
+        Incorrect
+    }
+
+    public enum BallAction
+    {
+        Catch,
+        LetPass
+    }
+
+    // =====================================================
+    // CONFIGURACIÓN DE TIEMPOS
+    // =====================================================
+
     [Header("Tiempo de vida")]
-    [SerializeField] private float catchDuration = 0.3f;
-    [SerializeField] private float maxLifeTime = 3f;
+    [SerializeField, Min(0f)] private float catchDuration = 0.3f;
+    [SerializeField, Min(0.1f)] private float maxLifeTime = 3f;
+
+    // =====================================================
+    // ACTIVACIÓN POR DISTANCIA
+    // =====================================================
+
+    [Header("Activación por distancia")]
+    [Tooltip(
+        "Porcentaje de distancia que debe quedar hasta el objetivo " +
+        "para activar el balón. 0.8 significa que se activa al recorrer " +
+        "aproximadamente el 20 % de la distancia inicial."
+    )]
+    [Range(0f, 1f)]
+    [SerializeField] private float activationDistancePercent = 0.8f;
+
+    // =====================================================
+    // REFERENCIAS
+    // =====================================================
 
     private PassReactionGameManager gameManager;
     private BallLauncher launcher;
@@ -14,19 +52,58 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
     private Rigidbody rb;
     private Collider ballCollider;
 
-    // Zona responsable del agarre.
     private DoubleHandGripZone currentGripZone;
+
+    // =====================================================
+    // ESTADO INTERNO
+    // =====================================================
 
     private bool resolved;
     private float launchTime;
+    private float initialDistanceToTarget;
 
     private Coroutine lifeCoroutine;
     private Coroutine catchCoroutine;
+
+    private BallAction assignedAction = BallAction.Catch;
+
+    private Vector3 playerPositionAtLaunch;
+    private Vector3 targetPositionAtLaunch;
+
+    public BallState CurrentState { get; private set; } =
+        BallState.Inactive;
+
+    public BallAction AssignedAction => assignedAction;
+
+    public Vector3 PlayerPositionAtLaunch => playerPositionAtLaunch;
+
+    public Vector3 TargetPositionAtLaunch => targetPositionAtLaunch;
+
+    // =====================================================
+    // EVENTOS DE RESULTADO
+    // =====================================================
+
+    public event Action<float> OnCorrectCatch;
+    public event Action OnWrongCatch;
+    public event Action OnMiss;
+    public event Action OnCorrectPass;
+
+    // =====================================================
+    // INICIALIZACIÓN
+    // =====================================================
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         ballCollider = GetComponent<Collider>();
+    }
+
+    private void Update()
+    {
+        if (resolved || CurrentState != BallState.Inactive)
+            return;
+
+        CheckActivationDistance();
     }
 
     // =====================================================
@@ -36,6 +113,27 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
     public void SetPool(ObjectPool objectPool)
     {
         pool = objectPool;
+    }
+
+    // =====================================================
+    // CONFIGURACIÓN DEL LANZAMIENTO
+    // =====================================================
+
+    public void SetLaunchData(
+        BallAction action,
+        Vector3 playerPosition,
+        Vector3 targetPosition)
+    {
+        assignedAction = action;
+        playerPositionAtLaunch = playerPosition;
+        targetPositionAtLaunch = targetPosition;
+
+        initialDistanceToTarget = Vector3.Distance(
+            transform.position,
+            targetPositionAtLaunch
+        );
+
+        CurrentState = BallState.Inactive;
     }
 
     // =====================================================
@@ -56,7 +154,9 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
         launcher = ballLauncher;
 
         resolved = false;
-        launchTime = Time.time;
+
+        // El tiempo de reacción se inicializa cuando se activa.
+        launchTime = 0f;
 
         transform.SetParent(null);
 
@@ -65,6 +165,40 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
 
         ResetRigidbody();
 
+        // El balón todavía no acepta atrapadas.
+        CurrentState = BallState.Inactive;
+    }
+
+    // =====================================================
+    // ACTIVACIÓN POR DISTANCIA
+    // =====================================================
+
+    private void CheckActivationDistance()
+    {
+        float remainingDistance = Vector3.Distance(
+            transform.position,
+            targetPositionAtLaunch
+        );
+
+        float activationThreshold =
+            initialDistanceToTarget * activationDistancePercent;
+
+        if (remainingDistance <= activationThreshold)
+            ActivateBall();
+    }
+
+    private void ActivateBall()
+    {
+        if (resolved || CurrentState != BallState.Inactive)
+            return;
+
+        CurrentState = assignedAction == BallAction.Catch
+            ? BallState.ActiveCatch
+            : BallState.ActiveLetPass;
+
+        launchTime = Time.time;
+
+        // El tiempo de vida empieza a contar desde la activación.
         lifeCoroutine = StartCoroutine(LifeTimer());
     }
 
@@ -77,32 +211,51 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
         if (resolved || gripZone == null)
             return false;
 
-        CatchBall(gripZone);
+        // No se puede atrapar antes de la activación.
+        if (CurrentState != BallState.ActiveCatch &&
+            CurrentState != BallState.ActiveLetPass)
+        {
+            return false;
+        }
+
+        currentGripZone = gripZone;
+
+        if (CurrentState == BallState.ActiveCatch)
+        {
+            CatchCorrectBall(gripZone);
+        }
+        else
+        {
+            CatchIncorrectBall();
+        }
 
         return true;
     }
 
-private void CatchBall(DoubleHandGripZone gripZone)
+    // =====================================================
+    // ATRAPADA CORRECTA
+    // =====================================================
+
+    private void CatchCorrectBall(DoubleHandGripZone gripZone)
     {
-        if (resolved || gripZone == null)
+        if (resolved)
             return;
 
         resolved = true;
-        currentGripZone = gripZone;
+        CurrentState = BallState.Correct;
 
         StopLifeCoroutine();
 
-        float reactionTime = Time.time - launchTime;
-
-        Vector3 caughtPosition = gripZone.transform.position;
-        Quaternion caughtRotation = gripZone.transform.rotation;
-
-        if (launcher != null)
-            launcher.BallResolved();
+        float reactionTime = Mathf.Max(
+            0f,
+            Time.time - launchTime
+        );
 
         if (rb != null)
         {
             rb.useGravity = false;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
             rb.isKinematic = true;
         }
 
@@ -110,36 +263,91 @@ private void CatchBall(DoubleHandGripZone gripZone)
             ballCollider.enabled = false;
 
         transform.SetParent(null);
+
         transform.SetPositionAndRotation(
-            caughtPosition,
-            caughtRotation
+            gripZone.transform.position,
+            gripZone.transform.rotation
         );
 
-        if (gameManager != null)
-            gameManager.RegisterCatch(reactionTime);
+        if (launcher != null)
+            launcher.BallResolved();
+
+        OnCorrectCatch?.Invoke(reactionTime);
 
         catchCoroutine = StartCoroutine(DestroyAfterCatch());
     }
 
+    // =====================================================
+    // ATRAPADA INCORRECTA
+    // =====================================================
+
+    private void CatchIncorrectBall()
+    {
+        if (resolved)
+            return;
+
+        resolved = true;
+        CurrentState = BallState.Incorrect;
+
+        StopLifeCoroutine();
+
+        // Detener el balón para impedir nuevas colisiones.
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = true;
+        }
+
+        if (ballCollider != null)
+            ballCollider.enabled = false;
+
+        if (launcher != null)
+            launcher.BallResolved();
+
+        // El balón debía dejarse pasar, pero fue atrapado.
+        OnWrongCatch?.Invoke();
+
+        catchCoroutine = StartCoroutine(DestroyAfterCatch());
+    }
+
+    // =====================================================
+    // RESOLVER CUANDO TERMINA EL RECORRIDO
+    // =====================================================
 
     public void Missed()
     {
         if (resolved)
             return;
 
+        // No registrar el resultado si el balón todavía no se activó.
+        if (CurrentState == BallState.Inactive)
+            return;
+
         resolved = true;
 
         StopLifeCoroutine();
 
+        if (CurrentState == BallState.ActiveCatch)
+        {
+            CurrentState = BallState.Incorrect;
+
+            // Debía atraparse, pero no fue atrapado.
+            OnMiss?.Invoke();
+        }
+        else if (CurrentState == BallState.ActiveLetPass)
+        {
+            CurrentState = BallState.Correct;
+
+            // Debía dejarse pasar y nadie lo atrapó.
+            OnCorrectPass?.Invoke();
+        }
+
         if (launcher != null)
             launcher.BallResolved();
 
-        if (gameManager != null)
-            gameManager.RegisterMiss();
-
         ReturnToPool();
     }
-
 
     private IEnumerator LifeTimer()
     {
@@ -147,14 +355,12 @@ private void CatchBall(DoubleHandGripZone gripZone)
 
         lifeCoroutine = null;
 
-        if (resolved)
-            yield break;
-
-        Missed();
+        if (!resolved)
+            Missed();
     }
 
     // =====================================================
-    // ESPERA DESPUÉS DE ATRAPAR
+    // ESPERA DESPUÉS DE RESOLVER POR AGARRE
     // =====================================================
 
     private IEnumerator DestroyAfterCatch()
@@ -196,7 +402,6 @@ private void CatchBall(DoubleHandGripZone gripZone)
         lifeCoroutine = null;
         catchCoroutine = null;
 
-        // Restablecer el estado visual de la zona.
         if (currentGripZone != null)
         {
             currentGripZone.ResetGrip();
@@ -209,6 +414,9 @@ private void CatchBall(DoubleHandGripZone gripZone)
             ballCollider.enabled = true;
 
         ResetRigidbody();
+
+        // Cambiar el estado antes de devolverlo al pool.
+        CurrentState = BallState.Inactive;
 
         if (pool != null)
         {
@@ -243,8 +451,6 @@ private void CatchBall(DoubleHandGripZone gripZone)
         if (rb == null)
             return;
 
-        // Primero pasar a dinámico para poder limpiar
-        // las velocidades de forma segura.
         rb.isKinematic = false;
 
         rb.linearVelocity = Vector3.zero;

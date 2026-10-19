@@ -24,6 +24,9 @@ public class PassReactionGameManager : MonoBehaviour
     [Header("Estadísticas")]
     [SerializeField] private PassReactionStatsManager statsManager;
 
+    [Header("Indicador visual de máquinas")]
+    [SerializeField] private PassMachineIndicator machineIndicator;
+
     // =====================================================
     // ESTADO DEL EJERCICIO
     // =====================================================
@@ -350,8 +353,6 @@ public class PassReactionGameManager : MonoBehaviour
             return;
         }
 
-        // El contador aumenta únicamente cuando se solicita
-        // un lanzamiento a una máquina válida.
         shotsLaunched++;
 
         selectedLauncher.LaunchBall();
@@ -363,10 +364,10 @@ public class PassReactionGameManager : MonoBehaviour
             this
         );
     }
-
     // =====================================================
     // CONFIGURACIÓN DE MÁQUINAS
     // =====================================================
+
 
     private bool ConfigureMachinesForLevel(int level)
     {
@@ -380,7 +381,16 @@ public class PassReactionGameManager : MonoBehaviour
             return false;
         }
 
-        return machineManager.ConfigureLevel(level);
+        if (!machineManager.ConfigureLevel(level))
+            return false;
+
+        if (machineIndicator != null)
+        {
+            machineIndicator.BindMachines(machineManager);
+            machineIndicator.SetLevel(level);
+        }
+
+        return true;
     }
 
     private int GetCurrentLevelShots()
@@ -527,6 +537,39 @@ public class PassReactionGameManager : MonoBehaviour
             return;
 
         BeginLevelTransition();
+    }
+
+    // =====================================================
+    // ATRAPADA INCORRECTA
+    // =====================================================
+
+    public void RegisterWrongCatch()
+    {
+        if (!gameRunning ||
+            isFinishingLevel ||
+            statsManager == null)
+        {
+            return;
+        }
+
+        BallFinished();
+    }
+
+    // =====================================================
+    // PASE CORRECTO
+    // =====================================================
+
+    public void RegisterCorrectPass()
+    {
+        if (!gameRunning ||
+            isFinishingLevel ||
+            statsManager == null)
+        {
+            return;
+        }
+
+        
+        BallFinished();
     }
 
     // =====================================================

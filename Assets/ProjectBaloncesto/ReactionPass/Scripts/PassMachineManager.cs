@@ -45,7 +45,13 @@ public class PassMachineManager : MonoBehaviour
     // =====================================================
 
     private int currentLevel = 1;
+
+    // Índice de la última máquina seleccionada.
     private int lastMachineIndex = -1;
+
+    // Nivel 3: 1 = sentido ascendente, -1 = sentido inverso.
+    private int level3Direction = 1;
+
     private bool levelConfigured;
 
     public int CurrentLevel => currentLevel;
@@ -83,7 +89,15 @@ public class PassMachineManager : MonoBehaviour
             levelConfigManager.GetLevelConfigForLevel(level);
 
         if (config == null)
+        {
+            Debug.LogError(
+                $"[PASS MACHINES] No se encontró la configuración " +
+                $"del nivel {level}.",
+                this
+            );
+
             return false;
+        }
 
         if (!ValidateLaunchers())
             return false;
@@ -132,8 +146,7 @@ public class PassMachineManager : MonoBehaviour
                 return false;
             }
 
-            // La raíz de la máquina recibe la posición y orientación
-            // del punto asignado en el Inspector.
+            // Aplicar posición y orientación configuradas en el Inspector.
             launcher.transform.SetPositionAndRotation(
                 destination.position,
                 destination.rotation
@@ -141,9 +154,13 @@ public class PassMachineManager : MonoBehaviour
 
             launcher.SetMachineBaseRotation(destination.rotation);
 
-            // Aplicar los datos de velocidad y disparos del nivel.
+            // Aplicar configuración del nivel.
             launcher.SetLevel(level, config);
         }
+
+        // El inicio y el sentido del nivel 3 se decidirán
+        // al seleccionar la primera máquina.
+        level3Direction = 1;
 
         levelConfigured = true;
 
@@ -191,6 +208,10 @@ public class PassMachineManager : MonoBehaviour
         }
     }
 
+    // =====================================================
+    // CANTIDAD DE MÁQUINAS POR NIVEL
+    // =====================================================
+
     private int GetMachineCountForLevel(int level)
     {
         switch (level)
@@ -203,7 +224,7 @@ public class PassMachineManager : MonoBehaviour
     }
 
     // =====================================================
-    // SELECCIONAR MÁQUINA ALEATORIA
+    // SELECCIÓN DE MÁQUINAS POR NIVEL
     // =====================================================
 
     public BallLauncher GetNextLauncher()
@@ -223,58 +244,87 @@ public class PassMachineManager : MonoBehaviour
         if (machineCount <= 0)
             return null;
 
-        int[] candidates = new int[machineCount];
-        int candidateCount = 0;
+        int selectedIndex;
 
-        for (int i = 0; i < machineCount; i++)
+        switch (currentLevel)
         {
-            BallLauncher launcher = machineLaunchers[i];
+            // -------------------------------------------------
+            // NIVEL 1: UNA SOLA MÁQUINA
+            // -------------------------------------------------
 
-            if (launcher == null || !launcher.gameObject.activeInHierarchy)
-                continue;
+            case 1:
+                selectedIndex = 0;
+                break;
 
-            // Evitar repetir la máquina anterior si hay otra disponible.
-            if (machineCount > 1 && i == lastMachineIndex)
-                continue;
+            // -------------------------------------------------
+            // NIVEL 2: ALTERNANCIA ENTRE DOS MÁQUINAS
+            // -------------------------------------------------
 
-            candidates[candidateCount] = i;
-            candidateCount++;
-        }
-
-        // Si solo quedaba la última máquina como opción, permitirla.
-        if (candidateCount == 0)
-        {
-            for (int i = 0; i < machineCount; i++)
-            {
-                BallLauncher launcher = machineLaunchers[i];
-
-                if (launcher == null ||
-                    !launcher.gameObject.activeInHierarchy)
+            case 2:
+                if (lastMachineIndex == -1)
                 {
-                    continue;
+                    // La primera máquina es aleatoria.
+                    selectedIndex = Random.Range(0, 2);
+                }
+                else
+                {
+                    // Después se alternan obligatoriamente.
+                    selectedIndex = lastMachineIndex == 0 ? 1 : 0;
                 }
 
-                candidates[candidateCount] = i;
-                candidateCount++;
-            }
+                break;
+
+            // -------------------------------------------------
+            // NIVEL 3: CICLO DE TRES MÁQUINAS
+            // -------------------------------------------------
+
+            case 3:
+                if (lastMachineIndex == -1)
+                {
+                    // Elegir aleatoriamente la máquina inicial.
+                    selectedIndex = Random.Range(0, 3);
+
+                    // Elegir aleatoriamente el sentido del recorrido.
+                    level3Direction =
+                        Random.value < 0.5f ? 1 : -1;
+                }
+                else
+                {
+                    // Avanzar al siguiente índice en el sentido elegido.
+                    selectedIndex =
+                        (lastMachineIndex + level3Direction + 3) % 3;
+                }
+
+                break;
+
+            default:
+                return null;
         }
 
-        if (candidateCount == 0)
+        // Validar que la máquina seleccionada esté disponible.
+        BallLauncher selectedLauncher = machineLaunchers[selectedIndex];
+
+        if (selectedLauncher == null ||
+            !selectedLauncher.gameObject.activeInHierarchy)
         {
             Debug.LogError(
-                "[PASS MACHINES] No hay máquinas activas disponibles.",
+                $"[PASS MACHINES] La máquina {selectedIndex + 1} " +
+                "no está disponible.",
                 this
             );
 
             return null;
         }
 
-        int selectedIndex =
-            candidates[Random.Range(0, candidateCount)];
-
         lastMachineIndex = selectedIndex;
 
-        return machineLaunchers[selectedIndex];
+        Debug.Log(
+            $"[PASS MACHINES] Nivel {currentLevel}: " +
+            $"máquina seleccionada {selectedIndex + 1}.",
+            this
+        );
+
+        return selectedLauncher;
     }
 
     // =====================================================
@@ -301,6 +351,9 @@ public class PassMachineManager : MonoBehaviour
 
     public void ResetVisualFeeds()
     {
+        if (machineLaunchers == null)
+            return;
+
         foreach (BallLauncher launcher in machineLaunchers)
         {
             if (launcher != null)
@@ -354,6 +407,32 @@ public class PassMachineManager : MonoBehaviour
         }
 
         return true;
+    }
+
+    public int GetMachineIndex(BallLauncher launcher)
+    {
+        if (launcher == null || machineLaunchers == null)
+            return -1;
+
+        for (int i = 0; i < machineLaunchers.Length; i++)
+        {
+            if (machineLaunchers[i] == launcher)
+                return i;
+        }
+
+        return -1;
+    }
+
+    public BallLauncher GetLauncher(int index)
+    {
+        if (machineLaunchers == null ||
+            index < 0 ||
+            index >= machineLaunchers.Length)
+        {
+            return null;
+        }
+
+        return machineLaunchers[index];
     }
 
     private bool ValidatePositions(int level)

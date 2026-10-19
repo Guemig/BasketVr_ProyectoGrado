@@ -2040,7 +2040,7 @@ MonoBehaviour:
   curvePoint: 0.75
   spinSpeed: 333
   machineTurnSpeed: 8
-  launchDelay: 0.15
+  warningDuration: 0.7
   currentLevel: 1
   showGizmos: 1
   gizmoRadius: 0.12

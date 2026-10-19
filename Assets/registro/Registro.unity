@@ -1843,14 +1843,14 @@ MonoBehaviour:
   m_VerticalScrollbarEventHandler: {fileID: 0}
   m_LayoutGroup: {fileID: 0}
   m_ScrollSensitivity: 1
-  m_ContentType: 2
+  m_ContentType: 5
   m_InputType: 0
   m_AsteriskChar: 42
-  m_KeyboardType: 4
+  m_KeyboardType: 0
   m_LineType: 0
   m_HideMobileInput: 0
   m_HideSoftKeyboard: 0
-  m_CharacterValidation: 2
+  m_CharacterValidation: 5
   m_RegexValue: 
   m_GlobalPointSize: 14
   m_CharacterLimit: 0
@@ -2340,9 +2340,9 @@ MonoBehaviour:
   botonIniciarSesion: {fileID: 1098423356}
   mensajeErrorLogin: {fileID: 2138463784}
   modoTest: 1
-  nombreTest: Leo
-  codigoRegistroTest: 30000089928
-  codigoLoginTest: 30000089928
+  nombreTest: Sebas gutierrez
+  codigoRegistroTest: 30000089926
+  codigoLoginTest: 30000089926
   esperaAntesDeCambiar: 0.25
   nombreEscenaSiguiente: Casilleros
 --- !u!4 &354227234
@@ -5802,7 +5802,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0.147}
+  m_AnchoredPosition: {x: 0, y: 0.199}
   m_SizeDelta: {x: 706.6, y: 61.77}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &752211713
