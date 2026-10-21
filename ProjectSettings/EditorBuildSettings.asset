@@ -24,7 +24,7 @@ EditorBuildSettings:
     path: Assets/ProjectBaloncesto/Scenes/Luces.unity
     guid: 1ec51c4d65507054e9c0f16680c782cc
   - enabled: 1
-    path: Assets/DriblingReactivo/DriblingReactivo.unity
+    path: Assets/DriblingReactivo/Dribling.unity
     guid: 90346963bce60604a868de726960a405
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
