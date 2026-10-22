@@ -1,4 +1,3 @@
-
 using UnityEngine;
 
 public class DoubleHandGripController : MonoBehaviour
@@ -29,7 +28,6 @@ public class DoubleHandGripController : MonoBehaviour
     [Tooltip("Desplaza la zona sobre el eje Z local de la mano izquierda.")]
     [SerializeField] private float offsetZ = 0.05f;
 
-    private bool tutorialMode;
 
     private enum PalmAxis
     {
@@ -43,9 +41,21 @@ public class DoubleHandGripController : MonoBehaviour
 
     private void Update()
     {
-        // La zona solo funciona mientras el nivel está ejecutándose.
-        if (!tutorialMode &&
-            (gameManager == null || !gameManager.GameRunning))
+        ReactionModeController.ReactionMode currentMode =
+            ReactionModeController.CurrentMode;
+
+        bool isTutorial =
+            currentMode == ReactionModeController.ReactionMode.Tutorial;
+
+        bool isTraining =
+            currentMode == ReactionModeController.ReactionMode.Training;
+
+        bool exerciseActive =
+            isTutorial ||
+            isTraining ||
+            (gameManager != null && gameManager.GameRunning);
+
+        if (!exerciseActive)
         {
             SetGripReady(false);
             return;
@@ -85,13 +95,6 @@ public class DoubleHandGripController : MonoBehaviour
     }
 
 
-    public void SetTutorialMode(bool enabled)
-    {
-        tutorialMode = enabled;
-
-        if (!enabled)
-            SetGripReady(false);
-    }
     private bool ArePalmsFacingEachOther()
     {
         Vector3 directionBetweenHands =

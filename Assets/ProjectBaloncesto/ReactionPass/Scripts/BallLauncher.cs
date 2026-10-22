@@ -225,8 +225,20 @@ public class BallLauncher : MonoBehaviour
             return;
         }
 
+
         if (currentBall != null || prepareLaunchCoroutine != null)
+        {
+            Debug.LogWarning(
+                $"[BallLauncher] Lanzamiento bloqueado. " +
+                $"Hay balón activo: {currentBall != null}. " +
+                $"Preparación en curso: {prepareLaunchCoroutine != null}. " +
+                $"Tutorial: {tutorialMode}.",
+                this
+            );
+
             return;
+        }
+
 
         if (spawnPoint == null)
         {
@@ -255,12 +267,18 @@ public class BallLauncher : MonoBehaviour
             return;
         }
 
-        // La acción ya fue decidida por PassMachineManager.
         nextBallAction = action;
+
+        Debug.Log(
+            $"[BallLauncher] Preparando lanzamiento. " +
+            $"Tutorial: {tutorialMode}, " +
+            $"GameRunning: {(gameManager != null && gameManager.GameRunning)}, " +
+            $"Acción: {action}",
+            this
+        );
 
         prepareLaunchCoroutine = StartCoroutine(PrepareLaunch());
     }
-
     private void HandleCorrectCatch(float reactionTime)
     {
         if (gameManager != null)
@@ -289,6 +307,18 @@ public class BallLauncher : MonoBehaviour
     public void SetTutorialMode(bool enabled)
     {
         tutorialMode = enabled;
+
+        if (enabled)
+        {
+            // Permite lanzar aunque el lanzador se haya detenido antes.
+            launchAllowed = true;
+
+            Debug.Log(
+                "[BallLauncher] Modo tutorial activado. " +
+                "Lanzamientos habilitados: " + launchAllowed,
+                this
+            );
+        }
     }
     private void SubscribeBallEvents(DoubleHandPassBall ball)
     {
@@ -314,7 +344,6 @@ public class BallLauncher : MonoBehaviour
         ball.OnCorrectPass -= HandleCorrectPass;
     }
 
-
     private IEnumerator PrepareLaunch()
     {
         if (!TryGetRandomOffset(
@@ -334,7 +363,6 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // 1. Determinar la acción del próximo balón.
         DoubleHandPassBall.BallState nextState =
             nextBallAction == DoubleHandPassBall.BallAction.Catch
                 ? DoubleHandPassBall.BallState.ActiveCatch
@@ -342,18 +370,18 @@ public class BallLauncher : MonoBehaviour
 
         OnNextBallStateChanged?.Invoke(this, nextState);
 
-        // 2. Avisar que esta máquina va a disparar.
         SetLaunchState(LaunchState.Warning);
-
-        // 3. Orientar la máquina hacia el destino.
         RotateMachineToTarget(targetPosition);
 
-        // 4. Esperar el tiempo de aviso.
         yield return new WaitForSeconds(warningDuration);
 
+        // El tutorial puede disparar sin que la partida normal esté activa.
+        bool gameCanContinue =
+            tutorialMode ||
+            (gameManager != null && gameManager.GameRunning);
+
         if (!launchAllowed ||
-            gameManager == null ||
-            !gameManager.GameRunning ||
+            !gameCanContinue ||
             currentBall != null)
         {
             SetLaunchState(LaunchState.Idle);
@@ -361,7 +389,6 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // 5. Actualizar el destino por si el jugador se movió.
         if (!TryCalculateTargetPosition(
                 horizontal,
                 vertical,
@@ -383,7 +410,6 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // 6. Obtener un balón del pool.
         currentBall = ballPool.Get();
 
         if (currentBall == null)
@@ -425,14 +451,12 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // 7. Transmitir acción y referencias espaciales.
         passBall.SetLaunchData(
             nextBallAction,
             playerTargetCenter.position,
             targetPosition
         );
 
-        // 8. Preparar el balón.
         reactionBall.Setup(gameManager, this);
 
         if (tutorialMode)
@@ -444,13 +468,10 @@ public class BallLauncher : MonoBehaviour
 
         if (rb != null)
         {
-            // Dejar primero el cuerpo en modo cinemático.
-            // No asignar velocidades en este estado.
             rb.isKinematic = true;
             rb.useGravity = false;
         }
 
-        // 9. Finalizar el aviso e iniciar el movimiento.
         SetLaunchState(LaunchState.Firing);
 
         movementCoroutine = StartCoroutine(
@@ -462,10 +483,6 @@ public class BallLauncher : MonoBehaviour
 
         prepareLaunchCoroutine = null;
     }
-
-    // =========================================================
-    // CÁLCULO DE ORIENTACIÓN Y OBJETIVO
-    // =========================================================
 
     private bool TryGetShotAxes(
         out Vector3 forward,

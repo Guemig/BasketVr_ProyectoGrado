@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,28 +27,26 @@ public class PassTutoController : MonoBehaviour
         public StepType stepType;
 
         [Header("Demostración")]
-        public DoubleHandPassBall.BallAction action;
-
         [Tooltip(
-            "CorrectCatch: atrapar correctamente. " +
-            "CorrectPass: dejar pasar correctamente."
+            "CorrectCatch: atrapar el balón correctamente. " +
+            "MissCatch: dejar pasar un balón que debía atraparse. " +
+            "CorrectPass: dejar pasar correctamente un balón. " +
+            "WrongCatch: atrapar por error un balón que debía dejarse pasar."
         )]
         public PassTutorialReaction.ExpectedResult expectedResult;
 
-        [Header("Cantidad de aciertos")]
-        [Min(1)]
+        [Header("Cantidad de respuestas correctas requeridas")]
+        [Min(0)]
         public int requiredCorrectBalls = 1;
 
-        [Tooltip(
-            "Si está activado, los errores reinician " +
-            "los aciertos acumulados."
-        )]
-        public bool resetProgressOnFailure = false;
-
-        [TextArea(2, 4)]
-        public string failureText =
-            "¡Inténtalo de nuevo! Observa la indicación del balón.";
+        [Header("Cantidad de errores requeridos")]
+        [Min(0)]
+        public int requiredErrors = 0;
     }
+
+    // =====================================================
+    // REFERENCIAS
+    // =====================================================
 
     [Header("Pasos del tutorial")]
     [SerializeField]
@@ -63,8 +62,8 @@ public class PassTutoController : MonoBehaviour
     [SerializeField] private GameObject tutorialCanvas;
     [SerializeField] private GameObject dialogueContainer;
     [SerializeField] private TextMeshProUGUI dialogueText;
+    [SerializeField] private GameObject nextButtonObject;
     [SerializeField] private Button nextButton;
-    [SerializeField] private TextMeshProUGUI nextButtonText;
 
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
@@ -73,23 +72,28 @@ public class PassTutoController : MonoBehaviour
     [SerializeField, Min(0f)]
     private float typingDelay = 0.03f;
 
+    // =====================================================
+    // ESTADO
+    // =====================================================
+
     private int currentStepIndex = -1;
-    private int successfulBalls;
 
     private bool isTyping;
     private bool demonstrationRunning;
     private bool demonstrationCompleted;
 
-    private string currentButtonLabel = "Continuar";
-    private bool buttonShouldBeDisabled;
-
     private Coroutine typingCoroutine;
     private Coroutine continueDemoCoroutine;
 
     private TutorialStep CurrentStep =>
-        currentStepIndex >= 0 && currentStepIndex < steps.Count
+        currentStepIndex >= 0 &&
+        currentStepIndex < steps.Count
             ? steps[currentStepIndex]
             : null;
+
+    // =====================================================
+    // INICIALIZACIÓN
+    // =====================================================
 
     private void Awake()
     {
@@ -102,9 +106,15 @@ public class PassTutoController : MonoBehaviour
             nextButton.interactable = false;
         }
 
+        SetNextButtonVisible(false);
+
         if (tutorialCanvas != null)
             tutorialCanvas.SetActive(false);
     }
+
+    // =====================================================
+    // INICIAR TUTORIAL
+    // =====================================================
 
     public void StartTutorial()
     {
@@ -128,8 +138,6 @@ public class PassTutoController : MonoBehaviour
         );
 
         currentStepIndex = -1;
-        successfulBalls = 0;
-
         demonstrationRunning = false;
         demonstrationCompleted = false;
 
@@ -141,6 +149,10 @@ public class PassTutoController : MonoBehaviour
 
         BeginNextStep();
     }
+
+    // =====================================================
+    // SIGUIENTE PASO
+    // =====================================================
 
     private void BeginNextStep()
     {
@@ -156,7 +168,6 @@ public class PassTutoController : MonoBehaviour
 
         TutorialStep step = CurrentStep;
 
-        successfulBalls = 0;
         demonstrationRunning = false;
         demonstrationCompleted = false;
 
@@ -166,18 +177,27 @@ public class PassTutoController : MonoBehaviour
             return;
         }
 
+        SetNextButtonVisible(step.stepType == StepType.Button);
+
         ShowText(step.text, step.audio);
 
-        if (step.stepType == StepType.Button)
-        {
-            SetButton("Continuar", false);
-        }
-        else
-        {
-            SetButton("Continuar", true);
+        if (step.stepType == StepType.Demonstration)
             StartAutomaticDemonstration();
-        }
     }
+
+    // =====================================================
+    // BOTÓN DE AVANCE MANUAL
+    // =====================================================
+
+    private void SetNextButtonVisible(bool visible)
+    {
+        if (nextButtonObject != null)
+            nextButtonObject.SetActive(visible);
+
+        if (nextButton != null)
+            nextButton.interactable = visible && !isTyping;
+    }
+
     public void AdvanceTutorial()
     {
         if (isTyping || demonstrationRunning)
@@ -191,17 +211,44 @@ public class PassTutoController : MonoBehaviour
         BeginNextStep();
     }
 
+    // =====================================================
+    // CONVERTIR RESULTADO EN ACCIÓN
+    // =====================================================
+
+    private DoubleHandPassBall.BallAction GetBallAction(
+        PassTutorialReaction.ExpectedResult result)
+    {
+        switch (result)
+        {
+            case PassTutorialReaction.ExpectedResult.CorrectCatch:
+            case PassTutorialReaction.ExpectedResult.MissCatch:
+                return DoubleHandPassBall.BallAction.Catch;
+
+            case PassTutorialReaction.ExpectedResult.CorrectPass:
+            case PassTutorialReaction.ExpectedResult.WrongCatch:
+                return DoubleHandPassBall.BallAction.LetPass;
+
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(result),
+                    result,
+                    "Resultado de tutorial no válido."
+                );
+        }
+    }
+
+    // =====================================================
+    // INICIAR DEMOSTRACIÓN
+    // =====================================================
+
     private void StartCurrentDemonstration()
     {
         if (tutorialReaction == null)
         {
-            demonstrationRunning = false;
-
             Debug.LogError(
                 "[PASS TUTORIAL] Falta PassTutorialReaction.",
                 this
             );
-
             return;
         }
 
@@ -210,109 +257,91 @@ public class PassTutoController : MonoBehaviour
         if (step == null || demonstrationCompleted)
             return;
 
-        if (!IsConfigurationValid(step))
-        {
-            demonstrationRunning = false;
+        // Cada tipo de resultado utiliza su propio contador.
+        bool isErrorObjective =
+            step.expectedResult == PassTutorialReaction.ExpectedResult.MissCatch ||
+            step.expectedResult == PassTutorialReaction.ExpectedResult.WrongCatch;
 
+        if (isErrorObjective && step.requiredErrors <= 0)
+        {
             Debug.LogError(
-                "[PASS TUTORIAL] Acción y resultado esperado " +
-                "no válidos en el paso " + (currentStepIndex + 1) + ".",
+                "[PASS TUTORIAL] El paso " + (currentStepIndex + 1) +
+                " espera el resultado " + step.expectedResult +
+                ", por lo que requiredErrors debe ser mayor que cero.",
                 this
             );
-
             return;
         }
 
+        if (!isErrorObjective && step.requiredCorrectBalls <= 0)
+        {
+            Debug.LogError(
+                "[PASS TUTORIAL] El paso " + (currentStepIndex + 1) +
+                " espera el resultado " + step.expectedResult +
+                ", por lo que requiredCorrectBalls debe ser mayor que cero.",
+                this
+            );
+            return;
+        }
+
+        SetNextButtonVisible(false);
         demonstrationRunning = true;
 
+        Debug.Log(
+            "[PASS TUTORIAL] Iniciando paso " +
+            (currentStepIndex + 1) +
+            ". Resultado esperado: " + step.expectedResult +
+            ". Acción: " + GetBallAction(step.expectedResult) +
+            ". Cantidad requerida: " +
+            (isErrorObjective
+                ? step.requiredErrors
+                : step.requiredCorrectBalls),
+            this
+        );
+
         tutorialReaction.StartDemonstration(
-            step.action,
+            GetBallAction(step.expectedResult),
             step.expectedResult,
-            OnDemonstrationResult
+            step.requiredCorrectBalls,
+            step.requiredErrors,
+            OnDemonstrationCompleted
         );
     }
-    private bool IsConfigurationValid(TutorialStep step)
+
+    // =====================================================
+    // SECUENCIA COMPLETADA
+    // =====================================================
+
+    private void OnDemonstrationCompleted()
     {
-        switch (step.action)
-        {
-            case DoubleHandPassBall.BallAction.Catch:
-                return step.expectedResult ==
-                           PassTutorialReaction.ExpectedResult.CorrectCatch ||
-                       step.expectedResult ==
-                           PassTutorialReaction.ExpectedResult.WrongCatch;
+        if (!demonstrationRunning)
+            return;
 
-            case DoubleHandPassBall.BallAction.LetPass:
-                return step.expectedResult ==
-                           PassTutorialReaction.ExpectedResult.CorrectPass ||
-                       step.expectedResult ==
-                           PassTutorialReaction.ExpectedResult.MissCatch;
-
-            default:
-                return false;
-        }
-    }
-
-    private void OnDemonstrationResult(bool success)
-    {
         demonstrationRunning = false;
 
         TutorialStep step = CurrentStep;
 
-        if (step == null)
+        if (step == null || demonstrationCompleted)
             return;
 
-        int requiredBalls = Mathf.Max(1, step.requiredCorrectBalls);
+        demonstrationCompleted = true;
 
-        if (success)
-        {
-            successfulBalls++;
+        SetNextButtonVisible(false);
 
-            if (successfulBalls >= requiredBalls)
-            {
-                successfulBalls = requiredBalls;
-                demonstrationCompleted = true;
+        Debug.Log(
+            "[PASS TUTORIAL] Paso " +
+            (currentStepIndex + 1) +
+            " completado. Avanzando al siguiente paso.",
+            this
+        );
 
-                ShowText(
-                    $"¡Excelente! Has conseguido {successfulBalls} " +
-                    $"de {requiredBalls} aciertos.",
-                    null
-                );
-
-                StopAutomaticDemonstration();
-
-                continueDemoCoroutine =
-                    StartCoroutine(AdvanceAfterCompletionText());
-
-                return;
-            }
-
-            int remainingBalls = requiredBalls - successfulBalls;
-
-            ShowText(
-                $"¡Correcto! Llevas {successfulBalls} de " +
-                $"{requiredBalls} aciertos. Te faltan {remainingBalls}.",
-                null
-            );
-        }
-        else
-        {
-            if (step.resetProgressOnFailure)
-                successfulBalls = 0;
-
-            string errorMessage =
-                string.IsNullOrWhiteSpace(step.failureText)
-                    ? "¡Inténtalo de nuevo! Observa la indicación del balón."
-                    : step.failureText;
-
-            ShowText(
-                errorMessage + "\nAciertos: " +
-                successfulBalls + " de " + requiredBalls + ".",
-                null
-            );
-        }
-
-        StartAutomaticDemonstration();
+        continueDemoCoroutine =
+            StartCoroutine(AdvanceAfterCompletionText());
     }
+
+    // =====================================================
+    // AVANCE AUTOMÁTICO
+    // =====================================================
 
     private IEnumerator AdvanceAfterCompletionText()
     {
@@ -326,6 +355,7 @@ public class PassTutoController : MonoBehaviour
 
         BeginNextStep();
     }
+
     private void StartAutomaticDemonstration()
     {
         StopAutomaticDemonstration();
@@ -351,6 +381,10 @@ public class PassTutoController : MonoBehaviour
         StartCurrentDemonstration();
     }
 
+    // =====================================================
+    // TEXTO Y AUDIO
+    // =====================================================
+
     private void ShowText(string message, AudioClip clip)
     {
         StopTyping();
@@ -367,7 +401,10 @@ public class PassTutoController : MonoBehaviour
         }
 
         if (dialogueText == null)
+        {
+            isTyping = false;
             return;
+        }
 
         typingCoroutine = StartCoroutine(TypeText(message));
     }
@@ -396,20 +433,16 @@ public class PassTutoController : MonoBehaviour
         isTyping = false;
         typingCoroutine = null;
 
-        SetButton(currentButtonLabel, buttonShouldBeDisabled);
+        TutorialStep step = CurrentStep;
+
+        SetNextButtonVisible(
+            step != null && step.stepType == StepType.Button
+        );
     }
 
-    private void SetButton(string label, bool disabled)
-    {
-        currentButtonLabel = label;
-        buttonShouldBeDisabled = disabled;
-
-        if (nextButtonText != null)
-            nextButtonText.text = label;
-
-        if (nextButton != null)
-            nextButton.interactable = !disabled && !isTyping;
-    }
+    // =====================================================
+    // DETENER CORRUTINAS
+    // =====================================================
 
     private void StopTyping()
     {
@@ -431,7 +464,35 @@ public class PassTutoController : MonoBehaviour
         }
     }
 
+    // =====================================================
+    // FINALIZAR TUTORIAL
+    // =====================================================
+
     private void FinishTutorial()
+    {
+        StopTyping();
+        StopAutomaticDemonstration();
+
+        demonstrationRunning = false;
+        demonstrationCompleted = true;
+
+        if (tutorialReaction != null)
+            tutorialReaction.StopTutorialReaction();
+
+        SetNextButtonVisible(false);
+
+        if (tutorialCanvas != null)
+            tutorialCanvas.SetActive(false);
+
+        Debug.Log(
+            "[PASS TUTORIAL] Tutorial finalizado.",
+            this
+        );
+
+        OnTutorialFinished?.Invoke();
+    }
+
+    private void OnDisable()
     {
         StopTyping();
         StopAutomaticDemonstration();
@@ -439,18 +500,11 @@ public class PassTutoController : MonoBehaviour
         if (tutorialReaction != null)
             tutorialReaction.StopTutorialReaction();
 
-        if (tutorialCanvas != null)
-            tutorialCanvas.SetActive(false);
-
-        Debug.Log("[PASS TUTORIAL] Tutorial finalizado.", this);
-
-        OnTutorialFinished?.Invoke();
+        demonstrationRunning = false;
     }
 
     private void OnDestroy()
     {
-        StopAutomaticDemonstration();
-
         if (nextButton != null)
             nextButton.onClick.RemoveListener(AdvanceTutorial);
     }
