@@ -3,6 +3,7 @@ using UnityEngine;
 public class DribbleBallFreeMovement : MonoBehaviour
 {
     [SerializeField] private FakeDribbleBall dribbleBall;
+    [SerializeField] private DribbleBallAudio ballAudio;
 
     [Header("Movimiento libre")]
     [SerializeField] private float impulseMultiplier = 0.65f;
@@ -19,10 +20,19 @@ public class DribbleBallFreeMovement : MonoBehaviour
     [SerializeField] private float bounceHorizontalDamping = 0.96f;
     [SerializeField] private float minimumBounceVelocity = 0.25f;
 
+    [Header("Detección de movimiento")]
+    [SerializeField] private float movementThreshold = 0.05f;
+
     private Vector3 velocity;
     private bool movingFreely;
+    private bool touchingFloor;
 
     public bool MovingFreely => movingFreely;
+
+    public bool IsMoving =>
+        movingFreely &&
+        velocity.magnitude >
+        movementThreshold;
 
     private void Update()
     {
@@ -50,7 +60,8 @@ public class DribbleBallFreeMovement : MonoBehaviour
             Vector3.MoveTowards(
                 horizontalVelocity,
                 Vector3.zero,
-                horizontalDrag * Time.deltaTime
+                horizontalDrag *
+                Time.deltaTime
             );
 
         velocity.x =
@@ -64,12 +75,26 @@ public class DribbleBallFreeMovement : MonoBehaviour
             velocity *
             Time.deltaTime;
 
-        if (newPosition.y <= floorY)
+        if (newPosition.y <= floorY &&
+            velocity.y < 0f)
         {
             newPosition.y = floorY;
 
+            float impactSpeed =
+                Mathf.Abs(velocity.y);
+
+            if (!touchingFloor)
+            {
+                touchingFloor = true;
+
+                if (ballAudio != null)
+                {
+                    ballAudio.PlayBounce();
+                }
+            }
+
             float bounceVelocity =
-                Mathf.Abs(velocity.y) *
+                impactSpeed *
                 bounceStrength;
 
             if (bounceVelocity >
@@ -86,11 +111,20 @@ public class DribbleBallFreeMovement : MonoBehaviour
 
                 velocity.z *=
                     bounceHorizontalDamping;
+
+                touchingFloor = false;
             }
             else
             {
-                velocity.y = 0f;
+                velocity = Vector3.zero;
+                movingFreely = false;
+                touchingFloor = true;
             }
+        }
+        else if (newPosition.y >
+                 floorY + 0.03f)
+        {
+            touchingFloor = false;
         }
 
         transform.position =
@@ -124,12 +158,14 @@ public class DribbleBallFreeMovement : MonoBehaviour
                 horizontalImpulse.z
             );
 
+        touchingFloor = false;
         movingFreely = true;
     }
 
     public void StopFreeMovement()
     {
         movingFreely = false;
+        touchingFloor = false;
         velocity = Vector3.zero;
     }
 }

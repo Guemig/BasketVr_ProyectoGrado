@@ -4,11 +4,14 @@ public class DribbleHandManager : MonoBehaviour
 {
     [SerializeField] private FakeDribbleBall dribbleBall;
     [SerializeField] private DribbleBallFreeMovement freeMovement;
+    [SerializeField] private DribbleBallStart ballStart;
 
     [SerializeField] private Transform leftHandTarget;
     [SerializeField] private Transform rightHandTarget;
 
+    [Header("Impulso")]
     [SerializeField] private float releaseSpeed = 0.7f;
+    [SerializeField] private float maximumReleaseAngle = 45f;
 
     private DribbleHandDetector controllingHand;
 
@@ -20,30 +23,92 @@ public class DribbleHandManager : MonoBehaviour
         if (!dribbleBall.IsControlled)
             return;
 
-        Vector3 velocity =
+        if (ballStart != null &&
+            ballStart.WaitingToStart)
+        {
+            return;
+        }
+
+        Vector3 handVelocity =
             controllingHand.HandVelocity;
 
         Vector3 horizontalVelocity =
             new Vector3(
-                velocity.x,
+                handVelocity.x,
                 0f,
-                velocity.z
+                handVelocity.z
             );
 
-        if (horizontalVelocity.magnitude >= releaseSpeed)
+        if (horizontalVelocity.magnitude <
+            releaseSpeed)
         {
-            ReleaseBall(
-                controllingHand,
-                horizontalVelocity
-            );
+            return;
         }
+
+        Transform oppositeHand =
+            controllingHand.IsLeftHand
+            ? rightHandTarget
+            : leftHandTarget;
+
+        if (oppositeHand == null)
+            return;
+
+        Vector3 directionToOtherHand =
+            oppositeHand.position -
+            dribbleBall.transform.position;
+
+        directionToOtherHand.y = 0f;
+
+        if (directionToOtherHand.sqrMagnitude <=
+            0.001f)
+        {
+            return;
+        }
+
+        float angle =
+            Vector3.Angle(
+                horizontalVelocity.normalized,
+                directionToOtherHand.normalized
+            );
+
+        if (angle >
+            maximumReleaseAngle)
+        {
+            return;
+        }
+
+        ReleaseBall(
+            controllingHand,
+            horizontalVelocity
+        );
     }
 
     public void TryTakeControl(
         DribbleHandDetector detector)
     {
+        if (dribbleBall == null)
+            return;
+
         if (dribbleBall.IsControlled)
             return;
+
+        if (ballStart != null &&
+            ballStart.IsAtSpawn())
+        {
+            Transform hand =
+                detector.IsLeftHand
+                ? leftHandTarget
+                : rightHandTarget;
+
+            controllingHand =
+                detector;
+
+            ballStart.StartFromSpawn(
+                hand
+            );
+
+            return;
+        }
 
         TakeControl(detector);
     }
@@ -51,7 +116,8 @@ public class DribbleHandManager : MonoBehaviour
     private void TakeControl(
         DribbleHandDetector detector)
     {
-        controllingHand = detector;
+        controllingHand =
+            detector;
 
         if (freeMovement != null)
         {

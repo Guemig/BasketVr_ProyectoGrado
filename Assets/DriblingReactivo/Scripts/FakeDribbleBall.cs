@@ -3,6 +3,8 @@ using UnityEngine;
 public class FakeDribbleBall : MonoBehaviour
 {
     [SerializeField] private Transform handTarget;
+    [SerializeField] private DribbleBallStart ballStart;
+    [SerializeField] private DribbleBallAudio ballAudio;
 
     [Header("Dribling")]
     [SerializeField] private float floorY = 0.2f;
@@ -13,12 +15,9 @@ public class FakeDribbleBall : MonoBehaviour
     [SerializeField] private float followSmoothTime = 0.05f;
     [SerializeField] private float maxFollowSpeed = 10f;
 
-    [Header("Rotación")]
-    [SerializeField] private Vector3 rotationSpeed =
-        new Vector3(90f, 60f, 40f);
-
     private float dribbleTime;
     private Vector3 horizontalVelocity;
+    private bool floorHit;
 
     public bool IsControlled => handTarget != null;
 
@@ -38,13 +37,14 @@ public class FakeDribbleBall : MonoBehaviour
 
     private void Update()
     {
-        transform.Rotate(
-            rotationSpeed * Time.deltaTime,
-            Space.Self
-        );
-
         if (handTarget == null)
             return;
+
+        if (ballStart != null &&
+            !ballStart.DribbleEnabled)
+        {
+            return;
+        }
 
         dribbleTime +=
             Time.deltaTime *
@@ -87,5 +87,30 @@ public class FakeDribbleBall : MonoBehaviour
                 newY,
                 smoothPosition.z
             );
+
+        CheckFloorHit(newY);
+    }
+
+    private void CheckFloorHit(float currentY)
+    {
+        float threshold =
+            floorY + 0.03f;
+
+        if (currentY <= threshold)
+        {
+            if (!floorHit)
+            {
+                floorHit = true;
+
+                if (ballAudio != null)
+                {
+                    ballAudio.PlayBounce();
+                }
+            }
+        }
+        else
+        {
+            floorHit = false;
+        }
     }
 }
