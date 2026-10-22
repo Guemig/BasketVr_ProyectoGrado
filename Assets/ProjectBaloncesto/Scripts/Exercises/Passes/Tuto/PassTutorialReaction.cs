@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections;
 using UnityEngine;
 
 public class PassTutorialReaction : MonoBehaviour
@@ -14,25 +15,40 @@ public class PassTutorialReaction : MonoBehaviour
 
     [Header("Referencias")]
     [SerializeField] private PassMachineManager machineManager;
-    [SerializeField] private DoubleHandGripController gripController;
 
     private BallLauncher currentLauncher;
     private DoubleHandPassBall currentBall;
 
-    private Action<bool> resultCallback;
+    private Action completionCallback;
+    private DoubleHandPassBall.BallAction currentAction;
     private ExpectedResult expectedResult;
 
+    private int requiredCorrect;
+    private int requiredErrors;
+
+    private int successfulBalls;
+    private int errorsCount;
+
+    private bool tutorialActive;
     private bool waitingForResult;
+
+    private Coroutine nextBallCoroutine;
+
+    // =====================================================
+    // INICIAR SECUENCIA DEL PASO
+    // =====================================================
 
     public void StartDemonstration(
         DoubleHandPassBall.BallAction action,
         ExpectedResult expected,
-        Action<bool> onResult)
+        int requiredCorrectBalls,
+        int requiredErrorsCount,
+        Action onCompleted)
     {
-        if (waitingForResult)
+        if (tutorialActive)
         {
             Debug.LogWarning(
-                "[PASS TUTORIAL] Ya hay una demostración en curso.",
+                "[PASS TUTORIAL] Ya hay una secuencia activa.",
                 this
             );
             return;
@@ -44,19 +60,15 @@ public class PassTutorialReaction : MonoBehaviour
                 "[PASS TUTORIAL] Falta PassMachineManager.",
                 this
             );
-
-            onResult?.Invoke(false);
             return;
         }
 
         if (!machineManager.ConfigureLevel(1))
         {
             Debug.LogError(
-                "[PASS TUTORIAL] No se pudo configurar el nivel.",
+                "[PASS TUTORIAL] No se pudo configurar el nivel 1.",
                 this
             );
-
-            onResult?.Invoke(false);
             return;
         }
 
@@ -68,32 +80,60 @@ public class PassTutorialReaction : MonoBehaviour
                 "[PASS TUTORIAL] No se encontró una máquina disponible.",
                 this
             );
-
-            onResult?.Invoke(false);
             return;
         }
 
+        currentAction = action;
         expectedResult = expected;
-        resultCallback = onResult;
-        waitingForResult = true;
 
-        // Activar el modo tutorial sin iniciar las estadísticas normales.
+        requiredCorrect = Mathf.Max(0, requiredCorrectBalls);
+        requiredErrors = Mathf.Max(0, requiredErrorsCount);
+
+        successfulBalls = 0;
+        errorsCount = 0;
+
+        completionCallback = onCompleted;
+        tutorialActive = true;
+        waitingForResult = false;
+
         currentLauncher.SetTutorialMode(true);
 
-        if (gripController != null)
-            gripController.SetTutorialMode(true);
+        LaunchNextBall();
+    }
 
+    // =====================================================
+    // LANZAMIENTO
+    // =====================================================
+
+    private void LaunchNextBall()
+    {
+        if (!tutorialActive || currentLauncher == null)
+            return;
+
+        if (waitingForResult)
+            return;
+
+        currentLauncher.OnTutorialBallSpawned -= OnTutorialBallSpawned;
         currentLauncher.OnTutorialBallSpawned += OnTutorialBallSpawned;
 
-        currentLauncher.LaunchBall(action);
+        currentLauncher.LaunchBall(currentAction);
+
+        Debug.Log(
+            $"[PASS TUTORIAL] Solicitando balón. " +
+            $"Acción: {currentAction}. " +
+            $"Aciertos: {successfulBalls}/{requiredCorrect}. " +
+            $"Errores: {errorsCount}/{requiredErrors}.",
+            this
+        );
     }
 
     private void OnTutorialBallSpawned(ILaunchableBall ball)
     {
-        if (!waitingForResult)
+        if (!tutorialActive)
             return;
 
-        // Evitar aceptar un objeto que no sea el balón esperado.
+        currentLauncher.OnTutorialBallSpawned -= OnTutorialBallSpawned;
+
         if (ball is not DoubleHandPassBall passBall)
         {
             Debug.LogError(
@@ -101,19 +141,12 @@ public class PassTutorialReaction : MonoBehaviour
                 this
             );
 
-            // No se interpreta como un fallo de captura o pase.
-            // Es un error técnico de la demostración.
-            Resolve(false);
+            StopTutorialReaction();
             return;
         }
 
-        if (currentLauncher != null)
-        {
-            currentLauncher.OnTutorialBallSpawned -=
-                OnTutorialBallSpawned;
-        }
-
         currentBall = passBall;
+        waitingForResult = true;
 
         currentBall.OnCorrectCatch += OnCorrectCatch;
         currentBall.OnMiss += OnMiss;
@@ -121,77 +154,177 @@ public class PassTutorialReaction : MonoBehaviour
         currentBall.OnWrongCatch += OnWrongCatch;
     }
 
+    // =====================================================
+    // RESULTADOS DEL BALÓN
+    // =====================================================
+
     private void OnCorrectCatch(float reactionTime)
     {
-        Resolve(ExpectedResult.CorrectCatch);
+        RegisterResult(ExpectedResult.CorrectCatch);
     }
 
     private void OnMiss()
     {
-        Resolve(ExpectedResult.MissCatch);
+        RegisterResult(ExpectedResult.MissCatch);
     }
 
     private void OnCorrectPass()
     {
-        Resolve(ExpectedResult.CorrectPass);
+        RegisterResult(ExpectedResult.CorrectPass);
     }
 
     private void OnWrongCatch(float reactionTime)
     {
-        Resolve(ExpectedResult.WrongCatch);
+        RegisterResult(ExpectedResult.WrongCatch);
     }
 
-    private void Resolve(ExpectedResult actualResult)
-    {
-        Resolve(actualResult == expectedResult);
-    }
 
-    private void Resolve(bool success)
+    private void RegisterResult(ExpectedResult actualResult)
     {
-        if (!waitingForResult)
+        if (!tutorialActive || !waitingForResult)
             return;
 
         waitingForResult = false;
 
-        UnsubscribeFromBall();
+        UnsubscribeFromCurrentBall();
 
-        // Guardar las referencias antes de limpiar el estado.
-        BallLauncher launcher = currentLauncher;
-        currentLauncher = null;
+        bool matchesExpected = actualResult == expectedResult;
 
-        if (launcher != null)
-            launcher.SetTutorialMode(false);
+        bool isErrorObjective =
+            expectedResult == ExpectedResult.MissCatch ||
+            expectedResult == ExpectedResult.WrongCatch;
 
-        Action<bool> callback = resultCallback;
-        resultCallback = null;
+        if (isErrorObjective)
+        {
+            // En estos pasos se cuenta el error específico
+            // que el tutorial quiere enseñar.
+            if (matchesExpected)
+            {
+                errorsCount++;
 
-        callback?.Invoke(success);
+                Debug.Log(
+                    $"[PASS TUTORIAL] Error esperado realizado: {actualResult}. " +
+                    $"Progreso: {errorsCount}/{requiredErrors}.",
+                    this
+                );
+            }
+            else
+            {
+                Debug.Log(
+                    $"[PASS TUTORIAL] Resultado recibido: {actualResult}. " +
+                    $"Se esperaba: {expectedResult}. " +
+                    "Este resultado no completa el objetivo.",
+                    this
+                );
+            }
+
+            if (errorsCount >= Mathf.Max(1, requiredErrors))
+            {
+                CompleteTutorialStep();
+                return;
+            }
+        }
+        else
+        {
+            // En los pasos normales se cuentan las respuestas correctas.
+            if (matchesExpected)
+            {
+                successfulBalls++;
+
+                Debug.Log(
+                    $"[PASS TUTORIAL] Respuesta correcta: {actualResult}. " +
+                    $"Progreso: {successfulBalls}/{requiredCorrect}.",
+                    this
+                );
+            }
+            else
+            {
+                Debug.Log(
+                    $"[PASS TUTORIAL] Resultado incorrecto: {actualResult}. " +
+                    $"Se esperaba: {expectedResult}.",
+                    this
+                );
+            }
+
+            if (successfulBalls >= Mathf.Max(1, requiredCorrect))
+            {
+                CompleteTutorialStep();
+                return;
+            }
+        }
+
+        nextBallCoroutine = StartCoroutine(WaitAndLaunchNextBall());
     }
 
-    private void UnsubscribeFromBall()
+    // =====================================================
+    // SIGUIENTE BALÓN
+    // =====================================================
+
+    private IEnumerator WaitAndLaunchNextBall()
     {
-        if (currentBall != null)
+        while (tutorialActive &&
+               currentLauncher != null &&
+               currentLauncher.HasActiveBall())
         {
-            currentBall.OnCorrectCatch -= OnCorrectCatch;
-            currentBall.OnMiss -= OnMiss;
-            currentBall.OnCorrectPass -= OnCorrectPass;
-            currentBall.OnWrongCatch -= OnWrongCatch;
-
-            currentBall = null;
+            yield return null;
         }
 
-        if (currentLauncher != null)
-        {
-            currentLauncher.OnTutorialBallSpawned -=
-                OnTutorialBallSpawned;
-        }
+        nextBallCoroutine = null;
+
+        if (!tutorialActive || currentLauncher == null)
+            yield break;
+
+        yield return null;
+
+        if (tutorialActive)
+            LaunchNextBall();
+    }
+
+    // =====================================================
+    // FINALIZAR PASO
+    // =====================================================
+
+    private void CompleteTutorialStep()
+    {
+        if (!tutorialActive)
+            return;
+
+        Action callback = completionCallback;
+
+        StopTutorialReaction();
+
+        callback?.Invoke();
+    }
+
+    // =====================================================
+    // LIMPIEZA
+    // =====================================================
+
+    private void UnsubscribeFromCurrentBall()
+    {
+        if (currentBall == null)
+            return;
+
+        currentBall.OnCorrectCatch -= OnCorrectCatch;
+        currentBall.OnMiss -= OnMiss;
+        currentBall.OnCorrectPass -= OnCorrectPass;
+        currentBall.OnWrongCatch -= OnWrongCatch;
+
+        currentBall = null;
     }
 
     public void StopTutorialReaction()
     {
+        tutorialActive = false;
         waitingForResult = false;
 
-        UnsubscribeFromBall();
+        if (nextBallCoroutine != null)
+        {
+            StopCoroutine(nextBallCoroutine);
+            nextBallCoroutine = null;
+        }
+
+        UnsubscribeFromCurrentBall();
 
         if (currentLauncher != null)
         {
@@ -204,10 +337,7 @@ public class PassTutorialReaction : MonoBehaviour
             currentLauncher = null;
         }
 
-        if (gripController != null)
-            gripController.SetTutorialMode(false);
-
-        resultCallback = null;
+        completionCallback = null;
     }
 
     private void OnDisable()

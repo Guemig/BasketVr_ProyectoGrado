@@ -559,17 +559,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 4221563039158920579, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
   m_PrefabInstance: {fileID: 76875515}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &76875517 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3973109764999385568, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
-  m_PrefabInstance: {fileID: 76875515}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &76875518 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
@@ -1604,7 +1593,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &210147363
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5389,7 +5378,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   machineManager: {fileID: 501203400}
-  gripController: {fileID: 1388670440}
 --- !u!114 &500504659
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5407,66 +5395,52 @@ MonoBehaviour:
       a doble mano , '
     audio: {fileID: 0}
     stepType: 0
-    action: 0
     expectedResult: 0
     requiredCorrectBalls: 1
-    resetProgressOnFailure: 0
-    failureText: 
+    requiredErrors: 1
   - text: Junta las manos donde las palmas se miren de frente para activar la zona
       de agarre
     audio: {fileID: 0}
     stepType: 0
-    action: 0
     expectedResult: 0
     requiredCorrectBalls: 1
-    resetProgressOnFailure: 0
-    failureText: 
+    requiredErrors: 1
   - text: agarra los balones amarillos usando la zona de agarre
     audio: {fileID: 0}
-    stepType: 0
-    action: 0
+    stepType: 1
     expectedResult: 0
     requiredCorrectBalls: 2
-    resetProgressOnFailure: 0
-    failureText: 
+    requiredErrors: 0
   - text: Dejar pasar los balones amarillos ocasiona una equivocacion
     audio: {fileID: 0}
     stepType: 1
-    action: 0
-    expectedResult: 3
-    requiredCorrectBalls: 2
-    resetProgressOnFailure: 0
-    failureText: 
+    expectedResult: 1
+    requiredCorrectBalls: 0
+    requiredErrors: 2
   - text: Dejar pasar los balones morados es una accion correcta
     audio: {fileID: 0}
     stepType: 1
-    action: 1
     expectedResult: 2
     requiredCorrectBalls: 2
-    resetProgressOnFailure: 0
-    failureText: 
+    requiredErrors: 0
   - text: Agarrar los balones morados es una penalizacion
     audio: {fileID: 0}
     stepType: 1
-    action: 1
-    expectedResult: 1
-    requiredCorrectBalls: 2
-    resetProgressOnFailure: 0
-    failureText: 
+    expectedResult: 3
+    requiredCorrectBalls: 0
+    requiredErrors: 2
   - text: Recuerda apoyarte de cualquier elemento de la interfaz y tutorial terminado
     audio: {fileID: 0}
-    stepType: 1
-    action: 1
+    stepType: 0
     expectedResult: 1
-    requiredCorrectBalls: 2
-    resetProgressOnFailure: 0
-    failureText: 
+    requiredCorrectBalls: 0
+    requiredErrors: 0
   tutorialReaction: {fileID: 500504658}
   tutorialCanvas: {fileID: 1656309732}
   dialogueContainer: {fileID: 1034945990}
   dialogueText: {fileID: 1531943762}
+  nextButtonObject: {fileID: 79718629}
   nextButton: {fileID: 76875518}
-  nextButtonText: {fileID: 76875517}
   audioSource: {fileID: 500504657}
   typingDelay: 0.03
 --- !u!114 &500504660

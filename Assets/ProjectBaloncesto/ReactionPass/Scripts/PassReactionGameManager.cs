@@ -407,11 +407,11 @@ public class PassReactionGameManager : MonoBehaviour
         if (!machineManager.ConfigureLevel(level))
             return false;
 
-        if (machineIndicator != null)
+       /* if (machineIndicator != null)
         {
             machineIndicator.BindMachines(machineManager);
             machineIndicator.SetLevel(level);
-        }
+        }*/
 
         return true;
     }

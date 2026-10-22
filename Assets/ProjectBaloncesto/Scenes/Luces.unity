@@ -21683,16 +21683,16 @@ MonoBehaviour:
   level1Group: {fileID: 1907123188}
   level2Group: {fileID: 1177208136}
   level3Group: {fileID: 1795210442}
-  reactionsRequiredByLevel: 0a0000000f00000014000000
+  reactionsRequiredByLevel: 0a0000000f0000001e000000
   totalTimeByLevel:
   - 1.5
-  - 0.9
-  - 0.75
+  - 0.95
+  - 0.85
   warningPercentage: 20
   delayBetweenTargetsByLevel:
   - 1
   - 0.75
-  - 0.65
+  - 0.7
 --- !u!114 &2067335736
 MonoBehaviour:
   m_ObjectHideFlags: 0
