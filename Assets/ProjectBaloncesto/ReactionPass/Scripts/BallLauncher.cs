@@ -125,6 +125,10 @@ public class BallLauncher : MonoBehaviour
     // =========================================================
     // INICIALIZACIÓN
     // =========================================================
+    public event Action<ILaunchableBall> OnTutorialBallSpawned;
+
+    private bool tutorialMode;
+
 
     private void Awake()
     {
@@ -215,8 +219,11 @@ public class BallLauncher : MonoBehaviour
             return;
         }
 
-        if (gameManager == null || !gameManager.GameRunning)
+        if (!tutorialMode &&
+            (gameManager == null || !gameManager.GameRunning))
+        {
             return;
+        }
 
         if (currentBall != null || prepareLaunchCoroutine != null)
             return;
@@ -279,6 +286,10 @@ public class BallLauncher : MonoBehaviour
             gameManager.RegisterCorrectPass();
     }
 
+    public void SetTutorialMode(bool enabled)
+    {
+        tutorialMode = enabled;
+    }
     private void SubscribeBallEvents(DoubleHandPassBall ball)
     {
         if (ball == null)
@@ -423,6 +434,10 @@ public class BallLauncher : MonoBehaviour
 
         // 8. Preparar el balón.
         reactionBall.Setup(gameManager, this);
+
+        if (tutorialMode)
+            OnTutorialBallSpawned?.Invoke(reactionBall);
+
         SubscribeBallEvents(passBall);
 
         Rigidbody rb = currentBall.GetComponent<Rigidbody>();

@@ -172,7 +172,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   catchDuration: 0.3
   maxLifeTime: 3
-  activationDistancePercent: 0.6
+  activationDistancePercent: 0.5
   visuals: {fileID: -4912741961797734290}
 --- !u!114 &-4912741961797734290
 MonoBehaviour:
@@ -192,9 +192,9 @@ MonoBehaviour:
   activeLetPassColor: {r: 0.9608474, g: 0, b: 1, a: 1}
   correctColor: {r: 0, g: 1, b: 0, a: 1}
   incorrectColor: {r: 1, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 6763730331230889711}
   correctClip: {fileID: 8300000, guid: 9578b25de2e95804bbf35914c6fd0d4a, type: 3}
   errorClip: {fileID: 8300000, guid: 0850940b88fa51a48bdafef94495a5b2, type: 3}
+  volume: 1
 --- !u!82 &6763730331230889711
 AudioSource:
   m_ObjectHideFlags: 0

@@ -1,23 +1,94 @@
 
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class PassReactionUIManager : MonoBehaviour
 {
     [Header("Paneles")]
     [SerializeField] private GameObject startPanel;
     [SerializeField] private GameObject endPanel;
+    [SerializeField] private GameObject indicatorPanel;
 
     [Header("Gestor del ejercicio")]
     [SerializeField] private PassReactionGameManager gameManager;
+
+    [Header("Tutorial")]
+    [SerializeField] private PassTutoController tutorialController;
 
     // =====================================================
     // INICIALIZACIÓN
     // =====================================================
 
+    private void Awake()
+    {
+        if (tutorialController != null)
+        {
+            tutorialController.OnTutorialFinished +=
+                ShowTrainingStartMenu;
+        }
+    }
+
     private void Start()
     {
-        ShowStartMenu();
+        bool isTutorialMode =
+            ReactionModeController.CurrentMode ==
+            ReactionModeController.ReactionMode.Tutorial;
+
+        if (endPanel != null)
+            endPanel.SetActive(false);
+
+        if (startPanel != null)
+            startPanel.SetActive(!isTutorialMode);
+
+        SetIndicatorVisible(false);
+
+        if (isTutorialMode)
+        {
+            if (tutorialController != null)
+            {
+                tutorialController.StartTutorial();
+            }
+            else
+            {
+                Debug.LogError(
+                    "[PASSES] Falta asignar PassTutoController.",
+                    this
+                );
+            }
+        }
+    }
+
+    // =====================================================
+    // INDICADOR VISUAL
+    // =====================================================
+
+    public void SetIndicatorVisible(bool visible)
+    {
+        if (indicatorPanel != null)
+            indicatorPanel.SetActive(visible);
+    }
+
+    // =====================================================
+    // MOSTRAR MENÚ DE ENTRENAMIENTO
+    // =====================================================
+
+    public void ShowTrainingStartMenu()
+    {
+        ReactionModeController.SetMode(
+            ReactionModeController.ReactionMode.Training
+        );
+
+        if (startPanel != null)
+            startPanel.SetActive(true);
+
+        if (endPanel != null)
+            endPanel.SetActive(false);
+
+        SetIndicatorVisible(false);
+
+        Debug.Log(
+            "[PASSES] Tutorial finalizado. " +
+            "Menú de entrenamiento disponible."
+        );
     }
 
     // =====================================================
@@ -32,6 +103,8 @@ public class PassReactionUIManager : MonoBehaviour
         if (endPanel != null)
             endPanel.SetActive(false);
 
+        SetIndicatorVisible(true);
+
         if (gameManager != null)
         {
             gameManager.StartGame();
@@ -39,7 +112,9 @@ public class PassReactionUIManager : MonoBehaviour
         else
         {
             Debug.LogError(
-                "PassReactionUIManager: falta asignar PassReactionGameManager."
+                "PassReactionUIManager: falta asignar " +
+                "PassReactionGameManager.",
+                this
             );
         }
     }
@@ -55,6 +130,8 @@ public class PassReactionUIManager : MonoBehaviour
 
         if (endPanel != null)
             endPanel.SetActive(true);
+
+        SetIndicatorVisible(false);
     }
 
     // =====================================================
@@ -68,6 +145,8 @@ public class PassReactionUIManager : MonoBehaviour
 
         if (endPanel != null)
             endPanel.SetActive(false);
+
+        SetIndicatorVisible(false);
     }
 
     // =====================================================
@@ -82,6 +161,8 @@ public class PassReactionUIManager : MonoBehaviour
         if (startPanel != null)
             startPanel.SetActive(false);
 
+        SetIndicatorVisible(true);
+
         if (gameManager != null)
         {
             gameManager.RestartExercise();
@@ -89,8 +170,19 @@ public class PassReactionUIManager : MonoBehaviour
         else
         {
             Debug.LogError(
-                "PassReactionUIManager: falta asignar PassReactionGameManager."
+                "PassReactionUIManager: falta asignar " +
+                "PassReactionGameManager.",
+                this
             );
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (tutorialController != null)
+        {
+            tutorialController.OnTutorialFinished -=
+                ShowTrainingStartMenu;
         }
     }
 }

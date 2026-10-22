@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class DoubleHandGripController : MonoBehaviour
 {
+    [Header("Ejercicio")]
+    [SerializeField] private PassReactionGameManager gameManager;
+
     [Header("Manos rastreadas")]
     [SerializeField] private Transform leftHand;
     [SerializeField] private Transform rightHand;
@@ -23,10 +26,10 @@ public class DoubleHandGripController : MonoBehaviour
     private float maxPalmAngle = 35f;
 
     [Header("Posición de la zona")]
-    [Tooltip("Desplaza la zona hacia delante o atrás en el eje Z local.")]
+    [Tooltip("Desplaza la zona sobre el eje Z local de la mano izquierda.")]
     [SerializeField] private float offsetZ = 0.05f;
 
-    private bool gripReady;
+    private bool tutorialMode;
 
     private enum PalmAxis
     {
@@ -40,6 +43,14 @@ public class DoubleHandGripController : MonoBehaviour
 
     private void Update()
     {
+        // La zona solo funciona mientras el nivel está ejecutándose.
+        if (!tutorialMode &&
+            (gameManager == null || !gameManager.GameRunning))
+        {
+            SetGripReady(false);
+            return;
+        }
+
         if (leftHand == null ||
             rightHand == null ||
             gripZone == null)
@@ -48,36 +59,39 @@ public class DoubleHandGripController : MonoBehaviour
             return;
         }
 
-        // Comprobar distancia entre ambas manos.
         float distance = Vector3.Distance(
             leftHand.position,
             rightHand.position
         );
 
         bool handsClose = distance <= activationDistance;
-
-        // Comprobar orientación de ambas palmas.
         bool palmsFacingEachOther = ArePalmsFacingEachOther();
 
-        bool shouldActivate =
-            handsClose && palmsFacingEachOther;
+        bool shouldActivate = handsClose && palmsFacingEachOther;
 
-        // Actualizar la posición solamente cuando la zona sea válida.
         if (shouldActivate)
         {
             Vector3 center = (
                 leftHand.position + rightHand.position
             ) * 0.5f;
 
-            // Aplicar el offset sobre el eje Z local de la mano izquierda.
             Vector3 forward = leftHand.forward;
 
-            gripZone.transform.position = center + forward * offsetZ;
+            gripZone.transform.position =
+                center + forward * offsetZ;
         }
 
         SetGripReady(shouldActivate);
     }
 
+
+    public void SetTutorialMode(bool enabled)
+    {
+        tutorialMode = enabled;
+
+        if (!enabled)
+            SetGripReady(false);
+    }
     private bool ArePalmsFacingEachOther()
     {
         Vector3 directionBetweenHands =
@@ -142,18 +156,12 @@ public class DoubleHandGripController : MonoBehaviour
 
     private void SetGripReady(bool ready)
     {
-        gripReady = ready;
-
         if (gripZone != null)
             gripZone.SetGripReady(ready);
     }
 
     private void OnDisable()
     {
-        gripReady = false;
-
-        if (gripZone != null)
-            gripZone.SetGripReady(false);
+        SetGripReady(false);
     }
-
 }

@@ -509,6 +509,7 @@ public class ReactionExerciseController : MonoBehaviour
 
         if (menuController != null)
         {
+
             menuController.ShowEndMenu();
         }
 
