@@ -9,6 +9,13 @@ public class PassLevelConfigManager : MonoBehaviour
         [Header("Cantidad de disparos")]
         [Min(1)] public int requiredShots = 10;
 
+        [Header("Distribución de acciones")]
+        [Range(0, 100)]
+        [Tooltip("Porcentaje de balones que el jugador debe atrapar. El porcentaje restante corresponde a balones que debe dejar pasar.")]
+        public int catchPercentage = 70;
+
+        public int LetPassPercentage => 100 - catchPercentage;
+
         [Header("Tiempo entre disparos")]
         [Min(0f)] public float shotDelay = 1f;
 
@@ -125,6 +132,17 @@ public class PassLevelConfigManager : MonoBehaviour
         {
             Debug.LogError(
                 $"[PASSES] El nivel {level} debe tener al menos un disparo.",
+                this
+            );
+
+            return false;
+        }
+
+        if (config.catchPercentage < 0 || config.catchPercentage > 100)
+        {
+            Debug.LogError(
+                $"[PASSES] Nivel {level}: el porcentaje de atrape " +
+                "debe estar entre 0 y 100.",
                 this
             );
 

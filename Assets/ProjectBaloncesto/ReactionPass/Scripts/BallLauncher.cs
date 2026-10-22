@@ -79,11 +79,6 @@ public class BallLauncher : MonoBehaviour
     // TIPO DE ESTÍMULO
     // =========================================================
 
-    [Header("Tipo de estímulo")]
-    [Tooltip("Probabilidad de que el balón deba atraparse.")]
-    [Range(0f, 1f)]
-    [SerializeField] private float catchBallProbability = 0.7f;
-
     private DoubleHandPassBall.BallAction nextBallAction;
 
     // =========================================================
@@ -206,7 +201,7 @@ public class BallLauncher : MonoBehaviour
     // LANZAMIENTO
     // =========================================================
 
-    public void LaunchBall()
+    public void LaunchBall(DoubleHandPassBall.BallAction action)
     {
         if (!launchAllowed)
             return;
@@ -253,9 +248,11 @@ public class BallLauncher : MonoBehaviour
             return;
         }
 
+        // La acción ya fue decidida por PassMachineManager.
+        nextBallAction = action;
+
         prepareLaunchCoroutine = StartCoroutine(PrepareLaunch());
     }
-
 
     private void HandleCorrectCatch(float reactionTime)
     {
@@ -263,10 +260,11 @@ public class BallLauncher : MonoBehaviour
             gameManager.RegisterCatch(reactionTime);
     }
 
-    private void HandleWrongCatch()
+    // CAMBIO: también recibe el tiempo de una captura incorrecta.
+    private void HandleWrongCatch(float reactionTime)
     {
         if (gameManager != null)
-            gameManager.RegisterWrongCatch();
+            gameManager.RegisterWrongCatch(reactionTime);
     }
 
     private void HandleMiss()
@@ -305,6 +303,7 @@ public class BallLauncher : MonoBehaviour
         ball.OnCorrectPass -= HandleCorrectPass;
     }
 
+
     private IEnumerator PrepareLaunch()
     {
         if (!TryGetRandomOffset(
@@ -324,12 +323,7 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // 1. La máquina determina la acción del próximo balón.
-        nextBallAction = UnityEngine.Random.value < catchBallProbability
-            ? DoubleHandPassBall.BallAction.Catch
-            : DoubleHandPassBall.BallAction.LetPass;
-
-        // 2. Notificar el estado antes del aviso visual.
+        // 1. Determinar la acción del próximo balón.
         DoubleHandPassBall.BallState nextState =
             nextBallAction == DoubleHandPassBall.BallAction.Catch
                 ? DoubleHandPassBall.BallState.ActiveCatch
@@ -337,13 +331,13 @@ public class BallLauncher : MonoBehaviour
 
         OnNextBallStateChanged?.Invoke(this, nextState);
 
-        // 3. Avisar que esta máquina va a disparar.
+        // 2. Avisar que esta máquina va a disparar.
         SetLaunchState(LaunchState.Warning);
 
-        // 4. Orientar la máquina hacia el destino.
+        // 3. Orientar la máquina hacia el destino.
         RotateMachineToTarget(targetPosition);
 
-        // 5. Esperar el tiempo de aviso.
+        // 4. Esperar el tiempo de aviso.
         yield return new WaitForSeconds(warningDuration);
 
         if (!launchAllowed ||
@@ -356,7 +350,7 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // 6. Actualizar el destino por si el jugador se movió.
+        // 5. Actualizar el destino por si el jugador se movió.
         if (!TryCalculateTargetPosition(
                 horizontal,
                 vertical,
@@ -378,7 +372,7 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // 7. Obtener un balón del pool.
+        // 6. Obtener un balón del pool.
         currentBall = ballPool.Get();
 
         if (currentBall == null)
@@ -420,16 +414,14 @@ public class BallLauncher : MonoBehaviour
             yield break;
         }
 
-        // 8. Transmitir acción y referencias espaciales.
-        // Se guarda una posición estable del jugador para este lanzamiento.
+        // 7. Transmitir acción y referencias espaciales.
         passBall.SetLaunchData(
             nextBallAction,
             playerTargetCenter.position,
             targetPosition
         );
 
-
-        // 9. Preparar el balón sin activar todavía su estado de reacción.
+        // 8. Preparar el balón.
         reactionBall.Setup(gameManager, this);
         SubscribeBallEvents(passBall);
 
@@ -437,13 +429,13 @@ public class BallLauncher : MonoBehaviour
 
         if (rb != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.useGravity = false;
+            // Dejar primero el cuerpo en modo cinemático.
+            // No asignar velocidades en este estado.
             rb.isKinematic = true;
+            rb.useGravity = false;
         }
 
-        // 10. Finalizar el aviso e iniciar el movimiento.
+        // 9. Finalizar el aviso e iniciar el movimiento.
         SetLaunchState(LaunchState.Firing);
 
         movementCoroutine = StartCoroutine(
@@ -579,6 +571,7 @@ public class BallLauncher : MonoBehaviour
     // MOVIMIENTO DEL BALÓN
     // =========================================================
 
+
     private IEnumerator MoveBall(
         GameObject ball,
         Vector3 targetPosition,
@@ -637,7 +630,13 @@ public class BallLauncher : MonoBehaviour
 
             if (rb != null)
             {
+                // Primero hacer dinámico el cuerpo.
                 rb.isKinematic = false;
+
+                // Ahora sí es seguro reiniciar y asignar velocidades.
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+
                 rb.useGravity = false;
 
                 Vector3 finalDirection = GetBezierDirection(

@@ -1,4 +1,5 @@
 
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PassMachineManager : MonoBehaviour
@@ -41,12 +42,19 @@ public class PassMachineManager : MonoBehaviour
     private Transform level3Machine3Position;
 
     // =====================================================
+    // SECUENCIA DE ACCIONES
+    // =====================================================
+
+    private readonly List<DoubleHandPassBall.BallAction> actionSequence =
+        new List<DoubleHandPassBall.BallAction>();
+
+    private int nextActionIndex;
+
+    // =====================================================
     // ESTADO
     // =====================================================
 
     private int currentLevel = 1;
-
-    // Índice de la última máquina seleccionada.
     private int lastMachineIndex = -1;
 
     // Nivel 3: 1 = sentido ascendente, -1 = sentido inverso.
@@ -58,6 +66,9 @@ public class PassMachineManager : MonoBehaviour
 
     public int ActiveMachineCount =>
         levelConfigured ? GetMachineCountForLevel(currentLevel) : 0;
+
+    public int RemainingActions =>
+        Mathf.Max(0, actionSequence.Count - nextActionIndex);
 
     // =====================================================
     // CONFIGURACIÓN DEL NIVEL
@@ -112,6 +123,10 @@ public class PassMachineManager : MonoBehaviour
         lastMachineIndex = -1;
         levelConfigured = false;
 
+        // Descartar cualquier secuencia del nivel anterior.
+        actionSequence.Clear();
+        nextActionIndex = 0;
+
         int machineCount = GetMachineCountForLevel(level);
 
         for (int i = 0; i < machineLaunchers.Length; i++)
@@ -129,7 +144,6 @@ public class PassMachineManager : MonoBehaviour
                 continue;
             }
 
-            // Activar primero para asegurar que el objeto esté disponible.
             launcher.gameObject.SetActive(true);
 
             Transform destination = GetMachinePosition(level, i);
@@ -146,22 +160,16 @@ public class PassMachineManager : MonoBehaviour
                 return false;
             }
 
-            // Aplicar posición y orientación configuradas en el Inspector.
             launcher.transform.SetPositionAndRotation(
                 destination.position,
                 destination.rotation
             );
 
             launcher.SetMachineBaseRotation(destination.rotation);
-
-            // Aplicar configuración del nivel.
             launcher.SetLevel(level, config);
         }
 
-        // El inicio y el sentido del nivel 3 se decidirán
-        // al seleccionar la primera máquina.
         level3Direction = 1;
-
         levelConfigured = true;
 
         Debug.Log(
@@ -171,6 +179,124 @@ public class PassMachineManager : MonoBehaviour
         );
 
         return true;
+    }
+
+    // =====================================================
+    // GENERAR SECUENCIA DE ACCIONES
+    // =====================================================
+
+    public bool PrepareActionSequence(int level)
+    {
+        if (!levelConfigured || level != currentLevel)
+        {
+            Debug.LogError(
+                "[PASS MACHINES] Configura el nivel correspondiente " +
+                "antes de generar la secuencia.",
+                this
+            );
+
+            return false;
+        }
+
+        PassLevelConfigManager.LevelConfig config =
+            levelConfigManager.GetLevelConfigForLevel(level);
+
+        if (config == null)
+        {
+            Debug.LogError(
+                $"[PASS MACHINES] No existe la configuración del nivel {level}.",
+                this
+            );
+
+            return false;
+        }
+
+        if (config.requiredShots < 1 ||
+            config.catchPercentage < 0 ||
+            config.catchPercentage > 100)
+        {
+            Debug.LogError(
+                $"[PASS MACHINES] La configuración de acciones del " +
+                $"nivel {level} no es válida.",
+                this
+            );
+
+            return false;
+        }
+
+        actionSequence.Clear();
+        nextActionIndex = 0;
+
+        int totalShots = config.requiredShots;
+
+        int catchCount = Mathf.RoundToInt(
+            totalShots * config.catchPercentage / 100f
+        );
+
+        // El restante siempre corresponde a dejar pasar.
+        int letPassCount = totalShots - catchCount;
+
+        for (int i = 0; i < catchCount; i++)
+        {
+            actionSequence.Add(
+                DoubleHandPassBall.BallAction.Catch
+            );
+        }
+
+        for (int i = 0; i < letPassCount; i++)
+        {
+            actionSequence.Add(
+                DoubleHandPassBall.BallAction.LetPass
+            );
+        }
+
+        // Mezcla Fisher-Yates: distribución aleatoria sin
+        // modificar las cantidades calculadas.
+        for (int i = actionSequence.Count - 1; i > 0; i--)
+        {
+            int randomIndex = Random.Range(0, i + 1);
+
+            DoubleHandPassBall.BallAction temp = actionSequence[i];
+            actionSequence[i] = actionSequence[randomIndex];
+            actionSequence[randomIndex] = temp;
+        }
+
+        Debug.Log(
+            $"[PASS MACHINES] Secuencia del nivel {level}: " +
+            $"{catchCount} balones para atrapar y " +
+            $"{letPassCount} para dejar pasar. " +
+            $"Total: {actionSequence.Count}.",
+            this
+        );
+
+        return true;
+    }
+
+    // =====================================================
+    // OBTENER SIGUIENTE ACCIÓN
+    // =====================================================
+
+    public DoubleHandPassBall.BallAction GetNextBallAction()
+    {
+        if (nextActionIndex >= actionSequence.Count)
+        {
+            Debug.LogError(
+                "[PASS MACHINES] No quedan acciones disponibles " +
+                "en la secuencia del nivel.",
+                this
+            );
+
+            // Valor de respaldo ante una llamada inesperada.
+            // No se consume ninguna acción adicional.
+            return DoubleHandPassBall.BallAction.Catch;
+        }
+
+        DoubleHandPassBall.BallAction action =
+            actionSequence[nextActionIndex];
+
+        nextActionIndex++;
+
+        return action;
     }
 
     // =====================================================
@@ -248,49 +374,35 @@ public class PassMachineManager : MonoBehaviour
 
         switch (currentLevel)
         {
-            // -------------------------------------------------
-            // NIVEL 1: UNA SOLA MÁQUINA
-            // -------------------------------------------------
-
             case 1:
+                // Una sola máquina.
                 selectedIndex = 0;
                 break;
 
-            // -------------------------------------------------
-            // NIVEL 2: ALTERNANCIA ENTRE DOS MÁQUINAS
-            // -------------------------------------------------
-
             case 2:
+                // Alternancia entre dos máquinas.
                 if (lastMachineIndex == -1)
                 {
-                    // La primera máquina es aleatoria.
                     selectedIndex = Random.Range(0, 2);
                 }
                 else
                 {
-                    // Después se alternan obligatoriamente.
                     selectedIndex = lastMachineIndex == 0 ? 1 : 0;
                 }
 
                 break;
 
-            // -------------------------------------------------
-            // NIVEL 3: CICLO DE TRES MÁQUINAS
-            // -------------------------------------------------
-
             case 3:
+                // Ciclo entre tres máquinas.
                 if (lastMachineIndex == -1)
                 {
-                    // Elegir aleatoriamente la máquina inicial.
                     selectedIndex = Random.Range(0, 3);
 
-                    // Elegir aleatoriamente el sentido del recorrido.
                     level3Direction =
                         Random.value < 0.5f ? 1 : -1;
                 }
                 else
                 {
-                    // Avanzar al siguiente índice en el sentido elegido.
                     selectedIndex =
                         (lastMachineIndex + level3Direction + 3) % 3;
                 }
@@ -301,7 +413,6 @@ public class PassMachineManager : MonoBehaviour
                 return null;
         }
 
-        // Validar que la máquina seleccionada esté disponible.
         BallLauncher selectedLauncher = machineLaunchers[selectedIndex];
 
         if (selectedLauncher == null ||
@@ -409,6 +520,27 @@ public class PassMachineManager : MonoBehaviour
         return true;
     }
 
+    private bool ValidatePositions(int level)
+    {
+        int machineCount = GetMachineCountForLevel(level);
+
+        for (int i = 0; i < machineCount; i++)
+        {
+            if (GetMachinePosition(level, i) == null)
+            {
+                Debug.LogError(
+                    $"[PASS MACHINES] Falta asignar la posición " +
+                    $"de la máquina {i + 1} del nivel {level}.",
+                    this
+                );
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public int GetMachineIndex(BallLauncher launcher)
     {
         if (launcher == null || machineLaunchers == null)
@@ -433,26 +565,5 @@ public class PassMachineManager : MonoBehaviour
         }
 
         return machineLaunchers[index];
-    }
-
-    private bool ValidatePositions(int level)
-    {
-        int machineCount = GetMachineCountForLevel(level);
-
-        for (int i = 0; i < machineCount; i++)
-        {
-            if (GetMachinePosition(level, i) == null)
-            {
-                Debug.LogError(
-                    $"[PASS MACHINES] Falta asignar la posición " +
-                    $"de la máquina {i + 1} del nivel {level}.",
-                    this
-                );
-
-                return false;
-            }
-        }
-
-        return true;
     }
 }

@@ -45,6 +45,9 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
     // REFERENCIAS
     // =====================================================
 
+    [Header("Efectos visuales")]
+    [SerializeField] private DoubleHandPassBallVisuals visuals;
+
     private PassReactionGameManager gameManager;
     private BallLauncher launcher;
     private ObjectPool pool;
@@ -84,7 +87,7 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
     // =====================================================
 
     public event Action<float> OnCorrectCatch;
-    public event Action OnWrongCatch;
+    public event Action<float> OnWrongCatch;
     public event Action OnMiss;
     public event Action OnCorrectPass;
 
@@ -96,6 +99,20 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
     {
         rb = GetComponent<Rigidbody>();
         ballCollider = GetComponent<Collider>();
+
+        if (visuals == null)
+            visuals = GetComponent<DoubleHandPassBallVisuals>();
+
+        if (visuals == null)
+        {
+            Debug.LogWarning(
+                "[DoubleHandPassBall] No se encontró " +
+                "DoubleHandPassBallVisuals.",
+                this
+            );
+        }
+
+        SetState(BallState.Inactive);
     }
 
     private void Update()
@@ -104,6 +121,33 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
             return;
 
         CheckActivationDistance();
+    }
+
+    // =====================================================
+    // CAMBIO DE ESTADO Y ACTUALIZACIÓN VISUAL
+    // =====================================================
+
+    private void SetState(BallState newState)
+    {
+        CurrentState = newState;
+
+        if (visuals == null)
+            return;
+
+        // Actualizar el color del balón.
+        visuals.SetVisualState(newState);
+
+        // Reproducir el sonido correspondiente al resultado.
+        switch (newState)
+        {
+            case BallState.Correct:
+                visuals.PlayCorrectSound();
+                break;
+
+            case BallState.Incorrect:
+                visuals.PlayErrorSound();
+                break;
+        }
     }
 
     // =====================================================
@@ -133,7 +177,7 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
             targetPositionAtLaunch
         );
 
-        CurrentState = BallState.Inactive;
+        SetState(BallState.Inactive);
     }
 
     // =====================================================
@@ -154,8 +198,6 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
         launcher = ballLauncher;
 
         resolved = false;
-
-        // El tiempo de reacción se inicializa cuando se activa.
         launchTime = 0f;
 
         transform.SetParent(null);
@@ -165,8 +207,7 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
 
         ResetRigidbody();
 
-        // El balón todavía no acepta atrapadas.
-        CurrentState = BallState.Inactive;
+        SetState(BallState.Inactive);
     }
 
     // =====================================================
@@ -192,13 +233,15 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
         if (resolved || CurrentState != BallState.Inactive)
             return;
 
-        CurrentState = assignedAction == BallAction.Catch
-            ? BallState.ActiveCatch
-            : BallState.ActiveLetPass;
+        BallState activeState =
+            assignedAction == BallAction.Catch
+                ? BallState.ActiveCatch
+                : BallState.ActiveLetPass;
+
+        SetState(activeState);
 
         launchTime = Time.time;
 
-        // El tiempo de vida empieza a contar desde la activación.
         lifeCoroutine = StartCoroutine(LifeTimer());
     }
 
@@ -211,7 +254,6 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
         if (resolved || gripZone == null)
             return false;
 
-        // No se puede atrapar antes de la activación.
         if (CurrentState != BallState.ActiveCatch &&
             CurrentState != BallState.ActiveLetPass)
         {
@@ -221,13 +263,9 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
         currentGripZone = gripZone;
 
         if (CurrentState == BallState.ActiveCatch)
-        {
             CatchCorrectBall(gripZone);
-        }
         else
-        {
             CatchIncorrectBall();
-        }
 
         return true;
     }
@@ -242,7 +280,8 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
             return;
 
         resolved = true;
-        CurrentState = BallState.Correct;
+
+        SetState(BallState.Correct);
 
         StopLifeCoroutine();
 
@@ -254,8 +293,14 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
         if (rb != null)
         {
             rb.useGravity = false;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+
+            // Solo modificar velocidades si el cuerpo es dinámico.
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
             rb.isKinematic = true;
         }
 
@@ -287,15 +332,28 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
             return;
 
         resolved = true;
-        CurrentState = BallState.Incorrect;
+
+        // Calcular el tiempo desde que se mostró la indicación.
+        float reactionTime = Mathf.Max(
+            0f,
+            Time.time - launchTime
+        );
+
+        SetState(BallState.Incorrect);
 
         StopLifeCoroutine();
 
-        // Detener el balón para impedir nuevas colisiones.
         if (rb != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            rb.useGravity = false;
+
+            // Evitar asignar velocidades a un cuerpo cinemático.
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
             rb.isKinematic = true;
         }
 
@@ -305,12 +363,11 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
         if (launcher != null)
             launcher.BallResolved();
 
-        // El balón debía dejarse pasar, pero fue atrapado.
-        OnWrongCatch?.Invoke();
+        // Notificar el error y su tiempo de reacción.
+        OnWrongCatch?.Invoke(reactionTime);
 
         catchCoroutine = StartCoroutine(DestroyAfterCatch());
     }
-
     // =====================================================
     // RESOLVER CUANDO TERMINA EL RECORRIDO
     // =====================================================
@@ -320,9 +377,17 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
         if (resolved)
             return;
 
-        // No registrar el resultado si el balón todavía no se activó.
         if (CurrentState == BallState.Inactive)
-            return;
+        {
+
+            SetState(
+                assignedAction == BallAction.Catch
+                    ? BallState.ActiveCatch
+                    : BallState.ActiveLetPass
+            );
+
+            launchTime = Time.time;
+        }
 
         resolved = true;
 
@@ -330,14 +395,14 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
 
         if (CurrentState == BallState.ActiveCatch)
         {
-            CurrentState = BallState.Incorrect;
+            SetState(BallState.Incorrect);
 
             // Debía atraparse, pero no fue atrapado.
             OnMiss?.Invoke();
         }
         else if (CurrentState == BallState.ActiveLetPass)
         {
-            CurrentState = BallState.Correct;
+            SetState(BallState.Correct);
 
             // Debía dejarse pasar y nadie lo atrapó.
             OnCorrectPass?.Invoke();
@@ -415,8 +480,7 @@ public class DoubleHandPassBall : MonoBehaviour, IPoolable, ILaunchableBall
 
         ResetRigidbody();
 
-        // Cambiar el estado antes de devolverlo al pool.
-        CurrentState = BallState.Inactive;
+        SetState(BallState.Inactive);
 
         if (pool != null)
         {

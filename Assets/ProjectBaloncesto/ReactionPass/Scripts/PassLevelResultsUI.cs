@@ -4,25 +4,25 @@ using UnityEngine;
 
 public class PassLevelResultsUI : MonoBehaviour
 {
-    [Header("Manager del ejercicio")]
+    [Header("Exercise Manager")]
     [SerializeField] private PassReactionGameManager gameManager;
 
-    [Header("Resultados del nivel 1")]
-    [SerializeField] private TMP_Text level1HitsText;
-    [SerializeField] private TMP_Text level1MissesText;
-    [SerializeField] private TMP_Text level1ReactionTimeText;
+    [Header("Level 1 - Results")]
+    [SerializeField] private TMP_Text level1CorrectHitsText;
+    [SerializeField] private TMP_Text level1AccuracyText;
+    [SerializeField] private TMP_Text level1AverageReactionTimeText;
 
-    [Header("Resultados del nivel 2")]
-    [SerializeField] private TMP_Text level2HitsText;
-    [SerializeField] private TMP_Text level2MissesText;
-    [SerializeField] private TMP_Text level2ReactionTimeText;
+    [Header("Level 2 - Results")]
+    [SerializeField] private TMP_Text level2CorrectHitsText;
+    [SerializeField] private TMP_Text level2AccuracyText;
+    [SerializeField] private TMP_Text level2AverageReactionTimeText;
 
-    [Header("Resultados del nivel 3")]
-    [SerializeField] private TMP_Text level3HitsText;
-    [SerializeField] private TMP_Text level3MissesText;
-    [SerializeField] private TMP_Text level3ReactionTimeText;
+    [Header("Level 3 - Results")]
+    [SerializeField] private TMP_Text level3CorrectHitsText;
+    [SerializeField] private TMP_Text level3AccuracyText;
+    [SerializeField] private TMP_Text level3AverageReactionTimeText;
 
-    [Header("Formato")]
+    [Header("Formatting")]
     [SerializeField, Min(0)] private int reactionTimeDecimals = 2;
 
     private void Awake()
@@ -30,7 +30,7 @@ public class PassLevelResultsUI : MonoBehaviour
         if (gameManager == null)
         {
             Debug.LogError(
-                "[PASS RESULTS UI] Asigna PassReactionGameManager.",
+                "[PASS RESULTS UI] Assign PassReactionGameManager.",
                 this
             );
         }
@@ -89,7 +89,7 @@ public class PassLevelResultsUI : MonoBehaviour
         if (stats == null)
         {
             Debug.LogWarning(
-                $"[PASS RESULTS UI] No hay estadísticas para el nivel {level}.",
+                $"[PASS RESULTS UI] No stats available for level {level}.",
                 this
             );
             return;
@@ -99,34 +99,34 @@ public class PassLevelResultsUI : MonoBehaviour
         {
             case 1:
                 SetResultTexts(
-                    level1HitsText,
-                    level1MissesText,
-                    level1ReactionTimeText,
+                    level1CorrectHitsText,
+                    level1AccuracyText,
+                    level1AverageReactionTimeText,
                     stats
                 );
                 break;
 
             case 2:
                 SetResultTexts(
-                    level2HitsText,
-                    level2MissesText,
-                    level2ReactionTimeText,
+                    level2CorrectHitsText,
+                    level2AccuracyText,
+                    level2AverageReactionTimeText,
                     stats
                 );
                 break;
 
             case 3:
                 SetResultTexts(
-                    level3HitsText,
-                    level3MissesText,
-                    level3ReactionTimeText,
+                    level3CorrectHitsText,
+                    level3AccuracyText,
+                    level3AverageReactionTimeText,
                     stats
                 );
                 break;
 
             default:
                 Debug.LogWarning(
-                    $"[PASS RESULTS UI] Nivel inválido: {level}.",
+                    $"[PASS RESULTS UI] Invalid level: {level}.",
                     this
                 );
                 break;
@@ -139,83 +139,77 @@ public class PassLevelResultsUI : MonoBehaviour
         {
             case 1:
                 return gameManager.Level1Stats;
-
             case 2:
                 return gameManager.Level2Stats;
-
             case 3:
                 return gameManager.Level3Stats;
-
             default:
                 return null;
         }
     }
 
     private void SetResultTexts(
-        TMP_Text hitsText,
-        TMP_Text missesText,
-        TMP_Text reactionTimeText,
+        TMP_Text correctHitsText,
+        TMP_Text accuracyText,
+        TMP_Text averageReactionTimeText,
         PassReactionStatsManager.LevelStats stats)
     {
-        if (hitsText != null)
-        {
-            hitsText.text =
-                $"Aciertos: {stats.caught + stats.correctPasses}\n" +
-                $"Atrapadas correctas: {stats.caught}\n" +
-                $"Pases correctos: {stats.correctPasses}";
-        }
+        int correctHits = stats.CorrectDecisions;
+        int totalShots = stats.Total;
 
-        if (missesText != null)
-        {
-            missesText.text =
-                $"Errores / omisiones: {stats.wrongCaught + stats.missed}\n" +
-                $"Atrapadas incorrectas: {stats.wrongCaught}\n" +
-                $"Balones omitidos: {stats.missed}\n" +
-                $"Precisión: {stats.accuracy.ToString("F1")}%";
-        }
+        float accuracy = totalShots > 0
+            ? (float)correctHits / totalShots * 100f
+            : 0f;
 
-        if (reactionTimeText != null)
-        {
-            string average =
-                stats.averageReaction.ToString($"F{reactionTimeDecimals}");
+        if (correctHitsText != null)
+            correctHitsText.text = $"{correctHits}/{totalShots}";
 
-            reactionTimeText.text = $"Tiempo promedio: {average} s";
+        if (accuracyText != null)
+            accuracyText.text = $"{accuracy:F1}%";
+
+        if (averageReactionTimeText != null)
+        {
+            averageReactionTimeText.text =
+                stats.reactionTimes != null &&
+                stats.reactionTimes.Count > 0
+                    ? $"{stats.averageReaction.ToString($"F{reactionTimeDecimals}")} s"
+                    : "-- s";
         }
     }
 
     public void ClearResults()
     {
         ClearLevelTexts(
-            level1HitsText,
-            level1MissesText,
-            level1ReactionTimeText
+            level1CorrectHitsText,
+            level1AccuracyText,
+            level1AverageReactionTimeText
         );
 
         ClearLevelTexts(
-            level2HitsText,
-            level2MissesText,
-            level2ReactionTimeText
+            level2CorrectHitsText,
+            level2AccuracyText,
+            level2AverageReactionTimeText
         );
 
         ClearLevelTexts(
-            level3HitsText,
-            level3MissesText,
-            level3ReactionTimeText
+            level3CorrectHitsText,
+            level3AccuracyText,
+            level3AverageReactionTimeText
         );
     }
 
     private void ClearLevelTexts(
-        TMP_Text hitsText,
-        TMP_Text missesText,
-        TMP_Text reactionTimeText)
+        TMP_Text correctHitsText,
+        TMP_Text accuracyText,
+        TMP_Text averageReactionTimeText)
     {
-        if (hitsText != null)
-            hitsText.text = "Aciertos: --";
+        if (correctHitsText != null)
+            correctHitsText.text = "--/--";
 
-        if (missesText != null)
-            missesText.text = "Errores / omisiones: --";
+        if (accuracyText != null)
+            accuracyText.text = "--%";
 
-        if (reactionTimeText != null)
-            reactionTimeText.text = "Tiempo promedio: -- s";
+        if (averageReactionTimeText != null)
+            averageReactionTimeText.text = "-- s";
     }
 }

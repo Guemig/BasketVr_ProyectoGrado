@@ -224,13 +224,27 @@ public class PassReactionGameManager : MonoBehaviour
     // INICIAR NIVEL
     // =====================================================
 
+
     private void StartLevel()
     {
         if (!ValidateCurrentLevelConfig() || !ValidateReferences())
             return;
 
+        // Configurar las máquinas para el nivel actual.
         if (!ConfigureMachinesForLevel(currentLevel))
             return;
+
+        // Crear la distribución completa de acciones del nivel.
+        if (!machineManager.PrepareActionSequence(currentLevel))
+        {
+            Debug.LogError(
+                $"[PASSES] No se pudo preparar la secuencia " +
+                $"del nivel {currentLevel}.",
+                this
+            );
+
+            return;
+        }
 
         statsManager.BeginLevel();
 
@@ -238,14 +252,17 @@ public class PassReactionGameManager : MonoBehaviour
         gameRunning = true;
         isFinishingLevel = false;
 
-        LaunchNextBall();
-
         OnLevelStarted?.Invoke(currentLevel);
 
         Debug.Log(
-            $"[PASSES] Nivel {currentLevel} iniciado."
+            $"[PASSES] Nivel {currentLevel} iniciado. " +
+            $"Lanzamientos previstos: {GetCurrentLevelShots()}.",
+            this
         );
+
+        LaunchNextBall();
     }
+
 
     // =====================================================
     // BALÓN ATRAPADO
@@ -330,6 +347,7 @@ public class PassReactionGameManager : MonoBehaviour
     // LANZAR SIGUIENTE BALÓN
     // =====================================================
 
+
     private void LaunchNextBall()
     {
         if (!gameRunning ||
@@ -353,17 +371,22 @@ public class PassReactionGameManager : MonoBehaviour
             return;
         }
 
-        shotsLaunched++;
+        DoubleHandPassBall.BallAction action =
+            machineManager.GetNextBallAction();
 
-        selectedLauncher.LaunchBall();
+        shotsLaunched++;
 
         Debug.Log(
             $"[PASSES] Disparo {shotsLaunched}/" +
             $"{GetCurrentLevelShots()} del nivel {currentLevel}. " +
-            $"Máquina: {selectedLauncher.name}.",
+            $"Máquina: {selectedLauncher.name}. " +
+            $"Acción: {action}.",
             this
         );
+
+        selectedLauncher.LaunchBall(action);
     }
+
     // =====================================================
     // CONFIGURACIÓN DE MÁQUINAS
     // =====================================================
@@ -543,7 +566,15 @@ public class PassReactionGameManager : MonoBehaviour
     // ATRAPADA INCORRECTA
     // =====================================================
 
-    public void RegisterWrongCatch()
+    // =====================================================
+    // ATRAPADA INCORRECTA
+    // =====================================================
+
+    // =====================================================
+    // ATRAPADA INCORRECTA
+    // =====================================================
+
+    public void RegisterWrongCatch(float reactionTime)
     {
         if (!gameRunning ||
             isFinishingLevel ||
@@ -552,9 +583,18 @@ public class PassReactionGameManager : MonoBehaviour
             return;
         }
 
+        statsManager.RegisterWrongCatch(reactionTime);
+
+        Debug.Log(
+            $"[PASSES] Atrapada incorrecta registrada. " +
+            $"Tiempo de reacción: {reactionTime:F3} s. " +
+            $"Resultados: {statsManager.TotalBalls}/" +
+            $"{GetCurrentLevelShots()}",
+            this
+        );
+
         BallFinished();
     }
-
     // =====================================================
     // PASE CORRECTO
     // =====================================================
@@ -568,7 +608,15 @@ public class PassReactionGameManager : MonoBehaviour
             return;
         }
 
-        
+        statsManager.RegisterCorrectPass();
+
+        Debug.Log(
+            $"[PASSES] Pase correcto registrado. " +
+            $"Resultados: {statsManager.TotalBalls}/" +
+            $"{GetCurrentLevelShots()}",
+            this
+        );
+
         BallFinished();
     }
 

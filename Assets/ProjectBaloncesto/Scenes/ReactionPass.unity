@@ -579,6 +579,7 @@ GameObject:
   m_Component:
   - component: {fileID: 114067120}
   - component: {fileID: 114067121}
+  - component: {fileID: 114067122}
   m_Layer: 0
   m_Name: UIWorldSpaceSpatial
   m_TagString: Untagged
@@ -621,6 +622,29 @@ MonoBehaviour:
   startPanel: {fileID: 377464147}
   endPanel: {fileID: 1192491292}
   gameManager: {fileID: 501203396}
+--- !u!114 &114067122
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114067116}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49e61a28099b6144483484eb489b8530, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameManager: {fileID: 501203396}
+  level1CorrectHitsText: {fileID: 1802572767}
+  level1AccuracyText: {fileID: 2057338061}
+  level1AverageReactionTimeText: {fileID: 926387700}
+  level2CorrectHitsText: {fileID: 259878667}
+  level2AccuracyText: {fileID: 2109728075}
+  level2AverageReactionTimeText: {fileID: 1858044157}
+  level3CorrectHitsText: {fileID: 820883434}
+  level3AccuracyText: {fileID: 1484140337}
+  level3AverageReactionTimeText: {fileID: 1661166085}
+  reactionTimeDecimals: 2
 --- !u!1 &118366094
 GameObject:
   m_ObjectHideFlags: 0
@@ -3005,7 +3029,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
@@ -3018,7 +3042,7 @@ PrefabInstance:
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 500504655}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
@@ -3029,7 +3053,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: SelectTrainingMode
+      value: Restart
       objectReference: {fileID: 0}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
@@ -3037,7 +3061,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ReactionModeController, Assembly-CSharp
+      value: GameManager, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
@@ -4969,6 +4993,8 @@ MonoBehaviour:
     level: 0
     caught: 0
     missed: 0
+    wrongCaught: 0
+    correctPasses: 0
     accuracy: 0
     averageReaction: 0
     fastestReaction: 0
@@ -4978,6 +5004,8 @@ MonoBehaviour:
     level: 0
     caught: 0
     missed: 0
+    wrongCaught: 0
+    correctPasses: 0
     accuracy: 0
     averageReaction: 0
     fastestReaction: 0
@@ -4987,6 +5015,8 @@ MonoBehaviour:
     level: 0
     caught: 0
     missed: 0
+    wrongCaught: 0
+    correctPasses: 0
     accuracy: 0
     averageReaction: 0
     fastestReaction: 0
@@ -4994,6 +5024,8 @@ MonoBehaviour:
     reactionTimes: []
   totalCaught: 0
   totalMissed: 0
+  totalWrongCaught: 0
+  totalCorrectPasses: 0
   totalPasses: 0
   totalAccuracy: 0
   globalAverageReaction: 0
@@ -5011,6 +5043,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   level1:
     requiredShots: 10
+    catchPercentage: 70
     shotDelay: 1.1
     slowSpeed: 8
     mediumSpeed: 9
@@ -5020,6 +5053,7 @@ MonoBehaviour:
     fastWeight: 0
   level2:
     requiredShots: 12
+    catchPercentage: 70
     shotDelay: 1
     slowSpeed: 8
     mediumSpeed: 9
@@ -5029,6 +5063,7 @@ MonoBehaviour:
     fastWeight: 0
   level3:
     requiredShots: 15
+    catchPercentage: 70
     shotDelay: 0.9
     slowSpeed: 8
     mediumSpeed: 9
@@ -8737,7 +8772,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
@@ -8746,7 +8781,7 @@ PrefabInstance:
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 500504655}
     - target: {fileID: 2466936557809434659, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: ChangeScene

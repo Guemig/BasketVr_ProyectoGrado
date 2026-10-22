@@ -76,7 +76,10 @@ public class PassReactionStatsManager : MonoBehaviour
     public int CorrectPasses => correctPasses;
 
     public int TotalBalls =>
-        caughtBalls + missedBalls + wrongCaughtBalls + correctPasses;
+        caughtBalls +
+        missedBalls +
+        wrongCaughtBalls +
+        correctPasses;
 
     public float AverageReactionTime => averageReactionTime;
 
@@ -137,16 +140,30 @@ public class PassReactionStatsManager : MonoBehaviour
     }
 
     // =====================================================
-    // ATRAPADA INCORRECTA: ATRAPÓ UN BALÓN QUE DEBÍA DEJAR PASAR
+    // ATRAPADA INCORRECTA:
+    // ATRAPÓ UN BALÓN QUE DEBÍA DEJAR PASAR
     // =====================================================
 
-    public void RegisterWrongCatch()
+    // =====================================================
+    // ATRAPADA INCORRECTA:
+    // ATRAPÓ UN BALÓN QUE DEBÍA DEJAR PASAR
+    // =====================================================
+
+    public void RegisterWrongCatch(float reactionTime)
     {
         wrongCaughtBalls++;
-    }
 
+        reactionTime = Mathf.Max(0f, reactionTime);
+
+        totalReactionTime += reactionTime;
+        currentReactionTimes.Add(reactionTime);
+
+        averageReactionTime =
+            totalReactionTime / currentReactionTimes.Count;
+    }
     // =====================================================
-    // PASE CORRECTO: DEJÓ PASAR EL BALÓN
+    // PASE CORRECTO:
+    // DEJÓ PASAR EL BALÓN
     // =====================================================
 
     public void RegisterCorrectPass()
@@ -206,11 +223,21 @@ public class PassReactionStatsManager : MonoBehaviour
 
             default:
                 Debug.LogError(
-                    $"[PASSES] No se pueden guardar resultados para el nivel {level}.",
+                    $"[PASES] No se pueden guardar resultados " +
+                    $"para el nivel {level}.",
                     this
                 );
                 break;
         }
+
+        Debug.Log(
+            $"[PASES] Nivel {level} guardado. " +
+            $"Total: {stats.Total}, " +
+            $"Correctas: {stats.CorrectDecisions}, " +
+            $"Precisión: {stats.accuracy:F1}%, " +
+            $"Reacción promedio: {stats.averageReaction:F3}s",
+            this
+        );
     }
 
     // =====================================================
@@ -255,13 +282,35 @@ public class PassReactionStatsManager : MonoBehaviour
         float reactionSum = 0f;
         int reactionCount = 0;
 
-        AddReactionTimes(level1Stats, ref reactionSum, ref reactionCount);
-        AddReactionTimes(level2Stats, ref reactionSum, ref reactionCount);
-        AddReactionTimes(level3Stats, ref reactionSum, ref reactionCount);
+        AddReactionTimes(
+            level1Stats,
+            ref reactionSum,
+            ref reactionCount
+        );
+
+        AddReactionTimes(
+            level2Stats,
+            ref reactionSum,
+            ref reactionCount
+        );
+
+        AddReactionTimes(
+            level3Stats,
+            ref reactionSum,
+            ref reactionCount
+        );
 
         globalAverageReaction = reactionCount > 0
             ? reactionSum / reactionCount
             : 0f;
+
+        Debug.Log(
+            $"[PASES] Estadísticas generales calculadas. " +
+            $"Total: {totalPasses}, " +
+            $"Precisión: {totalAccuracy:F1}%, " +
+            $"Reacción promedio: {globalAverageReaction:F3}s",
+            this
+        );
     }
 
     private void AddReactionTimes(
@@ -280,7 +329,7 @@ public class PassReactionStatsManager : MonoBehaviour
     }
 
     // =====================================================
-    // REINICIAR ESTADÍSTICAS
+    // REINICIAR TODAS LAS ESTADÍSTICAS
     // =====================================================
 
     public void ResetAllStats()
@@ -299,5 +348,10 @@ public class PassReactionStatsManager : MonoBehaviour
         globalAverageReaction = 0f;
 
         BeginLevel();
+
+        Debug.Log(
+            "[PASES] Todas las estadísticas se reiniciaron.",
+            this
+        );
     }
 }

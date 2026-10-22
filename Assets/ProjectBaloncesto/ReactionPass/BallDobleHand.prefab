@@ -15,6 +15,8 @@ GameObject:
   - component: {fileID: 4539443167806948779}
   - component: {fileID: 4248758367877713297}
   - component: {fileID: 5469151185053770082}
+  - component: {fileID: -4912741961797734290}
+  - component: {fileID: 6763730331230889711}
   m_Layer: 0
   m_Name: BallDobleHand
   m_TagString: Untagged
@@ -50,7 +52,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   blockId: 7358e191-33b7-43ca-b066-b2f00531ac66
-  instanceId: 43a24a5d-3032-4e8c-9805-6e2254986d0b
+  instanceId: 2cc4c598-ada8-4d33-a719-1a4634bc54a8
   version: 1
   installationRoutineCheckpoint:
     _installationRoutineId: 
@@ -171,3 +173,122 @@ MonoBehaviour:
   catchDuration: 0.3
   maxLifeTime: 3
   activationDistancePercent: 0.6
+  visuals: {fileID: -4912741961797734290}
+--- !u!114 &-4912741961797734290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7345636629230277528}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50c02b02153afcb449d8de42b2719cf3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ballRenderer: {fileID: 3910686894636638946}
+  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeCatchColor: {r: 0.92023313, g: 1, b: 0, a: 1}
+  activeLetPassColor: {r: 0.9608474, g: 0, b: 1, a: 1}
+  correctColor: {r: 0, g: 1, b: 0, a: 1}
+  incorrectColor: {r: 1, g: 0, b: 0, a: 1}
+  audioSource: {fileID: 6763730331230889711}
+  correctClip: {fileID: 8300000, guid: 9578b25de2e95804bbf35914c6fd0d4a, type: 3}
+  errorClip: {fileID: 8300000, guid: 0850940b88fa51a48bdafef94495a5b2, type: 3}
+--- !u!82 &6763730331230889711
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7345636629230277528}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 0850940b88fa51a48bdafef94495a5b2, type: 3}
+  m_Resource: {fileID: 8300000, guid: 0850940b88fa51a48bdafef94495a5b2, type: 3}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
