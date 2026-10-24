@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class DribbleHandManager : MonoBehaviour
@@ -15,9 +16,17 @@ public class DribbleHandManager : MonoBehaviour
 
     private DribbleHandDetector controllingHand;
 
+    private bool waitingForHandChange;
+    private bool releasedFromLeftHand;
+
+    public event Action OnSuccessfulHandChange;
+
     private void Update()
     {
         if (controllingHand == null)
+            return;
+
+        if (dribbleBall == null)
             return;
 
         if (!dribbleBall.IsControlled)
@@ -100,8 +109,9 @@ public class DribbleHandManager : MonoBehaviour
                 ? leftHandTarget
                 : rightHandTarget;
 
-            controllingHand =
-                detector;
+            controllingHand = detector;
+
+            waitingForHandChange = false;
 
             ballStart.StartFromSpawn(
                 hand
@@ -116,13 +126,10 @@ public class DribbleHandManager : MonoBehaviour
     private void TakeControl(
         DribbleHandDetector detector)
     {
-        controllingHand =
-            detector;
+        controllingHand = detector;
 
         if (freeMovement != null)
-        {
             freeMovement.StopFreeMovement();
-        }
 
         if (detector.IsLeftHand)
         {
@@ -136,12 +143,39 @@ public class DribbleHandManager : MonoBehaviour
                 rightHandTarget
             );
         }
+
+        CheckSuccessfulHandChange(
+            detector
+        );
+    }
+
+    private void CheckSuccessfulHandChange(
+        DribbleHandDetector detector)
+    {
+        if (!waitingForHandChange)
+            return;
+
+        bool changedHand =
+            releasedFromLeftHand !=
+            detector.IsLeftHand;
+
+        if (!changedHand)
+            return;
+
+        waitingForHandChange = false;
+
+        OnSuccessfulHandChange?.Invoke();
     }
 
     private void ReleaseBall(
         DribbleHandDetector detector,
         Vector3 velocity)
     {
+        releasedFromLeftHand =
+            detector.IsLeftHand;
+
+        waitingForHandChange = true;
+
         dribbleBall.ReleaseHand();
 
         detector.BlockUntilExit();
@@ -149,10 +183,22 @@ public class DribbleHandManager : MonoBehaviour
         controllingHand = null;
 
         if (freeMovement != null)
-        {
-            freeMovement.Launch(
-                velocity
-            );
-        }
+            freeMovement.Launch(velocity);
+    }
+
+    public void ResetBallControl()
+    {
+        if (controllingHand != null)
+            controllingHand.BlockUntilExit();
+
+        controllingHand = null;
+
+        waitingForHandChange = false;
+
+        if (dribbleBall != null)
+            dribbleBall.ReleaseHand();
+
+        if (freeMovement != null)
+            freeMovement.StopFreeMovement();
     }
 }
