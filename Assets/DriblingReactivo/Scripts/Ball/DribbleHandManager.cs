@@ -10,19 +10,28 @@ public class DribbleHandManager : MonoBehaviour
     [SerializeField] private Transform leftHandTarget;
     [SerializeField] private Transform rightHandTarget;
 
+    [Header("Captura")]
+    [SerializeField] private float grabLockTime = 0.4f;
+    [SerializeField] private bool snapToHandOnCatch = true;
+
     [Header("Impulso")]
-    [SerializeField] private float releaseSpeed = 0.7f;
-    [SerializeField] private float maximumReleaseAngle = 45f;
+    [SerializeField] private float releaseSpeed = 1.15f;
+    [SerializeField] private float maximumReleaseAngle = 40f;
 
     private DribbleHandDetector controllingHand;
 
     private bool waitingForHandChange;
     private bool releasedFromLeftHand;
 
+    private float grabLockTimer;
+
     public event Action OnSuccessfulHandChange;
 
     private void Update()
     {
+        if (grabLockTimer > 0f)
+            grabLockTimer -= Time.deltaTime;
+
         if (controllingHand == null)
             return;
 
@@ -30,6 +39,9 @@ public class DribbleHandManager : MonoBehaviour
             return;
 
         if (!dribbleBall.IsControlled)
+            return;
+
+        if (grabLockTimer > 0f)
             return;
 
         if (ballStart != null &&
@@ -95,6 +107,9 @@ public class DribbleHandManager : MonoBehaviour
     public void TryTakeControl(
         DribbleHandDetector detector)
     {
+        if (detector == null)
+            return;
+
         if (dribbleBall == null)
             return;
 
@@ -109,9 +124,17 @@ public class DribbleHandManager : MonoBehaviour
                 ? leftHandTarget
                 : rightHandTarget;
 
-            controllingHand = detector;
+            controllingHand =
+                detector;
 
-            waitingForHandChange = false;
+            waitingForHandChange =
+                false;
+
+            grabLockTimer =
+                grabLockTime;
+
+            if (snapToHandOnCatch)
+                SnapBallHorizontal(hand);
 
             ballStart.StartFromSpawn(
                 hand
@@ -120,16 +143,30 @@ public class DribbleHandManager : MonoBehaviour
             return;
         }
 
-        TakeControl(detector);
+        TakeControl(
+            detector
+        );
     }
 
     private void TakeControl(
         DribbleHandDetector detector)
     {
-        controllingHand = detector;
+        controllingHand =
+            detector;
+
+        grabLockTimer =
+            grabLockTime;
 
         if (freeMovement != null)
             freeMovement.StopFreeMovement();
+
+        Transform hand =
+            detector.IsLeftHand
+            ? leftHandTarget
+            : rightHandTarget;
+
+        if (snapToHandOnCatch)
+            SnapBallHorizontal(hand);
 
         if (detector.IsLeftHand)
         {
@@ -149,6 +186,25 @@ public class DribbleHandManager : MonoBehaviour
         );
     }
 
+    private void SnapBallHorizontal(
+        Transform hand)
+    {
+        if (hand == null)
+            return;
+
+        Vector3 position =
+            dribbleBall.transform.position;
+
+        position.x =
+            hand.position.x;
+
+        position.z =
+            hand.position.z;
+
+        dribbleBall.transform.position =
+            position;
+    }
+
     private void CheckSuccessfulHandChange(
         DribbleHandDetector detector)
     {
@@ -160,11 +216,18 @@ public class DribbleHandManager : MonoBehaviour
             detector.IsLeftHand;
 
         if (!changedHand)
+        {
+            waitingForHandChange =
+                false;
+
             return;
+        }
 
-        waitingForHandChange = false;
+        waitingForHandChange =
+            false;
 
-        OnSuccessfulHandChange?.Invoke();
+        OnSuccessfulHandChange
+            ?.Invoke();
     }
 
     private void ReleaseBall(
@@ -174,16 +237,25 @@ public class DribbleHandManager : MonoBehaviour
         releasedFromLeftHand =
             detector.IsLeftHand;
 
-        waitingForHandChange = true;
+        waitingForHandChange =
+            true;
 
         dribbleBall.ReleaseHand();
 
         detector.BlockUntilExit();
 
-        controllingHand = null;
+        controllingHand =
+            null;
+
+        grabLockTimer =
+            0f;
 
         if (freeMovement != null)
-            freeMovement.Launch(velocity);
+        {
+            freeMovement.Launch(
+                velocity
+            );
+        }
     }
 
     public void ResetBallControl()
@@ -191,9 +263,14 @@ public class DribbleHandManager : MonoBehaviour
         if (controllingHand != null)
             controllingHand.BlockUntilExit();
 
-        controllingHand = null;
+        controllingHand =
+            null;
 
-        waitingForHandChange = false;
+        waitingForHandChange =
+            false;
+
+        grabLockTimer =
+            0f;
 
         if (dribbleBall != null)
             dribbleBall.ReleaseHand();

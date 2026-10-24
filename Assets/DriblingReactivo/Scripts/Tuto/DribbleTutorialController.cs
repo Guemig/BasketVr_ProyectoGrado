@@ -119,8 +119,11 @@ public class DribbleTutorialController : MonoBehaviour
     {
         currentStep = 1;
 
-        waitingForInteraction = false;
-        transitioning = false;
+        waitingForInteraction =
+            false;
+
+        transitioning =
+            false;
 
         if (tutorialCanvas != null)
             tutorialCanvas.SetActive(true);
@@ -149,8 +152,62 @@ public class DribbleTutorialController : MonoBehaviour
         }
 
         StartCoroutine(
-            CompleteStepAndContinue()
+            ButtonStepTransition()
         );
+    }
+
+    private IEnumerator ButtonStepTransition()
+    {
+        transitioning =
+            true;
+
+        if (dialogueAudioSource != null)
+            dialogueAudioSource.Stop();
+
+        if (plateManager != null)
+            plateManager.StopTutorialAction();
+
+        if (ballRespawn != null)
+            ballRespawn.RespawnNow();
+
+        yield return new WaitForSecondsRealtime(
+            0.15f
+        );
+
+        currentStep++;
+
+        transitioning =
+            false;
+
+        ShowCurrentStep();
+    }
+
+    private IEnumerator AutomaticStepTransition()
+    {
+        transitioning =
+            true;
+
+        if (dialogueAudioSource != null)
+            dialogueAudioSource.Stop();
+
+        PlayCompleteSound();
+
+        if (plateManager != null)
+            plateManager.StopTutorialAction();
+
+        if (ballRespawn != null)
+            ballRespawn.RespawnNow();
+
+        yield return new WaitForSecondsRealtime(
+            transitionDelay
+        );
+
+        currentStep++;
+
+        transitioning =
+            false;
+
+        ShowCurrentStep();
     }
 
     private void ShowCurrentStep()
@@ -161,7 +218,8 @@ public class DribbleTutorialController : MonoBehaviour
         if (plateManager != null)
             plateManager.StopTutorialAction();
 
-        waitingForInteraction = false;
+        waitingForInteraction =
+            false;
 
         switch (currentStep)
         {
@@ -264,9 +322,12 @@ public class DribbleTutorialController : MonoBehaviour
         AudioClip clip)
     {
         if (dialogueText != null)
-            dialogueText.text = text;
+            dialogueText.text =
+                text;
 
-        PlayDialogue(clip);
+        PlayDialogue(
+            clip
+        );
 
         if (nextButtonObject != null)
             nextButtonObject.SetActive(true);
@@ -282,20 +343,25 @@ public class DribbleTutorialController : MonoBehaviour
             .TutorialRequirement requirement)
     {
         if (dialogueText != null)
-            dialogueText.text = text;
+            dialogueText.text =
+                text;
 
-        PlayDialogue(clip);
+        PlayDialogue(
+            clip
+        );
 
         if (nextButtonObject != null)
             nextButtonObject.SetActive(false);
 
-        waitingForInteraction = true;
+        waitingForInteraction =
+            true;
 
         if (tutorialReaction != null)
         {
-            tutorialReaction.StartRequirement(
-                requirement
-            );
+            tutorialReaction
+                .StartRequirement(
+                    requirement
+                );
         }
     }
 
@@ -307,42 +373,12 @@ public class DribbleTutorialController : MonoBehaviour
         if (transitioning)
             return;
 
-        waitingForInteraction = false;
+        waitingForInteraction =
+            false;
 
         StartCoroutine(
-            CompleteStepAndContinue()
+            AutomaticStepTransition()
         );
-    }
-
-    private IEnumerator CompleteStepAndContinue()
-    {
-        transitioning = true;
-
-        if (dialogueAudioSource != null)
-            dialogueAudioSource.Stop();
-
-        PlayCompleteSound();
-
-        if (plateManager != null)
-            plateManager.StopTutorialAction();
-
-        if (ballRespawn != null)
-            ballRespawn.RespawnNow();
-
-        yield return new WaitForSecondsRealtime(
-            transitionDelay
-        );
-
-        currentStep++;
-
-        Debug.Log(
-            "Avanzando al paso: " +
-            currentStep
-        );
-
-        transitioning = false;
-
-        ShowCurrentStep();
     }
 
     private void PlayDialogue(
@@ -356,7 +392,9 @@ public class DribbleTutorialController : MonoBehaviour
         if (clip == null)
             return;
 
-        dialogueAudioSource.clip = clip;
+        dialogueAudioSource.clip =
+            clip;
+
         dialogueAudioSource.Play();
     }
 

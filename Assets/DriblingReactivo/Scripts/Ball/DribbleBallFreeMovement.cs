@@ -5,167 +5,180 @@ public class DribbleBallFreeMovement : MonoBehaviour
     [SerializeField] private FakeDribbleBall dribbleBall;
     [SerializeField] private DribbleBallAudio ballAudio;
 
-    [Header("Movimiento libre")]
+    [Header("Movimiento")]
     [SerializeField] private float impulseMultiplier = 0.65f;
     [SerializeField] private float maximumSpeed = 3f;
     [SerializeField] private float horizontalDrag = 0.35f;
 
-    [Header("Caída")]
-    [SerializeField] private float gravity = 5f;
+    [Header("Salida de la mano")]
+    [SerializeField] private float releaseUpSpeed = 0f;
+
+    [Header("Rebote")]
+    [SerializeField] private float gravity = 9f;
     [SerializeField] private float floorY = 0.2f;
+    [SerializeField] private float bounceUpSpeed = 3.3f;
+    [SerializeField] private float minimumBounceUpSpeed = 1.6f;
+    [SerializeField] private float bounceDecayPerSecond = 0.25f;
+    [SerializeField] private float bounceHorizontalDamping = 0.92f;
 
-    [Header("Rebote libre")]
-    [SerializeField] private float bounceStrength = 0.9f;
-    [SerializeField] private float minimumBounceUpSpeed = 4.5f;
-    [SerializeField] private float bounceHorizontalDamping = 0.96f;
-    [SerializeField] private float minimumBounceVelocity = 0.25f;
-
-    [Header("Detección de movimiento")]
+    [Header("Estado")]
     [SerializeField] private float movementThreshold = 0.05f;
 
     private Vector3 velocity;
-    private bool movingFreely;
-    private bool touchingFloor;
 
-    public bool MovingFreely => movingFreely;
+    private bool movingFreely;
+    private bool floorHitRegistered;
+
+    private float currentBounceUpSpeed;
+
+    public bool MovingFreely =>
+        movingFreely;
 
     public bool IsMoving =>
         movingFreely &&
         velocity.magnitude >
         movementThreshold;
 
+    private void Awake()
+    {
+        currentBounceUpSpeed =
+            bounceUpSpeed;
+    }
+
     private void Update()
     {
         if (!movingFreely)
             return;
 
-        if (dribbleBall.IsControlled)
+        if (dribbleBall != null &&
+            dribbleBall.IsControlled)
         {
             StopFreeMovement();
             return;
         }
 
+        currentBounceUpSpeed =
+            Mathf.MoveTowards(
+                currentBounceUpSpeed,
+                minimumBounceUpSpeed,
+                bounceDecayPerSecond *
+                Time.deltaTime
+            );
+
         velocity.y -=
             gravity *
             Time.deltaTime;
 
-        Vector3 horizontalVelocity =
-            new Vector3(
+        velocity.x =
+            Mathf.MoveTowards(
                 velocity.x,
                 0f,
-                velocity.z
-            );
-
-        horizontalVelocity =
-            Vector3.MoveTowards(
-                horizontalVelocity,
-                Vector3.zero,
                 horizontalDrag *
                 Time.deltaTime
             );
 
-        velocity.x =
-            horizontalVelocity.x;
-
         velocity.z =
-            horizontalVelocity.z;
+            Mathf.MoveTowards(
+                velocity.z,
+                0f,
+                horizontalDrag *
+                Time.deltaTime
+            );
 
         Vector3 newPosition =
             transform.position +
             velocity *
             Time.deltaTime;
 
-        if (newPosition.y <= floorY &&
-            velocity.y < 0f)
+        if (newPosition.y <=
+            floorY)
         {
-            newPosition.y = floorY;
+            newPosition.y =
+                floorY;
 
-            float impactSpeed =
-                Mathf.Abs(velocity.y);
-
-            if (!touchingFloor)
+            if (velocity.y < 0f)
             {
-                touchingFloor = true;
-
-                if (ballAudio != null)
+                if (!floorHitRegistered)
                 {
-                    ballAudio.PlayBounce();
+                    if (ballAudio != null)
+                        ballAudio.PlayBounce();
+
+                    floorHitRegistered =
+                        true;
                 }
-            }
 
-            float bounceVelocity =
-                impactSpeed *
-                bounceStrength;
-
-            if (bounceVelocity >
-                minimumBounceVelocity)
-            {
                 velocity.y =
-                    Mathf.Max(
-                        bounceVelocity,
-                        minimumBounceUpSpeed
-                    );
+                    currentBounceUpSpeed;
 
                 velocity.x *=
                     bounceHorizontalDamping;
 
                 velocity.z *=
                     bounceHorizontalDamping;
-
-                touchingFloor = false;
-            }
-            else
-            {
-                velocity = Vector3.zero;
-                movingFreely = false;
-                touchingFloor = true;
             }
         }
-        else if (newPosition.y >
-                 floorY + 0.03f)
+        else
         {
-            touchingFloor = false;
+            if (velocity.y > 0.1f)
+            {
+                floorHitRegistered =
+                    false;
+            }
         }
 
         transform.position =
             newPosition;
     }
 
-    public void Launch(Vector3 handVelocity)
+    public void Launch(
+        Vector3 handVelocity)
     {
-        Vector3 horizontalImpulse =
+        Vector3 horizontalVelocity =
             new Vector3(
                 handVelocity.x,
                 0f,
                 handVelocity.z
             );
 
-        horizontalImpulse *=
+        horizontalVelocity *=
             impulseMultiplier;
 
-        if (horizontalImpulse.magnitude >
+        if (horizontalVelocity.magnitude >
             maximumSpeed)
         {
-            horizontalImpulse =
-                horizontalImpulse.normalized *
+            horizontalVelocity =
+                horizontalVelocity.normalized *
                 maximumSpeed;
         }
 
         velocity =
-            new Vector3(
-                horizontalImpulse.x,
-                0f,
-                horizontalImpulse.z
-            );
+            horizontalVelocity;
 
-        touchingFloor = false;
-        movingFreely = true;
+        velocity.y =
+            releaseUpSpeed;
+
+        currentBounceUpSpeed =
+            bounceUpSpeed;
+
+        movingFreely =
+            true;
+
+        floorHitRegistered =
+            false;
     }
 
     public void StopFreeMovement()
     {
-        movingFreely = false;
-        touchingFloor = false;
-        velocity = Vector3.zero;
+        velocity =
+            Vector3.zero;
+
+        movingFreely =
+            false;
+
+        floorHitRegistered =
+            false;
+
+        currentBounceUpSpeed =
+            bounceUpSpeed;
     }
 }

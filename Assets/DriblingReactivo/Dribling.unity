@@ -4161,8 +4161,10 @@ MonoBehaviour:
   ballStart: {fileID: 983555534}
   leftHandTarget: {fileID: 963272712}
   rightHandTarget: {fileID: 391901590}
-  releaseSpeed: 0.7
-  maximumReleaseAngle: 45
+  grabLockTime: 0.4
+  snapToHandOnCatch: 1
+  releaseSpeed: 1.3
+  maximumReleaseAngle: 33
 --- !u!1 &503224011
 GameObject:
   m_ObjectHideFlags: 0
@@ -7624,12 +7626,13 @@ MonoBehaviour:
   impulseMultiplier: 0.65
   maximumSpeed: 3
   horizontalDrag: 0.35
+  releaseUpSpeed: 0
   gravity: 5
   floorY: 0.2
-  bounceStrength: 0.93
-  minimumBounceUpSpeed: 3.5
+  bounceUpSpeed: 3.3
+  minimumBounceUpSpeed: 1.6
+  bounceDecayPerSecond: 0.25
   bounceHorizontalDamping: 0.96
-  minimumBounceVelocity: 0.25
   movementThreshold: 0.05
 --- !u!1 &985552425
 GameObject:
