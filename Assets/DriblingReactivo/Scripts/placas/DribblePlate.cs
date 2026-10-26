@@ -19,45 +19,60 @@ public class DribblePlate : MonoBehaviour
 
     private PlateType plateType = PlateType.Off;
     private bool canDetectBall;
+    private bool isVisible;
 
     public PlateType Type => plateType;
+    public bool IsVisible => isVisible;
 
     public event Action<DribblePlate> OnBallTouched;
+    public event Action<DribblePlate> OnStateChanged;
 
     public void ShowOff()
     {
         gameObject.SetActive(true);
 
+        isVisible = true;
         plateType = PlateType.Off;
         canDetectBall = false;
 
         UpdateMaterial();
+
+        OnStateChanged?.Invoke(this);
     }
 
     public void ShowGreen()
     {
         gameObject.SetActive(true);
 
+        isVisible = true;
         plateType = PlateType.Green;
         canDetectBall = true;
 
         UpdateMaterial();
+
+        OnStateChanged?.Invoke(this);
     }
 
     public void ShowOrange()
     {
         gameObject.SetActive(true);
 
+        isVisible = true;
         plateType = PlateType.Orange;
         canDetectBall = true;
 
         UpdateMaterial();
+
+        OnStateChanged?.Invoke(this);
     }
 
     public void Hide()
     {
         canDetectBall = false;
+        isVisible = false;
         plateType = PlateType.Off;
+
+        OnStateChanged?.Invoke(this);
 
         gameObject.SetActive(false);
     }

@@ -11,12 +11,12 @@ public class DribbleHandManager : MonoBehaviour
     [SerializeField] private Transform rightHandTarget;
 
     [Header("Captura")]
-    [SerializeField] private float grabLockTime = 0.4f;
+    [SerializeField] private float grabLockTime = 0.25f;
     [SerializeField] private bool snapToHandOnCatch = true;
 
     [Header("Impulso")]
-    [SerializeField] private float releaseSpeed = 1.15f;
-    [SerializeField] private float maximumReleaseAngle = 40f;
+    [SerializeField] private float releaseSpeed = 0.7f;
+    [SerializeField] private float maximumReleaseAngle = 55f;
 
     private DribbleHandDetector controllingHand;
 
@@ -25,12 +25,28 @@ public class DribbleHandManager : MonoBehaviour
 
     private float grabLockTimer;
 
+    public bool HasControl =>
+        controllingHand != null &&
+        dribbleBall != null &&
+        dribbleBall.IsControlled;
+
+    public bool IsLeftHandControlling =>
+        HasControl &&
+        controllingHand.IsLeftHand;
+
+    public bool IsRightHandControlling =>
+        HasControl &&
+        !controllingHand.IsLeftHand;
+
     public event Action OnSuccessfulHandChange;
 
     private void Update()
     {
         if (grabLockTimer > 0f)
-            grabLockTimer -= Time.deltaTime;
+        {
+            grabLockTimer -=
+                Time.deltaTime;
+        }
 
         if (controllingHand == null)
             return;
@@ -215,19 +231,13 @@ public class DribbleHandManager : MonoBehaviour
             releasedFromLeftHand !=
             detector.IsLeftHand;
 
-        if (!changedHand)
-        {
-            waitingForHandChange =
-                false;
-
-            return;
-        }
-
         waitingForHandChange =
             false;
 
-        OnSuccessfulHandChange
-            ?.Invoke();
+        if (!changedHand)
+            return;
+
+        OnSuccessfulHandChange?.Invoke();
     }
 
     private void ReleaseBall(

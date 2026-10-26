@@ -9,12 +9,17 @@ public class DribbleTutorialController : MonoBehaviour
     [SerializeField] private DribbleTutorialReaction tutorialReaction;
     [SerializeField] private DribblePlateManager plateManager;
     [SerializeField] private DribbleBallRespawn ballRespawn;
+    [SerializeField] private DribbleIndicatorUI indicatorUI;
 
     [Header("Canvas")]
     [SerializeField] private GameObject tutorialCanvas;
+    [SerializeField] private GameObject startCanvas;
     [SerializeField] private TMP_Text dialogueText;
     [SerializeField] private GameObject nextButtonObject;
     [SerializeField] private Button nextButton;
+
+    [Header("Typing")]
+    [SerializeField] private float typingDelay = 0.03f;
 
     [Header("Audio Dialogo")]
     [SerializeField] private AudioSource dialogueAudioSource;
@@ -71,13 +76,21 @@ public class DribbleTutorialController : MonoBehaviour
     private bool waitingForInteraction;
     private bool transitioning;
 
+    private Coroutine typingCoroutine;
+
     private void Awake()
     {
         if (tutorialCanvas != null)
             tutorialCanvas.SetActive(false);
 
+        if (startCanvas != null)
+            startCanvas.SetActive(false);
+
         if (nextButtonObject != null)
             nextButtonObject.SetActive(false);
+
+        if (indicatorUI != null)
+            indicatorUI.HideIndicator();
     }
 
     private void Start()
@@ -92,8 +105,11 @@ public class DribbleTutorialController : MonoBehaviour
             if (tutorialCanvas != null)
                 tutorialCanvas.SetActive(false);
 
-            if (plateManager != null)
-                plateManager.FinishTutorial();
+            if (indicatorUI != null)
+                indicatorUI.HideIndicator();
+
+            if (startCanvas != null)
+                startCanvas.SetActive(true);
         }
     }
 
@@ -113,26 +129,31 @@ public class DribbleTutorialController : MonoBehaviour
             tutorialReaction.OnRequirementCompleted -=
                 OnRequirementCompleted;
         }
+
+        StopTyping();
     }
 
     public void StartTutorial()
     {
         currentStep = 1;
 
-        waitingForInteraction =
-            false;
-
-        transitioning =
-            false;
+        waitingForInteraction = false;
+        transitioning = false;
 
         if (tutorialCanvas != null)
             tutorialCanvas.SetActive(true);
+
+        if (startCanvas != null)
+            startCanvas.SetActive(false);
 
         if (plateManager != null)
             plateManager.StartTutorial();
 
         if (ballRespawn != null)
             ballRespawn.RespawnNow();
+
+        if (indicatorUI != null)
+            indicatorUI.HideIndicator();
 
         ShowCurrentStep();
     }
@@ -158,8 +179,9 @@ public class DribbleTutorialController : MonoBehaviour
 
     private IEnumerator ButtonStepTransition()
     {
-        transitioning =
-            true;
+        transitioning = true;
+
+        StopTyping();
 
         if (dialogueAudioSource != null)
             dialogueAudioSource.Stop();
@@ -176,16 +198,16 @@ public class DribbleTutorialController : MonoBehaviour
 
         currentStep++;
 
-        transitioning =
-            false;
+        transitioning = false;
 
         ShowCurrentStep();
     }
 
     private IEnumerator AutomaticStepTransition()
     {
-        transitioning =
-            true;
+        transitioning = true;
+
+        StopTyping();
 
         if (dialogueAudioSource != null)
             dialogueAudioSource.Stop();
@@ -204,8 +226,7 @@ public class DribbleTutorialController : MonoBehaviour
 
         currentStep++;
 
-        transitioning =
-            false;
+        transitioning = false;
 
         ShowCurrentStep();
     }
@@ -218,8 +239,13 @@ public class DribbleTutorialController : MonoBehaviour
         if (plateManager != null)
             plateManager.StopTutorialAction();
 
-        waitingForInteraction =
-            false;
+        if (indicatorUI != null &&
+            currentStep != 7)
+        {
+            indicatorUI.HideIndicator();
+        }
+
+        waitingForInteraction = false;
 
         switch (currentStep)
         {
@@ -292,6 +318,12 @@ public class DribbleTutorialController : MonoBehaviour
                 break;
 
             case 7:
+                if (indicatorUI != null)
+                {
+                    indicatorUI
+                        .ShowTutorialMode();
+                }
+
                 ShowInteractionStep(
                     step7Text,
                     step7Audio,
@@ -321,13 +353,9 @@ public class DribbleTutorialController : MonoBehaviour
         string text,
         AudioClip clip)
     {
-        if (dialogueText != null)
-            dialogueText.text =
-                text;
+        StartTyping(text);
 
-        PlayDialogue(
-            clip
-        );
+        PlayDialogue(clip);
 
         if (nextButtonObject != null)
             nextButtonObject.SetActive(true);
@@ -342,27 +370,66 @@ public class DribbleTutorialController : MonoBehaviour
         DribbleTutorialReaction
             .TutorialRequirement requirement)
     {
-        if (dialogueText != null)
-            dialogueText.text =
-                text;
+        StartTyping(text);
 
-        PlayDialogue(
-            clip
-        );
+        PlayDialogue(clip);
 
         if (nextButtonObject != null)
             nextButtonObject.SetActive(false);
 
-        waitingForInteraction =
-            true;
+        waitingForInteraction = true;
 
         if (tutorialReaction != null)
         {
-            tutorialReaction
-                .StartRequirement(
-                    requirement
+            tutorialReaction.StartRequirement(
+                requirement
+            );
+        }
+    }
+
+    private void StartTyping(
+        string text)
+    {
+        StopTyping();
+
+        typingCoroutine =
+            StartCoroutine(
+                TypeText(text)
+            );
+    }
+
+    private IEnumerator TypeText(
+        string text)
+    {
+        if (dialogueText == null)
+            yield break;
+
+        dialogueText.text = "";
+
+        foreach (char character in text)
+        {
+            dialogueText.text +=
+                character;
+
+            yield return
+                new WaitForSecondsRealtime(
+                    typingDelay
                 );
         }
+
+        typingCoroutine = null;
+    }
+
+    private void StopTyping()
+    {
+        if (typingCoroutine == null)
+            return;
+
+        StopCoroutine(
+            typingCoroutine
+        );
+
+        typingCoroutine = null;
     }
 
     private void OnRequirementCompleted()
@@ -373,8 +440,7 @@ public class DribbleTutorialController : MonoBehaviour
         if (transitioning)
             return;
 
-        waitingForInteraction =
-            false;
+        waitingForInteraction = false;
 
         StartCoroutine(
             AutomaticStepTransition()
@@ -392,9 +458,7 @@ public class DribbleTutorialController : MonoBehaviour
         if (clip == null)
             return;
 
-        dialogueAudioSource.clip =
-            clip;
-
+        dialogueAudioSource.clip = clip;
         dialogueAudioSource.Play();
     }
 
@@ -413,6 +477,8 @@ public class DribbleTutorialController : MonoBehaviour
 
     private void FinishTutorial()
     {
+        StopTyping();
+
         if (tutorialReaction != null)
             tutorialReaction.StopRequirement();
 
@@ -422,10 +488,16 @@ public class DribbleTutorialController : MonoBehaviour
         if (ballRespawn != null)
             ballRespawn.RespawnNow();
 
+        if (indicatorUI != null)
+            indicatorUI.HideIndicator();
+
         if (dialogueAudioSource != null)
             dialogueAudioSource.Stop();
 
         if (tutorialCanvas != null)
             tutorialCanvas.SetActive(false);
+
+        if (startCanvas != null)
+            startCanvas.SetActive(true);
     }
 }

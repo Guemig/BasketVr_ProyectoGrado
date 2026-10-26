@@ -116,7 +116,8 @@ public class DribblePlateManager : MonoBehaviour
     {
         StopCurrentTarget();
 
-        currentMode = TutorialMode.OrangePractice;
+        currentMode =
+            TutorialMode.OrangePractice;
 
         ShowTutorialPlatesOff();
 
@@ -127,7 +128,8 @@ public class DribblePlateManager : MonoBehaviour
     {
         StopCurrentTarget();
 
-        currentMode = TutorialMode.MixedPractice;
+        currentMode =
+            TutorialMode.MixedPractice;
 
         ShowTutorialPlatesOff();
 
@@ -146,7 +148,8 @@ public class DribblePlateManager : MonoBehaviour
 
         currentPlate.ShowOrange();
 
-        lastPlate = currentPlate;
+        lastPlate =
+            currentPlate;
 
         targetCoroutine =
             StartCoroutine(
@@ -186,7 +189,8 @@ public class DribblePlateManager : MonoBehaviour
                 );
         }
 
-        lastPlate = currentPlate;
+        lastPlate =
+            currentPlate;
     }
 
     private DribblePlate GetNextTutorialPlate()
@@ -252,11 +256,8 @@ public class DribblePlateManager : MonoBehaviour
         if (currentMode ==
             TutorialMode.SingleGreen)
         {
-            if (tutorialReaction != null)
-            {
-                tutorialReaction
-                    .RegisterFrontPlate();
-            }
+            tutorialReaction
+                ?.RegisterFrontPlate();
 
             return;
         }
@@ -264,11 +265,8 @@ public class DribblePlateManager : MonoBehaviour
         if (currentMode ==
             TutorialMode.OrangePractice)
         {
-            if (tutorialReaction != null)
-            {
-                tutorialReaction
-                    .RegisterOrangePlate();
-            }
+            tutorialReaction
+                ?.RegisterOrangePlate();
 
             targetCoroutine =
                 StartCoroutine(
@@ -284,11 +282,8 @@ public class DribblePlateManager : MonoBehaviour
             if (type ==
                 DribblePlate.PlateType.Green)
             {
-                if (tutorialReaction != null)
-                {
-                    tutorialReaction
-                        .RegisterGreenPlate();
-                }
+                tutorialReaction
+                    ?.RegisterGreenPlate();
             }
 
             targetCoroutine =
@@ -314,6 +309,8 @@ public class DribblePlateManager : MonoBehaviour
         {
             currentPlate.ShowOff();
             currentPlate = null;
+
+            PlayError();
         }
 
         yield return new WaitForSecondsRealtime(
@@ -356,6 +353,8 @@ public class DribblePlateManager : MonoBehaviour
         {
             currentPlate.ShowOff();
             currentPlate = null;
+
+            PlayError();
         }
 
         yield return new WaitForSecondsRealtime(
@@ -489,36 +488,13 @@ public class DribblePlateManager : MonoBehaviour
         HideTrainingPlates();
     }
 
-    public void PrepareTrainingPlates()
-    {
-        StopCurrentTarget();
-
-        currentMode =
-            TutorialMode.None;
-
-        if (tutorialPlateLeft != null)
-            tutorialPlateLeft.ShowOff();
-
-        if (tutorialPlateRight != null)
-            tutorialPlateRight.ShowOff();
-
-        if (trainingPlate3 != null)
-            trainingPlate3.ShowOff();
-
-        if (trainingPlate4 != null)
-            trainingPlate4.ShowOff();
-
-        if (trainingPlate5 != null)
-            trainingPlate5.ShowOff();
-    }
-
     private void PlayCheck()
     {
-        if (feedbackAudioSource == null)
+        if (feedbackAudioSource == null ||
+            checkSound == null)
+        {
             return;
-
-        if (checkSound == null)
-            return;
+        }
 
         feedbackAudioSource.PlayOneShot(
             checkSound
@@ -527,11 +503,11 @@ public class DribblePlateManager : MonoBehaviour
 
     private void PlayError()
     {
-        if (feedbackAudioSource == null)
+        if (feedbackAudioSource == null ||
+            errorSound == null)
+        {
             return;
-
-        if (errorSound == null)
-            return;
+        }
 
         feedbackAudioSource.PlayOneShot(
             errorSound
