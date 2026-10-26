@@ -1,6 +1,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PassReactionGameManager : MonoBehaviour
@@ -41,6 +42,9 @@ public class PassReactionGameManager : MonoBehaviour
 
     private bool isTransitionPending;
     private bool isFinishingLevel;
+
+    // Evita solicitar dos veces el guardado del mismo intento.
+    private bool attemptSaveRequested;
 
     // =====================================================
     // EVENTOS
@@ -114,6 +118,7 @@ public class PassReactionGameManager : MonoBehaviour
         isTransitionPending = false;
         isFinishingLevel = false;
         shotsLaunched = 0;
+        attemptSaveRequested = false;
 
         if (machineManager != null)
         {
@@ -158,6 +163,7 @@ public class PassReactionGameManager : MonoBehaviour
         exerciseFinished = false;
         isFinishingLevel = false;
         shotsLaunched = 0;
+        attemptSaveRequested = false;
 
         statsManager.ResetAllStats();
 
@@ -217,6 +223,7 @@ public class PassReactionGameManager : MonoBehaviour
         }
 
         isTransitionPending = false;
+
         StartLevel();
     }
 
@@ -224,17 +231,15 @@ public class PassReactionGameManager : MonoBehaviour
     // INICIAR NIVEL
     // =====================================================
 
-
     private void StartLevel()
     {
         if (!ValidateCurrentLevelConfig() || !ValidateReferences())
             return;
 
-        // Configurar las máquinas para el nivel actual.
         if (!ConfigureMachinesForLevel(currentLevel))
             return;
 
-        // Crear la distribución completa de acciones del nivel.
+        // Crear la secuencia completa de acciones del nivel.
         if (!machineManager.PrepareActionSequence(currentLevel))
         {
             Debug.LogError(
@@ -263,9 +268,8 @@ public class PassReactionGameManager : MonoBehaviour
         LaunchNextBall();
     }
 
-
     // =====================================================
-    // BALÓN ATRAPADO
+    // BALÓN ATRAPADO CORRECTAMENTE
     // =====================================================
 
     public void RegisterCatch(float reactionTime)
@@ -278,6 +282,7 @@ public class PassReactionGameManager : MonoBehaviour
         }
 
         statsManager.RegisterCatch(reactionTime);
+
         BallFinished();
     }
 
@@ -295,11 +300,63 @@ public class PassReactionGameManager : MonoBehaviour
         }
 
         statsManager.RegisterMiss();
+
         BallFinished();
     }
 
     // =====================================================
-    // TERMINÓ UN PASE
+    // ATRAPADA INCORRECTA
+    // =====================================================
+
+    public void RegisterWrongCatch(float reactionTime)
+    {
+        if (!gameRunning ||
+            isFinishingLevel ||
+            statsManager == null)
+        {
+            return;
+        }
+
+        statsManager.RegisterWrongCatch(reactionTime);
+
+        Debug.Log(
+            $"[PASSES] Atrapada incorrecta registrada. " +
+            $"Tiempo de reacción: {reactionTime:F3} s. " +
+            $"Resultados: {statsManager.TotalBalls}/" +
+            $"{GetCurrentLevelShots()}",
+            this
+        );
+
+        BallFinished();
+    }
+
+    // =====================================================
+    // PASE CORRECTO
+    // =====================================================
+
+    public void RegisterCorrectPass()
+    {
+        if (!gameRunning ||
+            isFinishingLevel ||
+            statsManager == null)
+        {
+            return;
+        }
+
+        statsManager.RegisterCorrectPass();
+
+        Debug.Log(
+            $"[PASSES] Pase correcto registrado. " +
+            $"Resultados: {statsManager.TotalBalls}/" +
+            $"{GetCurrentLevelShots()}",
+            this
+        );
+
+        BallFinished();
+    }
+
+    // =====================================================
+    // FINALIZAR UNA ACCIÓN
     // =====================================================
 
     private void BallFinished()
@@ -330,6 +387,7 @@ public class PassReactionGameManager : MonoBehaviour
         }
 
         StopNextBallCoroutine();
+
         nextBallCoroutine = StartCoroutine(NextBall());
     }
 
@@ -346,7 +404,6 @@ public class PassReactionGameManager : MonoBehaviour
     // =====================================================
     // LANZAR SIGUIENTE BALÓN
     // =====================================================
-
 
     private void LaunchNextBall()
     {
@@ -391,7 +448,6 @@ public class PassReactionGameManager : MonoBehaviour
     // CONFIGURACIÓN DE MÁQUINAS
     // =====================================================
 
-
     private bool ConfigureMachinesForLevel(int level)
     {
         if (machineManager == null)
@@ -407,14 +463,20 @@ public class PassReactionGameManager : MonoBehaviour
         if (!machineManager.ConfigureLevel(level))
             return false;
 
-       /* if (machineIndicator != null)
+        /*
+        if (machineIndicator != null)
         {
             machineIndicator.BindMachines(machineManager);
             machineIndicator.SetLevel(level);
-        }*/
+        }
+        */
 
         return true;
     }
+
+    // =====================================================
+    // CONFIGURACIÓN DE DISPAROS
+    // =====================================================
 
     private int GetCurrentLevelShots()
     {
@@ -429,6 +491,10 @@ public class PassReactionGameManager : MonoBehaviour
             ? levelConfigManager.GetShotDelay(currentLevel)
             : 0f;
     }
+
+    // =====================================================
+    // VALIDACIONES
+    // =====================================================
 
     private bool ValidateCurrentLevelConfig()
     {
@@ -536,6 +602,9 @@ public class PassReactionGameManager : MonoBehaviour
 
             statsManager.CalculateGeneralStats();
 
+            // Guardar el intento completo antes de mostrar el menú final.
+            SaveCompletedPassesAttempt();
+
             OnExerciseFinished?.Invoke();
 
             if (uiManager != null)
@@ -563,61 +632,133 @@ public class PassReactionGameManager : MonoBehaviour
     }
 
     // =====================================================
-    // ATRAPADA INCORRECTA
+    // GUARDAR RESULTADOS EN FIRESTORE
     // =====================================================
 
-    // =====================================================
-    // ATRAPADA INCORRECTA
-    // =====================================================
-
-    // =====================================================
-    // ATRAPADA INCORRECTA
-    // =====================================================
-
-    public void RegisterWrongCatch(float reactionTime)
+    private async void SaveCompletedPassesAttempt()
     {
-        if (!gameRunning ||
-            isFinishingLevel ||
-            statsManager == null)
+        if (attemptSaveRequested)
         {
+            Debug.LogWarning(
+                "[PASES] El guardado de este intento ya fue solicitado.",
+                this
+            );
+
             return;
         }
 
-        statsManager.RegisterWrongCatch(reactionTime);
+        FirestoreService firestore = FirestoreService.Instance;
 
-        Debug.Log(
-            $"[PASSES] Atrapada incorrecta registrada. " +
-            $"Tiempo de reacción: {reactionTime:F3} s. " +
-            $"Resultados: {statsManager.TotalBalls}/" +
-            $"{GetCurrentLevelShots()}",
-            this
-        );
-
-        BallFinished();
-    }
-    // =====================================================
-    // PASE CORRECTO
-    // =====================================================
-
-    public void RegisterCorrectPass()
-    {
-        if (!gameRunning ||
-            isFinishingLevel ||
-            statsManager == null)
+        if (firestore == null)
         {
+            Debug.LogError(
+                "[PASES] FirestoreService no está disponible.",
+                this
+            );
+
             return;
         }
 
-        statsManager.RegisterCorrectPass();
+        if (!firestore.HasCurrentStudent)
+        {
+            Debug.LogError(
+                "[PASES] No hay un estudiante seleccionado. " +
+                "El intento no se guardará.",
+                this
+            );
 
-        Debug.Log(
-            $"[PASSES] Pase correcto registrado. " +
-            $"Resultados: {statsManager.TotalBalls}/" +
-            $"{GetCurrentLevelShots()}",
-            this
-        );
+            return;
+        }
 
-        BallFinished();
+        if (statsManager == null)
+        {
+            Debug.LogError(
+                "[PASES] No hay un gestor de estadísticas asignado.",
+                this
+            );
+
+            return;
+        }
+
+        // Bloquear nuevas solicitudes durante el envío.
+        attemptSaveRequested = true;
+
+        try
+        {
+            PassReactionStatsManager.LevelStats[] levelStats =
+            {
+                statsManager.Level1Stats,
+                statsManager.Level2Stats,
+                statsManager.Level3Stats
+            };
+
+            FirestoreService.PassesSession session =
+                firestore.CreatePassesSession();
+
+            foreach (
+                PassReactionStatsManager.LevelStats stats
+                in levelStats
+            )
+            {
+                if (stats == null)
+                {
+                    throw new Exception(
+                        "Faltan estadísticas de uno de los niveles."
+                    );
+                }
+
+                FirestoreService.PassesLevel levelData =
+                    new FirestoreService.PassesLevel
+                    {
+                        level = stats.level,
+
+                        correctAnswers = stats.CorrectDecisions,
+                        totalAttempts = stats.Total,
+                        accuracy = stats.accuracy,
+                        averageReaction = stats.averageReaction,
+
+                        caught = stats.caught,
+                        missed = stats.missed,
+                        wrongCaught = stats.wrongCaught,
+                        correctPasses = stats.correctPasses,
+
+                        fastestReaction = stats.fastestReaction,
+                        slowestReaction = stats.slowestReaction,
+
+                        reactionTimes = stats.reactionTimes != null
+                            ? new List<float>(stats.reactionTimes)
+                            : new List<float>()
+                    };
+
+                firestore.AddPassesLevelToSession(
+                    session,
+                    levelData
+                );
+            }
+
+            string attemptId = await firestore.SavePassesAttempt(
+                firestore.CurrentStudentCode,
+                session
+            );
+
+            Debug.Log(
+                "[PASES] Intento guardado correctamente en Firestore. " +
+                "Estudiante: " + firestore.CurrentStudentCode +
+                ", ID del intento: " + attemptId,
+                this
+            );
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError(
+                "[PASES] Error al guardar el intento en Firestore: " +
+                exception,
+                this
+            );
+
+            // Permitir otro intento si el envío falla.
+            attemptSaveRequested = false;
+        }
     }
 
     // =====================================================
@@ -630,6 +771,7 @@ public class PassReactionGameManager : MonoBehaviour
             return;
 
         StopNextBallCoroutine();
+
         machineManager.StopAllMachines();
 
         isTransitionPending = false;
@@ -640,6 +782,7 @@ public class PassReactionGameManager : MonoBehaviour
         gameRunning = false;
         exerciseFinished = false;
         shotsLaunched = 0;
+        attemptSaveRequested = false;
 
         statsManager.ResetAllStats();
 

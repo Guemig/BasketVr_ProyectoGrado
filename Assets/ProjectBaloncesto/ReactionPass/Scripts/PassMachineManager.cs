@@ -57,8 +57,9 @@ public class PassMachineManager : MonoBehaviour
     private int currentLevel = 1;
     private int lastMachineIndex = -1;
 
-    // Nivel 3: 1 = sentido ascendente, -1 = sentido inverso.
-    private int level3Direction = 1;
+    // Nivel 3: control de repeticiones consecutivas.
+    private int lastLevel3MachineIndex = -1;
+    private int consecutiveLevel3Shots;
 
     private bool levelConfigured;
 
@@ -123,6 +124,10 @@ public class PassMachineManager : MonoBehaviour
         lastMachineIndex = -1;
         levelConfigured = false;
 
+        // Reiniciar el historial de selección del nivel 3.
+        lastLevel3MachineIndex = -1;
+        consecutiveLevel3Shots = 0;
+
         // Descartar cualquier secuencia del nivel anterior.
         actionSequence.Clear();
         nextActionIndex = 0;
@@ -169,7 +174,6 @@ public class PassMachineManager : MonoBehaviour
             launcher.SetLevel(level, config);
         }
 
-        level3Direction = 1;
         levelConfigured = true;
 
         Debug.Log(
@@ -393,18 +397,30 @@ public class PassMachineManager : MonoBehaviour
                 break;
 
             case 3:
-                // Ciclo entre tres máquinas.
-                if (lastMachineIndex == -1)
+                // Selección aleatoria entre las tres máquinas.
+                if (lastLevel3MachineIndex != -1 &&
+                    consecutiveLevel3Shots >= 2)
                 {
-                    selectedIndex = Random.Range(0, 3);
+                    // Elegir una de las otras dos máquinas.
+                    int randomOffset = Random.Range(1, 3);
 
-                    level3Direction =
-                        Random.value < 0.5f ? 1 : -1;
+                    selectedIndex =
+                        (lastLevel3MachineIndex + randomOffset) % 3;
                 }
                 else
                 {
-                    selectedIndex =
-                        (lastMachineIndex + level3Direction + 3) % 3;
+                    selectedIndex = Random.Range(0, 3);
+                }
+
+                // Actualizar el contador de repeticiones.
+                if (selectedIndex == lastLevel3MachineIndex)
+                {
+                    consecutiveLevel3Shots++;
+                }
+                else
+                {
+                    lastLevel3MachineIndex = selectedIndex;
+                    consecutiveLevel3Shots = 1;
                 }
 
                 break;
@@ -431,7 +447,10 @@ public class PassMachineManager : MonoBehaviour
 
         Debug.Log(
             $"[PASS MACHINES] Nivel {currentLevel}: " +
-            $"máquina seleccionada {selectedIndex + 1}.",
+            $"máquina seleccionada {selectedIndex + 1}" +
+            (currentLevel == 3
+                ? $". Repeticiones consecutivas: {consecutiveLevel3Shots}"
+                : ""),
             this
         );
 
