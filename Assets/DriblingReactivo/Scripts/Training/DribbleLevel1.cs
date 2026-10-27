@@ -18,9 +18,12 @@ public class DribbleLevel1 : MonoBehaviour
     [SerializeField] private AudioClip checkSound;
     [SerializeField] private AudioClip errorSound;
 
-    [Header("Tiempo")]
+    [Header("Tiempo Nivel")]
     [SerializeField] private float levelDuration = 30f;
-    [SerializeField] private float targetTime = 5f;
+
+    [Header("Tiempo Objetivos")]
+    [SerializeField] private float greenTargetTime = 5f;
+    [SerializeField] private float orangeTargetTime = 3f;
     [SerializeField] private float delayBetweenTargets = 0.5f;
 
     [Header("Probabilidad")]
@@ -175,11 +178,7 @@ public class DribbleLevel1 : MonoBehaviour
             DribblePlate.PlateType.Green)
         {
             if (stats != null)
-            {
-                stats.level1.AddHit(
-                    reactionTime
-                );
-            }
+                stats.level1.AddHit(reactionTime);
 
             PlayCheck();
         }
@@ -187,10 +186,7 @@ public class DribbleLevel1 : MonoBehaviour
                  DribblePlate.PlateType.Orange)
         {
             if (stats != null)
-            {
-                stats.level1
-                    .orangeErrors++;
-            }
+                stats.level1.orangeErrors++;
 
             PlayError();
         }
@@ -203,8 +199,20 @@ public class DribbleLevel1 : MonoBehaviour
 
     private IEnumerator TargetTimeout()
     {
+        if (currentPlate == null)
+            yield break;
+
+        DribblePlate.PlateType initialType =
+            currentPlate.Type;
+
+        float targetDuration =
+            initialType ==
+            DribblePlate.PlateType.Green
+            ? greenTargetTime
+            : orangeTargetTime;
+
         yield return new WaitForSecondsRealtime(
-            targetTime
+            targetDuration
         );
 
         if (!levelActive)
@@ -216,10 +224,7 @@ public class DribbleLevel1 : MonoBehaviour
                 DribblePlate.PlateType.Green)
             {
                 if (stats != null)
-                {
-                    stats.level1
-                        .missedGreens++;
-                }
+                    stats.level1.missedGreens++;
 
                 PlayError();
             }
@@ -287,10 +292,7 @@ public class DribbleLevel1 : MonoBehaviour
 
         if (levelCoroutine != null)
         {
-            StopCoroutine(
-                levelCoroutine
-            );
-
+            StopCoroutine(levelCoroutine);
             levelCoroutine = null;
         }
 
@@ -316,9 +318,7 @@ public class DribbleLevel1 : MonoBehaviour
         if (targetCoroutine == null)
             return;
 
-        StopCoroutine(
-            targetCoroutine
-        );
+        StopCoroutine(targetCoroutine);
 
         targetCoroutine = null;
     }

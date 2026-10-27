@@ -11,6 +11,9 @@ public class DribbleTrainingStats : MonoBehaviour
         public int missedGreens;
         public int wrongHandErrors;
 
+        public int totalGreenTargets;
+        public int totalOrangeTargets;
+
         public float totalReactionTime;
         public float bestReactionTime;
         public float worstReactionTime;
@@ -30,15 +33,31 @@ public class DribbleTrainingStats : MonoBehaviour
             }
         }
 
+        public int TotalErrors
+        {
+            get
+            {
+                return orangeErrors +
+                       missedGreens +
+                       wrongHandErrors;
+            }
+        }
+
+        public int TotalAttempts
+        {
+            get
+            {
+                return hits +
+                       TotalErrors;
+            }
+        }
+
         public float Accuracy
         {
             get
             {
                 int total =
-                    hits +
-                    orangeErrors +
-                    missedGreens +
-                    wrongHandErrors;
+                    TotalAttempts;
 
                 if (total <= 0)
                     return 0f;
@@ -57,11 +76,24 @@ public class DribbleTrainingStats : MonoBehaviour
             missedGreens = 0;
             wrongHandErrors = 0;
 
+            totalGreenTargets = 0;
+            totalOrangeTargets = 0;
+
             totalReactionTime = 0f;
             bestReactionTime = 0f;
             worstReactionTime = 0f;
 
             reactionTimes.Clear();
+        }
+
+        public void RegisterGreenTarget()
+        {
+            totalGreenTargets++;
+        }
+
+        public void RegisterOrangeTarget()
+        {
+            totalOrangeTargets++;
         }
 
         public void AddHit(
@@ -91,14 +123,32 @@ public class DribbleTrainingStats : MonoBehaviour
                     reactionTime;
             }
         }
+
+        public void AddOrangeError()
+        {
+            orangeErrors++;
+        }
+
+        public void AddMissedGreen()
+        {
+            missedGreens++;
+        }
+
+        public void AddWrongHandError()
+        {
+            wrongHandErrors++;
+        }
     }
 
+    [Header("Nivel 1")]
     public LevelStats level1 =
         new LevelStats();
 
+    [Header("Nivel 2")]
     public LevelStats level2 =
         new LevelStats();
 
+    [Header("Nivel 3")]
     public LevelStats level3 =
         new LevelStats();
 

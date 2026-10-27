@@ -20,9 +20,12 @@ public class DribbleLevel2 : MonoBehaviour
     [SerializeField] private AudioClip checkSound;
     [SerializeField] private AudioClip errorSound;
 
-    [Header("Tiempo")]
+    [Header("Tiempo Nivel")]
     [SerializeField] private float levelDuration = 30f;
-    [SerializeField] private float targetTime = 5f;
+
+    [Header("Tiempo Objetivos")]
+    [SerializeField] private float greenTargetTime = 5f;
+    [SerializeField] private float orangeTargetTime = 3f;
     [SerializeField] private float delayBetweenTargets = 0.4f;
 
     [Header("Probabilidad")]
@@ -71,20 +74,14 @@ public class DribbleLevel2 : MonoBehaviour
         DribblePlate plate)
     {
         if (plate != null)
-        {
-            plate.OnBallTouched +=
-                OnPlateTouched;
-        }
+            plate.OnBallTouched += OnPlateTouched;
     }
 
     private void UnsubscribePlate(
         DribblePlate plate)
     {
         if (plate != null)
-        {
-            plate.OnBallTouched -=
-                OnPlateTouched;
-        }
+            plate.OnBallTouched -= OnPlateTouched;
     }
 
     public void StartLevel()
@@ -204,29 +201,20 @@ public class DribbleLevel2 : MonoBehaviour
             targetStartTime;
 
         plate.ShowOff();
-
         currentPlate = null;
 
         if (type ==
             DribblePlate.PlateType.Green)
         {
             if (stats != null)
-            {
-                stats.level2.AddHit(
-                    reactionTime
-                );
-            }
+                stats.level2.AddHit(reactionTime);
 
             PlayCheck();
         }
-        else if (type ==
-                 DribblePlate.PlateType.Orange)
+        else
         {
             if (stats != null)
-            {
-                stats.level2
-                    .orangeErrors++;
-            }
+                stats.level2.orangeErrors++;
 
             PlayError();
         }
@@ -239,8 +227,20 @@ public class DribbleLevel2 : MonoBehaviour
 
     private IEnumerator TargetTimeout()
     {
+        if (currentPlate == null)
+            yield break;
+
+        DribblePlate.PlateType initialType =
+            currentPlate.Type;
+
+        float targetDuration =
+            initialType ==
+            DribblePlate.PlateType.Green
+            ? greenTargetTime
+            : orangeTargetTime;
+
         yield return new WaitForSecondsRealtime(
-            targetTime
+            targetDuration
         );
 
         if (!levelActive)
@@ -252,10 +252,7 @@ public class DribbleLevel2 : MonoBehaviour
                 DribblePlate.PlateType.Green)
             {
                 if (stats != null)
-                {
-                    stats.level2
-                        .missedGreens++;
-                }
+                    stats.level2.missedGreens++;
 
                 PlayError();
             }
@@ -314,10 +311,7 @@ public class DribbleLevel2 : MonoBehaviour
 
         if (levelCoroutine != null)
         {
-            StopCoroutine(
-                levelCoroutine
-            );
-
+            StopCoroutine(levelCoroutine);
             levelCoroutine = null;
         }
 
@@ -354,9 +348,7 @@ public class DribbleLevel2 : MonoBehaviour
         if (targetCoroutine == null)
             return;
 
-        StopCoroutine(
-            targetCoroutine
-        );
+        StopCoroutine(targetCoroutine);
 
         targetCoroutine = null;
     }

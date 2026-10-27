@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 
 public class DribbleLevel3 : MonoBehaviour
@@ -22,14 +23,25 @@ public class DribbleLevel3 : MonoBehaviour
     [SerializeField] private DribbleBallRespawn ballRespawn;
     [SerializeField] private DribbleHandManager handManager;
 
-    [Header("Audio")]
-    [SerializeField] private AudioSource audioSource;
+    [Header("Indicador Mano")]
+    [SerializeField] private TextMeshProUGUI handText;
+
+    [Header("Audio Feedback")]
+    [SerializeField] private AudioSource feedbackAudioSource;
     [SerializeField] private AudioClip checkSound;
     [SerializeField] private AudioClip errorSound;
 
-    [Header("Tiempo")]
+    [Header("Audio Mano")]
+    [SerializeField] private AudioSource handAudioSource;
+    [SerializeField] private AudioClip leftHandSound;
+    [SerializeField] private AudioClip rightHandSound;
+
+    [Header("Tiempo Nivel")]
     [SerializeField] private float levelDuration = 30f;
-    [SerializeField] private float targetTime = 5f;
+
+    [Header("Tiempo Objetivos")]
+    [SerializeField] private float greenTargetTime = 5f;
+    [SerializeField] private float orangeTargetTime = 3f;
     [SerializeField] private float delayBetweenTargets = 0.4f;
 
     [Header("Probabilidad")]
@@ -86,20 +98,14 @@ public class DribbleLevel3 : MonoBehaviour
         DribblePlate plate)
     {
         if (plate != null)
-        {
-            plate.OnBallTouched +=
-                OnPlateTouched;
-        }
+            plate.OnBallTouched += OnPlateTouched;
     }
 
     private void UnsubscribePlate(
         DribblePlate plate)
     {
         if (plate != null)
-        {
-            plate.OnBallTouched -=
-                OnPlateTouched;
-        }
+            plate.OnBallTouched -= OnPlateTouched;
     }
 
     public void StartLevel()
@@ -119,26 +125,12 @@ public class DribbleLevel3 : MonoBehaviour
         if (indicatorUI != null)
             indicatorUI.ShowLevel3Mode();
 
-        ChooseRequiredHand();
-
         ActivateNextTarget();
 
         levelCoroutine =
             StartCoroutine(
                 LevelTimer()
             );
-    }
-
-    private void ChooseRequiredHand()
-    {
-        currentRequiredHand =
-            UnityEngine.Random.value >= 0.5f
-            ? RequiredHand.Right
-            : RequiredHand.Left;
-
-        OnRequiredHandChanged?.Invoke(
-            currentRequiredHand
-        );
     }
 
     private void ActivateNextTarget()
@@ -153,6 +145,8 @@ public class DribbleLevel3 : MonoBehaviour
 
         if (currentPlate == null)
             return;
+
+        ChooseRequiredHand();
 
         bool green =
             UnityEngine.Random.value <
@@ -173,6 +167,34 @@ public class DribbleLevel3 : MonoBehaviour
             StartCoroutine(
                 TargetTimeout()
             );
+    }
+
+    private void ChooseRequiredHand()
+    {
+        currentRequiredHand =
+            UnityEngine.Random.value >= 0.5f
+            ? RequiredHand.Right
+            : RequiredHand.Left;
+
+        if (currentRequiredHand ==
+            RequiredHand.Right)
+        {
+            if (handText != null)
+                handText.text = "DERECHA";
+
+            PlayRightHandAudio();
+        }
+        else
+        {
+            if (handText != null)
+                handText.text = "IZQUIERDA";
+
+            PlayLeftHandAudio();
+        }
+
+        OnRequiredHandChanged?.Invoke(
+            currentRequiredHand
+        );
     }
 
     private DribblePlate GetRandomPlate()
@@ -233,42 +255,32 @@ public class DribbleLevel3 : MonoBehaviour
             targetStartTime;
 
         plate.ShowOff();
-
         currentPlate = null;
 
         if (type ==
             DribblePlate.PlateType.Orange)
         {
             if (stats != null)
-            {
-                stats.level3
-                    .orangeErrors++;
-            }
+                stats.level3.orangeErrors++;
 
             PlayError();
 
             StartNext();
+
             return;
         }
 
         if (IsCorrectHand())
         {
             if (stats != null)
-            {
-                stats.level3.AddHit(
-                    reactionTime
-                );
-            }
+                stats.level3.AddHit(reactionTime);
 
             PlayCheck();
         }
         else
         {
             if (stats != null)
-            {
-                stats.level3
-                    .wrongHandErrors++;
-            }
+                stats.level3.wrongHandErrors++;
 
             PlayError();
         }
@@ -305,8 +317,20 @@ public class DribbleLevel3 : MonoBehaviour
 
     private IEnumerator TargetTimeout()
     {
+        if (currentPlate == null)
+            yield break;
+
+        DribblePlate.PlateType initialType =
+            currentPlate.Type;
+
+        float targetDuration =
+            initialType ==
+            DribblePlate.PlateType.Green
+            ? greenTargetTime
+            : orangeTargetTime;
+
         yield return new WaitForSecondsRealtime(
-            targetTime
+            targetDuration
         );
 
         if (!levelActive)
@@ -318,10 +342,7 @@ public class DribbleLevel3 : MonoBehaviour
                 DribblePlate.PlateType.Green)
             {
                 if (stats != null)
-                {
-                    stats.level3
-                        .missedGreens++;
-                }
+                    stats.level3.missedGreens++;
 
                 PlayError();
             }
@@ -368,6 +389,12 @@ public class DribbleLevel3 : MonoBehaviour
 
         SetAllOff();
 
+        if (handText != null)
+            handText.text = "";
+
+        if (handAudioSource != null)
+            handAudioSource.Stop();
+
         if (ballRespawn != null)
             ballRespawn.RespawnNow();
 
@@ -380,16 +407,19 @@ public class DribbleLevel3 : MonoBehaviour
 
         if (levelCoroutine != null)
         {
-            StopCoroutine(
-                levelCoroutine
-            );
-
+            StopCoroutine(levelCoroutine);
             levelCoroutine = null;
         }
 
         StopTargetCoroutine();
 
         SetAllOff();
+
+        if (handText != null)
+            handText.text = "";
+
+        if (handAudioSource != null)
+            handAudioSource.Stop();
     }
 
     private void SetAllOff()
@@ -420,19 +450,17 @@ public class DribbleLevel3 : MonoBehaviour
         if (targetCoroutine == null)
             return;
 
-        StopCoroutine(
-            targetCoroutine
-        );
+        StopCoroutine(targetCoroutine);
 
         targetCoroutine = null;
     }
 
     private void PlayCheck()
     {
-        if (audioSource != null &&
+        if (feedbackAudioSource != null &&
             checkSound != null)
         {
-            audioSource.PlayOneShot(
+            feedbackAudioSource.PlayOneShot(
                 checkSound
             );
         }
@@ -440,12 +468,42 @@ public class DribbleLevel3 : MonoBehaviour
 
     private void PlayError()
     {
-        if (audioSource != null &&
+        if (feedbackAudioSource != null &&
             errorSound != null)
         {
-            audioSource.PlayOneShot(
+            feedbackAudioSource.PlayOneShot(
                 errorSound
             );
         }
+    }
+
+    private void PlayLeftHandAudio()
+    {
+        if (handAudioSource == null ||
+            leftHandSound == null)
+        {
+            return;
+        }
+
+        handAudioSource.Stop();
+
+        handAudioSource.PlayOneShot(
+            leftHandSound
+        );
+    }
+
+    private void PlayRightHandAudio()
+    {
+        if (handAudioSource == null ||
+            rightHandSound == null)
+        {
+            return;
+        }
+
+        handAudioSource.Stop();
+
+        handAudioSource.PlayOneShot(
+            rightHandSound
+        );
     }
 }
