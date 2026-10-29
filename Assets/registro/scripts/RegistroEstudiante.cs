@@ -65,6 +65,7 @@ public class RegistroEstudiante : MonoBehaviour
             );
         }
 
+
         LimpiarErrorRegistro();
         LimpiarErrorLogin();
 

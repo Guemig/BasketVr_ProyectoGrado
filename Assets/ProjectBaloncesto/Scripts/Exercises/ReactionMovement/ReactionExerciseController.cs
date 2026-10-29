@@ -92,6 +92,9 @@ public class ReactionExerciseController : MonoBehaviour
                 }
 
 
+                AudioManager.Instance?.PlayBackground(
+    BackgroundContext.Level1
+);
                 tutorialController.StartTutorial();
             }
         }
@@ -101,6 +104,31 @@ public class ReactionExerciseController : MonoBehaviour
     // =====================================================
     // EXERCISE
     // =====================================================
+
+    private void PlayLevelMusic()
+    {
+        switch (levelController.CurrentLevel)
+        {
+            case ReactionLevelController.ReactionLevel.Level1:
+                AudioManager.Instance?.PlayBackground(
+                    BackgroundContext.Level1
+                );
+                break;
+
+            case ReactionLevelController.ReactionLevel.Level2:
+                AudioManager.Instance?.PlayBackground(
+                    BackgroundContext.Level2
+                );
+                break;
+
+            case ReactionLevelController.ReactionLevel.Level3:
+                AudioManager.Instance?.PlayBackground(
+                    BackgroundContext.Level3
+                );
+                break;
+        }
+    }
+
 
     public void StartExercise()
     {
@@ -139,6 +167,7 @@ public class ReactionExerciseController : MonoBehaviour
             $"{levelController.CurrentLevel}"
         );
 
+        PlayLevelMusic();
 
         sequence.CreateSequence();
 
@@ -513,6 +542,9 @@ public class ReactionExerciseController : MonoBehaviour
             menuController.ShowEndMenu();
         }
 
+        AudioManager.Instance?.PlayBackground(
+BackgroundContext.Results
+);
 
         if (resultsUI != null)
         {
