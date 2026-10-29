@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -138,6 +137,64 @@ public class PassReactionGameManager : MonoBehaviour
     }
 
     // =====================================================
+    // AUDIO
+    // =====================================================
+
+    private void PlayLevelMusic()
+    {
+        switch (currentLevel)
+        {
+            case 1:
+                AudioManager.Instance?.PlayBackground(
+                    BackgroundContext.Level1
+                );
+                break;
+
+            case 2:
+                AudioManager.Instance?.PlayBackground(
+                    BackgroundContext.Level2
+                );
+                break;
+
+            case 3:
+                AudioManager.Instance?.PlayBackground(
+                    BackgroundContext.Level3
+                );
+                break;
+
+            default:
+                Debug.LogWarning(
+                    $"[PASSES] No hay música configurada " +
+                    $"para el nivel {currentLevel}.",
+                    this
+                );
+                break;
+        }
+    }
+
+
+    private void PlayResultsMusic()
+    {
+        AudioManager.Instance?.PlayBackground(
+            BackgroundContext.Results
+        );
+    }
+
+    private void PlayCorrectSound()
+    {
+        AudioManager.Instance?.PlaySFX(
+            SFXEvent.Correct
+        );
+    }
+
+    private void PlayIncorrectSound()
+    {
+        AudioManager.Instance?.PlaySFX(
+            SFXEvent.Incorrect
+        );
+    }
+
+    // =====================================================
     // INICIAR EJERCICIO
     // =====================================================
 
@@ -169,6 +226,9 @@ public class PassReactionGameManager : MonoBehaviour
 
         if (!ConfigureMachinesForLevel(currentLevel))
             return;
+
+        // La música cambia al comenzar la transición inicial.
+        PlayLevelMusic();
 
         BeginLevelTransition();
     }
@@ -283,6 +343,8 @@ public class PassReactionGameManager : MonoBehaviour
 
         statsManager.RegisterCatch(reactionTime);
 
+        PlayCorrectSound();
+
         BallFinished();
     }
 
@@ -301,6 +363,8 @@ public class PassReactionGameManager : MonoBehaviour
 
         statsManager.RegisterMiss();
 
+        PlayIncorrectSound();
+
         BallFinished();
     }
 
@@ -318,6 +382,8 @@ public class PassReactionGameManager : MonoBehaviour
         }
 
         statsManager.RegisterWrongCatch(reactionTime);
+
+        PlayIncorrectSound();
 
         Debug.Log(
             $"[PASSES] Atrapada incorrecta registrada. " +
@@ -344,6 +410,8 @@ public class PassReactionGameManager : MonoBehaviour
         }
 
         statsManager.RegisterCorrectPass();
+
+        PlayCorrectSound();
 
         Debug.Log(
             $"[PASSES] Pase correcto registrado. " +
@@ -619,6 +687,9 @@ public class PassReactionGameManager : MonoBehaviour
                 );
             }
 
+            // Cambiar a la música de resultados.
+            PlayResultsMusic();
+
             return;
         }
 
@@ -627,6 +698,9 @@ public class PassReactionGameManager : MonoBehaviour
 
         if (!ConfigureMachinesForLevel(currentLevel))
             return;
+
+        // Cambiar la música al comenzar la transición del siguiente nivel.
+        PlayLevelMusic();
 
         BeginLevelTransition();
     }
@@ -788,6 +862,9 @@ public class PassReactionGameManager : MonoBehaviour
 
         if (!ConfigureMachinesForLevel(1))
             return;
+
+        // Reiniciar música y sonido de inicio.
+        PlayLevelMusic();
 
         BeginLevelTransition();
     }

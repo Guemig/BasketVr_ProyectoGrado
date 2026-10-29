@@ -100,6 +100,7 @@ GameObject:
   - component: {fileID: 7912507337977026141}
   - component: {fileID: 3834707397566687146}
   - component: {fileID: 6721241502062188047}
+  - component: {fileID: 208263900186023068}
   m_Layer: 0
   m_Name: Collider
   m_TagString: Untagged
@@ -153,8 +154,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 9578b25de2e95804bbf35914c6fd0d4a, type: 3}
-  m_Resource: {fileID: 8300000, guid: 9578b25de2e95804bbf35914c6fd0d4a, type: 3}
+  m_audioClip: {fileID: 8300000, guid: e64c1b1a110150c44b703f231a639e44, type: 3}
+  m_Resource: {fileID: 8300000, guid: e64c1b1a110150c44b703f231a639e44, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -240,6 +241,23 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &208263900186023068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3719278319175920353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bedbe2b976e89e347ae0302eafaefbd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  category: 1
+  uiEvent: 0
+  sfxEvent: 2
+  backgroundContext: 0
+  audioSource: {fileID: 6721241502062188047}
 --- !u!1 &6545650887650370368
 GameObject:
   m_ObjectHideFlags: 0
@@ -657,9 +675,5 @@ MonoBehaviour:
   successEmissionColor: {r: 0, g: 1, b: 0.11764706, a: 1}
   errorColor: {r: 1, g: 0, b: 0, a: 1}
   errorEmissionColor: {r: 1, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 6721241502062188047}
-  successSound: {fileID: 8300000, guid: 9578b25de2e95804bbf35914c6fd0d4a, type: 3}
-  errorSound: {fileID: 8300000, guid: 0850940b88fa51a48bdafef94495a5b2, type: 3}
-  warningSound: {fileID: 8300000, guid: 0e8828688bc1e62439a9f929fcde93d6, type: 3}
   feedbackDuration: 0.5
   currentState: 0

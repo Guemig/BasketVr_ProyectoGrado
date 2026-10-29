@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -42,14 +41,6 @@ public class ReactionGameManager : MonoBehaviour
 
     [Header("TUTORIAL")]
     [SerializeField] private LightsTutoController lightsTutoController;
-
-    // =========================================================
-    // AUDIO DE INICIO
-    // =========================================================
-
-    [Header("AUDIO DE INICIO")]
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip startSound;
 
     // =========================================================
     // ESTADO
@@ -119,7 +110,6 @@ public class ReactionGameManager : MonoBehaviour
     // INICIALIZACIÓN
     // =========================================================
 
-
     private void Start()
     {
         if (exerciseConfig == null)
@@ -181,16 +171,78 @@ public class ReactionGameManager : MonoBehaviour
                 return;
             }
 
-            Debug.Log("Iniciando directamente el tutorial.");
+
+            AudioManager.Instance?.PlayBackground(
+                BackgroundContext.Tutorial
+            );
 
             lightsTutoController.StartTutorial();
         }
         else
         {
-            Debug.Log(
-                "Modo Training: esperando que el usuario pulse Iniciar."
-            );
+            AudioManager.Instance?.PlayBackground(
+BackgroundContext.Tutorial
+);
+
         }
+    }
+
+    // =========================================================
+    // AUDIO
+    // =========================================================
+
+    private void PlayLevelMusic()
+    {
+        if (AudioManager.Instance == null)
+        {
+            Debug.LogWarning(
+                "[ReactionGameManager] No se encontró AudioManager."
+            );
+
+            return;
+        }
+
+        switch (currentLevel)
+        {
+            case 1:
+                AudioManager.Instance.PlayBackground(
+                    BackgroundContext.Level1
+                );
+                break;
+
+            case 2:
+                AudioManager.Instance.PlayBackground(
+                    BackgroundContext.Level2
+                );
+                break;
+
+            case 3:
+                AudioManager.Instance.PlayBackground(
+                    BackgroundContext.Level3
+                );
+                break;
+
+            default:
+                Debug.LogWarning(
+                    "[ReactionGameManager] No hay música configurada " +
+                    "para el nivel " + currentLevel
+                );
+                break;
+        }
+    }
+
+    private void PlayLevelStartSound()
+    {
+        AudioManager.Instance?.PlaySFX(
+            SFXEvent.LevelStart
+        );
+    }
+
+    private void PlayResultsMusic()
+    {
+        AudioManager.Instance?.PlayBackground(
+            BackgroundContext.Results
+        );
     }
 
     // =========================================================
@@ -271,7 +323,6 @@ public class ReactionGameManager : MonoBehaviour
             return;
         }
 
-        // Detener cualquier secuencia del entrenamiento.
         StopTargetSequence();
 
         gameRunning = false;
@@ -284,9 +335,12 @@ public class ReactionGameManager : MonoBehaviour
         if (gameUI != null)
             gameUI.HideFinalResults();
 
-        // El tutorial no debe registrar estadísticas del ejercicio.
         ReactionModeController.SetMode(
             ReactionModeController.ReactionMode.Tutorial
+        );
+
+        AudioManager.Instance?.PlayBackground(
+            BackgroundContext.Tutorial
         );
 
         lightsTutoController.StartTutorial();
@@ -301,14 +355,12 @@ public class ReactionGameManager : MonoBehaviour
         if (target == null || exerciseConfig == null)
             return;
 
-        // Asegurar que no quede activa la secuencia del entrenamiento.
         StopTargetSequence();
 
         gameRunning = false;
         isResolvingReaction = false;
         activeTargets = null;
 
-        // Apagar los grupos antes de activar el que contiene la luz.
         DeactivateAllGroups();
 
         GameObject targetGroup = GetGroupContainingTarget(target);
@@ -319,19 +371,11 @@ public class ReactionGameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning(
-                "ReactionGameManager: la luz '" + target.name +
-                "' no pertenece a ninguno de los grupos configurados " +
-                "en LightTargetExerciseConfig. Comprueba su jerarquía."
-            );
 
-            // Activar el objeto de la luz como alternativa.
-            // Si tiene un padre inactivo, también habrá que activar
-            // el grupo o padre correspondiente.
+
             target.gameObject.SetActive(true);
         }
 
-        // Evitar que las demás luces queden activas.
         DeactivateTargetList(level1Targets);
         DeactivateTargetList(level2Targets);
         DeactivateTargetList(level3Targets);
@@ -380,8 +424,6 @@ public class ReactionGameManager : MonoBehaviour
         if (gameRunning)
             return;
 
-
-        // El modo entrenamiento permite registrar estadísticas.
         ReactionModeController.SetMode(
             ReactionModeController.ReactionMode.Training
         );
@@ -401,7 +443,11 @@ public class ReactionGameManager : MonoBehaviour
         reactionsResolved = 0;
         activeTargets = null;
 
-        PlayStartSound();
+        // La música y el sonido comienzan junto a la transición.
+        PlayLevelMusic();
+        AudioManager.Instance?.PlaySFX(
+            SFXEvent.StartGame
+        );
         StartLevelWithTransition();
     }
 
@@ -631,7 +677,10 @@ public class ReactionGameManager : MonoBehaviour
         {
             currentLevel++;
 
-            PlayStartSound();
+            // Cambiar música y reproducir el sonido al comenzar
+            // la transición hacia el siguiente nivel.
+            PlayLevelMusic();
+
             StartLevelWithTransition();
         }
         else
@@ -658,6 +707,9 @@ public class ReactionGameManager : MonoBehaviour
         if (gameUI != null)
             gameUI.ShowFinalResults();
 
+        // Cambiar a la música de resultados.
+        PlayResultsMusic();
+
         Debug.Log("EJERCICIO FINALIZADO");
         Debug.Log("ACIERTOS TOTALES: " + TotalHits);
         Debug.Log("FALLOS TOTALES: " + TotalMisses);
@@ -672,7 +724,6 @@ public class ReactionGameManager : MonoBehaviour
             TotalAverageReactionTime.ToString("F3") + " s"
         );
 
-        // Guardar los resultados de los tres niveles.
         SaveLightsResults();
     }
 
@@ -707,7 +758,6 @@ public class ReactionGameManager : MonoBehaviour
         FirestoreService.LightsSession session =
             firestore.CreateLightsSession();
 
-        // Construir la sesión con las estadísticas reales.
         for (int level = 1; level <= 3; level++)
         {
             ReactionLightGameStats.LevelStats stats =
@@ -736,7 +786,6 @@ public class ReactionGameManager : MonoBehaviour
             );
         }
 
-        // Evitar que el mismo intento se envíe dos veces.
         resultsSaveStarted = true;
 
         try
@@ -786,7 +835,9 @@ public class ReactionGameManager : MonoBehaviour
 
         currentLevel = 1;
 
-        PlayStartSound();
+        // Volver a la música del nivel 1 antes de la transición.
+        PlayLevelMusic();
+
         StartLevelWithTransition();
     }
 
@@ -883,16 +934,8 @@ public class ReactionGameManager : MonoBehaviour
     }
 
     // =========================================================
-    // AUDIO DE INICIO
+    // OBTENER NIVEL DE UN TARGET
     // =========================================================
-
-    private void PlayStartSound()
-    {
-        if (audioSource != null && startSound != null)
-            audioSource.PlayOneShot(startSound);
-    }
-
-
 
     public int GetTargetLevel(LightTargetReaction target)
     {

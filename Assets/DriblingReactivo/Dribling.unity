@@ -6220,6 +6220,7 @@ GameObject:
   - component: {fileID: 500504661}
   - component: {fileID: 500504660}
   - component: {fileID: 500504662}
+  - component: {fileID: 500504663}
   m_Layer: 0
   m_Name: manager
   m_TagString: Untagged
@@ -6478,6 +6479,20 @@ MonoBehaviour:
   snapToHandOnCatch: 1
   releaseSpeed: 1.3
   maximumReleaseAngle: 33
+--- !u!114 &500504663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 500504654}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7506af694c3fa3b4287a55d4f17bfe9d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  audioMixer: {fileID: 24100000, guid: 719dbf1bc47f3964993aed3b14ad108d, type: 2}
+  sliderSoundInterval: 0.5
 --- !u!1 &503224011
 GameObject:
   m_ObjectHideFlags: 0

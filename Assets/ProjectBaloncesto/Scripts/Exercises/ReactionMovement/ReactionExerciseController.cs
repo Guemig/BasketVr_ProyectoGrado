@@ -10,7 +10,6 @@ public class ReactionExerciseController : MonoBehaviour
         Right
     }
 
-
     [Header("References")]
     [SerializeField] private ReactionSequence sequence;
 
@@ -34,7 +33,6 @@ public class ReactionExerciseController : MonoBehaviour
 
     [SerializeField] private ReactionTutorialController tutorialController;
 
-
     [Header("Reaction Timing By Level")]
     [SerializeField]
     private float[] timeBetweenReactions =
@@ -44,11 +42,9 @@ public class ReactionExerciseController : MonoBehaviour
         0.6f
     };
 
-
     private Hand currentHand;
 
     private bool reactionInProgress;
-
 
     // =====================================================
     // PAUSE
@@ -66,7 +62,6 @@ public class ReactionExerciseController : MonoBehaviour
     public static float TotalPausedTime =>
         totalPausedTime;
 
-
     // =====================================================
     // UNITY
     // =====================================================
@@ -75,7 +70,6 @@ public class ReactionExerciseController : MonoBehaviour
     {
         SetupInteractables();
     }
-
 
     private void Start()
     {
@@ -91,15 +85,20 @@ public class ReactionExerciseController : MonoBehaviour
                     );
                 }
 
-
                 AudioManager.Instance?.PlayBackground(
-    BackgroundContext.Level1
+    BackgroundContext.Tutorial
 );
                 tutorialController.StartTutorial();
             }
         }
-    }
+        else {
 
+            AudioManager.Instance?.PlayBackground(
+BackgroundContext.Tutorial
+);
+
+        }
+    }
 
     // =====================================================
     // EXERCISE
@@ -129,13 +128,17 @@ public class ReactionExerciseController : MonoBehaviour
         }
     }
 
-
     public void StartExercise()
     {
         StopAllCoroutines();
 
         DisableAllInteractables();
 
+        // La música comienza junto con la transición inicial.
+        PlayLevelMusic();
+        AudioManager.Instance?.PlaySFX(
+    SFXEvent.StartGame
+);
 
         if (transition != null)
         {
@@ -146,19 +149,15 @@ public class ReactionExerciseController : MonoBehaviour
                 );
             }
 
-
             transition.PlayTransition(
                 StartCurrentLevel
             );
 
-
             return;
         }
 
-
         StartCurrentLevel();
     }
-
 
     private void StartCurrentLevel()
     {
@@ -167,13 +166,10 @@ public class ReactionExerciseController : MonoBehaviour
             $"{levelController.CurrentLevel}"
         );
 
-        PlayLevelMusic();
-
         sequence.CreateSequence();
 
         ExecuteNextReaction();
     }
-
 
     // =====================================================
     // PAUSE API
@@ -184,44 +180,36 @@ public class ReactionExerciseController : MonoBehaviour
         if (isPaused)
             return;
 
-
         isPaused = true;
 
         pauseStartRealtime =
             Time.realtimeSinceStartup;
-
 
         Debug.Log(
             "[EXERCISE] Paused."
         );
     }
 
-
     public void ResumeExercise()
     {
         if (!isPaused)
             return;
 
-
         float pausedDuration =
             Time.realtimeSinceStartup -
             pauseStartRealtime;
 
-
         totalPausedTime +=
             pausedDuration;
-
 
         pauseStartRealtime = 0f;
 
         isPaused = false;
 
-
         Debug.Log(
             "[EXERCISE] Resumed."
         );
     }
-
 
     // =====================================================
     // NEXT REACTION
@@ -236,30 +224,24 @@ public class ReactionExerciseController : MonoBehaviour
             return;
         }
 
-
         currentHand =
             sequence.GetNext();
 
-
         reactionInProgress = true;
-
 
         Debug.Log(
             $"[REACTION] STARTING {currentHand}"
         );
 
-
         interaction.StartReaction(
             currentHand
         );
-
 
         levelController.ExecuteReaction(
             currentHand,
             ActivateCurrentReaction
         );
     }
-
 
     // =====================================================
     // REACTION ACTIVATION
@@ -270,21 +252,16 @@ public class ReactionExerciseController : MonoBehaviour
         if (!reactionInProgress)
             return;
 
-
         if (IsPaused)
             return;
-
 
         Debug.Log(
             $"[REACTION] ACTIVE {currentHand}"
         );
 
-
         interaction.ActivateReaction();
 
-
         StartCurrentHandReaction();
-
 
         StartCoroutine(
             WaitAndExecute(
@@ -293,7 +270,6 @@ public class ReactionExerciseController : MonoBehaviour
             )
         );
     }
-
 
     private void StartCurrentHandReaction()
     {
@@ -304,22 +280,26 @@ public class ReactionExerciseController : MonoBehaviour
                 if (leftHandInteractable != null)
                 {
                     leftHandInteractable.StartReaction();
+                    AudioManager.Instance?.PlaySFX(
+                        SFXEvent.Stimulus
+                    );
                 }
 
                 break;
-
 
             case Hand.Right:
 
                 if (rightHandInteractable != null)
                 {
                     rightHandInteractable.StartReaction();
+                    AudioManager.Instance?.PlaySFX(
+                        SFXEvent.Stimulus
+                    );
                 }
 
                 break;
         }
     }
-
 
     private void EndCurrentHandReaction()
     {
@@ -334,7 +314,6 @@ public class ReactionExerciseController : MonoBehaviour
 
                 break;
 
-
             case Hand.Right:
 
                 if (rightHandInteractable != null)
@@ -346,7 +325,6 @@ public class ReactionExerciseController : MonoBehaviour
         }
     }
 
-
     // =====================================================
     // RETURN
     // =====================================================
@@ -356,12 +334,10 @@ public class ReactionExerciseController : MonoBehaviour
         if (!reactionInProgress)
             return;
 
-
         if (IsPaused)
         {
             return;
         }
-
 
         interaction.ResolveTimeout();
 
@@ -371,7 +347,6 @@ public class ReactionExerciseController : MonoBehaviour
 
         reactionInProgress = false;
 
-
         switch (currentHand)
         {
             case Hand.Left:
@@ -380,14 +355,12 @@ public class ReactionExerciseController : MonoBehaviour
 
                 break;
 
-
             case Hand.Right:
 
                 characterIK.ReturnRightHand();
 
                 break;
         }
-
 
         StartCoroutine(
             WaitAndExecute(
@@ -396,7 +369,6 @@ public class ReactionExerciseController : MonoBehaviour
             )
         );
     }
-
 
     // =====================================================
     // LEVEL COMPLETE
@@ -408,12 +380,10 @@ public class ReactionExerciseController : MonoBehaviour
 
         DisableAllInteractables();
 
-
         Debug.Log(
             $"[LEVEL] Completed: " +
             $"{levelController.CurrentLevel}"
         );
-
 
         if (levelController.HasNextLevel())
         {
@@ -422,10 +392,8 @@ public class ReactionExerciseController : MonoBehaviour
             return;
         }
 
-
         CompleteExercise();
     }
-
 
     // =====================================================
     // LEVEL TRANSITION
@@ -437,9 +405,10 @@ public class ReactionExerciseController : MonoBehaviour
             "[EXERCISE] Preparing next level."
         );
 
-
         levelController.TryAdvanceLevel();
 
+        // Cambiar la música al comenzar la transición al siguiente nivel.
+        PlayLevelMusic();
 
         if (transition != null)
         {
@@ -449,7 +418,6 @@ public class ReactionExerciseController : MonoBehaviour
                     levelController.CurrentLevel.ToString()
                 );
             }
-
 
             transition.PlayTransition(
                 StartCurrentLevel
@@ -461,7 +429,6 @@ public class ReactionExerciseController : MonoBehaviour
         }
     }
 
-
     // =====================================================
     // EXERCISE COMPLETE
     // =====================================================
@@ -470,11 +437,9 @@ public class ReactionExerciseController : MonoBehaviour
     {
         reactionInProgress = false;
 
-
         Debug.Log(
             "[EXERCISE] Exercise completed."
         );
-
 
         // =================================================
         // SAVE TO FIRESTORE
@@ -501,11 +466,9 @@ public class ReactionExerciseController : MonoBehaviour
                     FirestoreService.MovementSession session =
                         BuildMovementSession();
 
-
                     string studentCode =
                         FirestoreService.Instance
                             .CurrentStudentCode;
-
 
                     string attemptId =
                         await FirestoreService.Instance
@@ -513,7 +476,6 @@ public class ReactionExerciseController : MonoBehaviour
                                 studentCode,
                                 session
                             );
-
 
                     Debug.Log(
                         "[FIRESTORE] Attempt saved successfully. " +
@@ -530,7 +492,6 @@ public class ReactionExerciseController : MonoBehaviour
                 }
             }
         }
-
 
         // =================================================
         // END UI
@@ -552,7 +513,6 @@ BackgroundContext.Results
         }
     }
 
-
     // =====================================================
     // BUILD MOVEMENT SESSION
     // =====================================================
@@ -564,14 +524,12 @@ BackgroundContext.Results
             FirestoreService.Instance
                 .CreateMovementSession();
 
-
         int levelCount =
             Enum.GetValues(
                 typeof(
                     ReactionLevelController.ReactionLevel
                 )
             ).Length;
-
 
         for (int i = 0;
              i < levelCount;
@@ -580,13 +538,11 @@ BackgroundContext.Results
             ReactionLevelController.ReactionLevel level =
                 (ReactionLevelController.ReactionLevel)i;
 
-
             FirestoreService.MovementLevel levelData =
                 resultsController
                     .GetFirestoreLevelData(
                         level
                     );
-
 
             FirestoreService.Instance
                 .AddLevelToSession(
@@ -595,10 +551,8 @@ BackgroundContext.Results
                 );
         }
 
-
         return session;
     }
-
 
     // =====================================================
     // INTERACTABLES
@@ -614,7 +568,6 @@ BackgroundContext.Results
                 );
         }
 
-
         if (rightHandInteractable != null)
         {
             rightHandInteractable
@@ -623,14 +576,12 @@ BackgroundContext.Results
                 );
         }
 
-
         if (interaction != null)
         {
             interaction.ReactionResolved +=
                 OnReactionResolved;
         }
     }
-
 
     private void OnReactionResolved(
         bool correct,
@@ -642,13 +593,11 @@ BackgroundContext.Results
             return;
         }
 
-
         if (resultsController == null ||
             levelController == null)
         {
             return;
         }
-
 
         resultsController.RegisterReaction(
             levelController.CurrentLevel,
@@ -658,7 +607,6 @@ BackgroundContext.Results
         );
     }
 
-
     private void DisableAllInteractables()
     {
         if (leftHandInteractable != null)
@@ -666,13 +614,11 @@ BackgroundContext.Results
             leftHandInteractable.EndReaction();
         }
 
-
         if (rightHandInteractable != null)
         {
             rightHandInteractable.EndReaction();
         }
     }
-
 
     // =====================================================
     // TIMING
@@ -683,13 +629,11 @@ BackgroundContext.Results
         int index =
             (int)levelController.CurrentLevel;
 
-
         if (timeBetweenReactions == null ||
             timeBetweenReactions.Length == 0)
         {
             return 1f;
         }
-
 
         if (index < 0 ||
             index >= timeBetweenReactions.Length)
@@ -699,20 +643,17 @@ BackgroundContext.Results
             ];
         }
 
-
         return Mathf.Max(
             0f,
             timeBetweenReactions[index]
         );
     }
 
-
     private IEnumerator WaitAndExecute(
         float duration,
         Action onComplete)
     {
         float elapsed = 0f;
-
 
         while (elapsed < duration)
         {
@@ -721,14 +662,11 @@ BackgroundContext.Results
                 elapsed += Time.deltaTime;
             }
 
-
             yield return null;
         }
 
-
         onComplete?.Invoke();
     }
-
 
 #if UNITY_EDITOR
 
@@ -741,13 +679,11 @@ BackgroundContext.Results
                 )
             ).Length;
 
-
         if (timeBetweenReactions == null ||
             timeBetweenReactions.Length != levelCount)
         {
             float[] newTimes =
                 new float[levelCount];
-
 
             for (
                 int i = 0;
@@ -766,7 +702,6 @@ BackgroundContext.Results
                     newTimes[i] = 1f;
                 }
             }
-
 
             timeBetweenReactions =
                 newTimes;

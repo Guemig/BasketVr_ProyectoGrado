@@ -1,4 +1,3 @@
-
 using UnityEngine;
 
 public class PassReactionUIManager : MonoBehaviour
@@ -6,7 +5,7 @@ public class PassReactionUIManager : MonoBehaviour
     [Header("Paneles")]
     [SerializeField] private GameObject startPanel;
     [SerializeField] private GameObject endPanel;
-   // [SerializeField] private GameObject indicatorPanel;
+    // [SerializeField] private GameObject indicatorPanel;
 
     [Header("Gestor del ejercicio")]
     [SerializeField] private PassReactionGameManager gameManager;
@@ -43,6 +42,11 @@ public class PassReactionUIManager : MonoBehaviour
 
         if (isTutorialMode)
         {
+            // La música del tutorial comienza antes de iniciarlo.
+            AudioManager.Instance?.PlayBackground(
+                BackgroundContext.Tutorial
+            );
+
             if (tutorialController != null)
             {
                 tutorialController.StartTutorial();
@@ -55,6 +59,12 @@ public class PassReactionUIManager : MonoBehaviour
                 );
             }
         }
+        else {
+            AudioManager.Instance?.PlayBackground(
+        BackgroundContext.Tutorial
+    );
+
+        }
     }
 
     // =====================================================
@@ -64,7 +74,7 @@ public class PassReactionUIManager : MonoBehaviour
     public void SetIndicatorVisible(bool visible)
     {
         /* if (indicatorPanel != null)
-            indicatorPanel.SetActive(visible);*/
+            indicatorPanel.SetActive(visible); */
     }
 
     // =====================================================
@@ -176,6 +186,10 @@ public class PassReactionUIManager : MonoBehaviour
             );
         }
     }
+
+    // =====================================================
+    // LIMPIEZA
+    // =====================================================
 
     private void OnDestroy()
     {

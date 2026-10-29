@@ -21,17 +21,6 @@ public class DoubleHandPassBallVisuals : MonoBehaviour
     [SerializeField] private Color incorrectColor = Color.red;
 
     // =====================================================
-    // SONIDOS DE RESULTADO
-    // =====================================================
-
-    [Header("Audio de resultados")]
-    [SerializeField] private AudioClip correctClip;
-    [SerializeField] private AudioClip errorClip;
-
-    [SerializeField, Range(0f, 1f)]
-    private float volume = 1f;
-
-    // =====================================================
     // MATERIAL
     // =====================================================
 
@@ -78,38 +67,17 @@ public class DoubleHandPassBallVisuals : MonoBehaviour
     }
 
     // =====================================================
-    // REPRODUCIR SONIDO SEGÚN RESULTADO
+    // REPRODUCIR SONIDOS DE RESULTADO
     // =====================================================
 
     public void PlayCorrectSound()
     {
-        PlayResultSound(correctClip);
+        AudioManager.Instance?.PlaySFX(SFXEvent.Correct);
     }
 
     public void PlayErrorSound()
     {
-        PlayResultSound(errorClip);
-    }
-
-    private void PlayResultSound(AudioClip clip)
-    {
-        if (clip == null)
-        {
-            Debug.LogWarning(
-                "[DoubleHandPassBallVisuals] No hay un AudioClip asignado.",
-                this
-            );
-
-            return;
-        }
-
-        // Reproduce el sonido independientemente de la activación
-        // o desactivación del balón que pertenece al pool.
-        AudioSource.PlayClipAtPoint(
-            clip,
-            transform.position,
-            volume
-        );
+        AudioManager.Instance?.PlaySFX(SFXEvent.Incorrect);
     }
 
     // =====================================================

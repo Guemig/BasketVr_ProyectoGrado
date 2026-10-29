@@ -11,12 +11,6 @@ public class ReactionResultIndicator : MonoBehaviour
     [SerializeField] private Material correctMaterial;
     [SerializeField] private Material wrongMaterial;
 
-    [Header("Audio")]
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip correctSound;
-    [SerializeField] private AudioClip wrongSound;
-
-
     public void SetResult(
         ReactionExerciseController.Hand hand,
         Result result)
@@ -29,55 +23,47 @@ public class ReactionResultIndicator : MonoBehaviour
         switch (result)
         {
             case Result.Normal:
-
                 targetRenderer.material = normalMaterial;
 
                 Debug.Log(
                     $"[ReactionResultIndicator] {hand} -> Normal"
                 );
-
                 break;
 
-
             case Result.Correct:
-
                 targetRenderer.material = correctMaterial;
 
-                PlaySound(correctSound);
+                PlaySFX(SFXEvent.Correct);
 
                 Debug.Log(
                     $"[ReactionResultIndicator] {hand} -> CORRECT"
                 );
-
                 break;
 
-
             case Result.Wrong:
-
                 targetRenderer.material = wrongMaterial;
 
-                PlaySound(wrongSound);
+                PlaySFX(SFXEvent.Incorrect);
 
                 Debug.Log(
                     $"[ReactionResultIndicator] {hand} -> WRONG"
                 );
-
                 break;
         }
     }
 
-
-    private void PlaySound(AudioClip clip)
+    private void PlaySFX(SFXEvent audioEvent)
     {
-        if (audioSource == null)
+        if (AudioManager.Instance == null)
+        {
+            Debug.LogWarning(
+                "[ReactionResultIndicator] No se encontró AudioManager."
+            );
             return;
+        }
 
-        if (clip == null)
-            return;
-
-        audioSource.PlayOneShot(clip);
+        AudioManager.Instance.PlaySFX(audioEvent);
     }
-
 
     private Renderer GetRenderer(
         ReactionExerciseController.Hand hand)
@@ -89,7 +75,6 @@ public class ReactionResultIndicator : MonoBehaviour
             _ => null
         };
     }
-
 
     public enum Result
     {

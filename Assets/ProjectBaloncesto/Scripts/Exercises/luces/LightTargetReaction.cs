@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections;
 using UnityEngine;
@@ -68,17 +67,6 @@ public class LightTargetReaction : MonoBehaviour
     [SerializeField] private Color errorEmissionColor = Color.red;
 
     // =========================================================
-    // AUDIO INDIVIDUAL
-    // =========================================================
-
-    [Header("Audio")]
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip successSound;
-    [SerializeField] private AudioClip errorSound;
-    [SerializeField] private AudioClip warningSound;
-
-
-    // =========================================================
     // FEEDBACK
     // =========================================================
 
@@ -102,9 +90,8 @@ public class LightTargetReaction : MonoBehaviour
 
     public event Action<LightTargetReaction> TutorialPoked;
 
-
     public event Action<LightTargetReaction, bool>
-    TutorialFeedbackFinished;
+        TutorialFeedbackFinished;
 
     // =========================================================
     // AWAKE
@@ -163,8 +150,7 @@ public class LightTargetReaction : MonoBehaviour
             warningEmissionColor
         );
 
-        PlaySound(warningSound);
-
+        PlaySound(SFXEvent.Stimulus);
     }
 
     // =========================================================
@@ -206,7 +192,7 @@ public class LightTargetReaction : MonoBehaviour
                 successEmissionColor
             );
 
-            PlaySound(successSound);
+            PlaySound(SFXEvent.Correct);
         }
         else
         {
@@ -217,7 +203,7 @@ public class LightTargetReaction : MonoBehaviour
                 errorEmissionColor
             );
 
-            PlaySound(errorSound);
+            PlaySound(SFXEvent.Incorrect);
         }
 
         yield return new WaitForSecondsRealtime(feedbackDuration);
@@ -311,13 +297,12 @@ public class LightTargetReaction : MonoBehaviour
     }
 
     // =========================================================
-    // AUDIO
+    // AUDIO CENTRALIZADO
     // =========================================================
 
-    private void PlaySound(AudioClip clip)
+    private void PlaySound(SFXEvent soundEvent)
     {
-        if (audioSource != null && clip != null)
-            audioSource.PlayOneShot(clip);
+        AudioManager.Instance?.PlaySFX(soundEvent);
     }
 
     // =========================================================
@@ -341,6 +326,4 @@ public class LightTargetReaction : MonoBehaviour
 
         gameManager.TargetTouched(this);
     }
-
-
 }

@@ -1,4 +1,3 @@
-
 using System;
 using System.Threading.Tasks;
 using TMPro;
@@ -22,25 +21,18 @@ public class RegistroEstudiante : MonoBehaviour
     [Header("Error Inicio de sesión")]
     public TMP_Text mensajeErrorLogin;
 
+    [Header("Diagnóstico técnico Firebase")]
+    [SerializeField] private TMP_Text mensajeErrorTecnico;
+
     [Header("Modo Test")]
-    [SerializeField]
-    private bool modoTest = false;
-
-    [SerializeField]
-    private string nombreTest = "Sebastian Villamil";
-
-    [SerializeField]
-    private string codigoRegistroTest = "TEST001";
-
-    [SerializeField]
-    private string codigoLoginTest = "TEST001";
+    [SerializeField] private bool modoTest = false;
+    [SerializeField] private string nombreTest = "Sebastian Villamil";
+    [SerializeField] private string codigoRegistroTest = "TEST001";
+    [SerializeField] private string codigoLoginTest = "TEST001";
 
     [Header("Cambio de escena")]
-    [SerializeField]
-    private float esperaAntesDeCambiar = 0.25f;
-
-    [SerializeField]
-    private string nombreEscenaSiguiente = "EscenaSiguiente";
+    [SerializeField] private float esperaAntesDeCambiar = 0.25f;
+    [SerializeField] private string nombreEscenaSiguiente = "EscenaSiguiente";
 
     private bool cambiandoEscena = false;
     private bool procesandoSolicitud = false;
@@ -52,27 +44,17 @@ public class RegistroEstudiante : MonoBehaviour
     private void Start()
     {
         if (botonRegistrar != null)
-        {
-            botonRegistrar.onClick.AddListener(
-                RegistrarEstudiante
-            );
-        }
+            botonRegistrar.onClick.AddListener(RegistrarEstudiante);
 
         if (botonIniciarSesion != null)
-        {
-            botonIniciarSesion.onClick.AddListener(
-                IniciarSesion
-            );
-        }
-
+            botonIniciarSesion.onClick.AddListener(IniciarSesion);
 
         LimpiarErrorRegistro();
         LimpiarErrorLogin();
+        LimpiarErrorTecnico();
 
         if (modoTest)
-        {
             RellenarCamposTest();
-        }
     }
 
     // =====================================================
@@ -82,19 +64,13 @@ public class RegistroEstudiante : MonoBehaviour
     private void RellenarCamposTest()
     {
         if (inputNombre != null)
-        {
             inputNombre.text = nombreTest;
-        }
 
         if (inputCodigoRegistro != null)
-        {
             inputCodigoRegistro.text = codigoRegistroTest;
-        }
 
         if (inputCodigoLogin != null)
-        {
             inputCodigoLogin.text = codigoLoginTest;
-        }
     }
 
     // =====================================================
@@ -104,11 +80,10 @@ public class RegistroEstudiante : MonoBehaviour
     public async void RegistrarEstudiante()
     {
         if (procesandoSolicitud || cambiandoEscena)
-        {
             return;
-        }
 
         LimpiarErrorRegistro();
+        LimpiarErrorTecnico();
 
         string nombre = inputNombre != null
             ? inputNombre.text.Trim()
@@ -118,6 +93,8 @@ public class RegistroEstudiante : MonoBehaviour
             ? inputCodigoRegistro.text.Trim()
             : string.Empty;
 
+        // Validaciones normales del formulario.
+
         if (string.IsNullOrEmpty(nombre))
         {
             MostrarErrorRegistro("Ingresa tu nombre.");
@@ -126,16 +103,17 @@ public class RegistroEstudiante : MonoBehaviour
 
         if (string.IsNullOrEmpty(codigo))
         {
-            MostrarErrorRegistro(
-                "Ingresa tu código universitario."
-            );
+            MostrarErrorRegistro("Ingresa tu código universitario.");
             return;
         }
 
+        // Diagnóstico técnico: instancia de Firebase.
+
         if (FirestoreService.Instance == null)
         {
-            MostrarErrorRegistro(
-                "El servicio de base de datos no está disponible."
+            MostrarErrorTecnico(
+                "ERROR TÉCNICO: FirestoreService.Instance es NULL.\n\n" +
+                "El servicio de Firebase no está disponible o no fue inicializado."
             );
             return;
         }
@@ -145,9 +123,7 @@ public class RegistroEstudiante : MonoBehaviour
         try
         {
             bool exists =
-                await FirestoreService.Instance.StudentCodeExists(
-                    codigo
-                );
+                await FirestoreService.Instance.StudentCodeExists(codigo);
 
             if (exists)
             {
@@ -174,15 +150,15 @@ public class RegistroEstudiante : MonoBehaviour
 
             FirestoreService.Instance.SetCurrentStudent(codigo);
 
+            AudioManager.Instance?.PlayUI(UIEvent.Confirm);
+
             CambiarDeEscena();
         }
         catch (Exception e)
         {
-            Debug.LogError("[REGISTRO] Error: " + e);
+            Debug.LogError("[REGISTRO] ERROR TÉCNICO COMPLETO:\n" + e);
 
-            MostrarErrorRegistro(
-                ObtenerMensajeError(e)
-            );
+            MostrarErrorTecnico(e.ToString());
         }
         finally
         {
@@ -197,28 +173,30 @@ public class RegistroEstudiante : MonoBehaviour
     public async void IniciarSesion()
     {
         if (procesandoSolicitud || cambiandoEscena)
-        {
             return;
-        }
 
         LimpiarErrorLogin();
+        LimpiarErrorTecnico();
 
         string codigo = inputCodigoLogin != null
             ? inputCodigoLogin.text.Trim()
             : string.Empty;
 
+        // Validación normal del formulario.
+
         if (string.IsNullOrEmpty(codigo))
         {
-            MostrarErrorLogin(
-                "Ingresa tu código universitario."
-            );
+            MostrarErrorLogin("Ingresa tu código universitario.");
             return;
         }
 
+        // Diagnóstico técnico: instancia de Firebase.
+
         if (FirestoreService.Instance == null)
         {
-            MostrarErrorLogin(
-                "El servicio de base de datos no está disponible."
+            MostrarErrorTecnico(
+                "ERROR TÉCNICO: FirestoreService.Instance es NULL.\n\n" +
+                "El servicio de Firebase no está disponible o no fue inicializado."
             );
             return;
         }
@@ -228,9 +206,7 @@ public class RegistroEstudiante : MonoBehaviour
         try
         {
             bool exists =
-                await FirestoreService.Instance.StudentCodeExists(
-                    codigo
-                );
+                await FirestoreService.Instance.StudentCodeExists(codigo);
 
             if (!exists)
             {
@@ -243,15 +219,15 @@ public class RegistroEstudiante : MonoBehaviour
 
             FirestoreService.Instance.SetCurrentStudent(codigo);
 
+            AudioManager.Instance?.PlayUI(UIEvent.Confirm);
+
             CambiarDeEscena();
         }
         catch (Exception e)
         {
-            Debug.LogError("[LOGIN] Error: " + e);
+            Debug.LogError("[LOGIN] ERROR TÉCNICO COMPLETO:\n" + e);
 
-            MostrarErrorLogin(
-                ObtenerMensajeError(e)
-            );
+            MostrarErrorTecnico(e.ToString());
         }
         finally
         {
@@ -260,67 +236,34 @@ public class RegistroEstudiante : MonoBehaviour
     }
 
     // =====================================================
-    // INTERPRETACIÓN DE ERRORES
+    // DIAGNÓSTICO TÉCNICO
     // =====================================================
 
-    private string ObtenerMensajeError(Exception e)
+    private void MostrarErrorTecnico(string detalle)
     {
-        string error = e.ToString().ToLowerInvariant();
+        AudioManager.Instance?.PlayUI(UIEvent.Error);
 
-        if (error.Contains("unavailable") ||
-            error.Contains("network") ||
-            error.Contains("connection"))
+        if (mensajeErrorTecnico != null)
         {
-            return "No hay conexión con el servidor. " +
-                   "Verifica tu conexión a internet.";
+            mensajeErrorTecnico.text = detalle;
+            mensajeErrorTecnico.gameObject.SetActive(true);
         }
-
-        if (error.Contains("permission-denied") ||
-            error.Contains("permission denied"))
+        else
         {
-            return "No tienes permiso para realizar esta operación.";
+            Debug.LogError(
+                "[DIAGNÓSTICO] No hay TMP_Text asignado para errores técnicos.\n" +
+                detalle
+            );
         }
+    }
 
-        if (error.Contains("deadline-exceeded") ||
-            error.Contains("timed out") ||
-            error.Contains("timeout"))
+    private void LimpiarErrorTecnico()
+    {
+        if (mensajeErrorTecnico != null)
         {
-            return "La solicitud tardó demasiado. " +
-                   "Intenta nuevamente.";
+            mensajeErrorTecnico.text = string.Empty;
+            mensajeErrorTecnico.gameObject.SetActive(false);
         }
-
-        if (error.Contains("unauthenticated"))
-        {
-            return "La sesión no está autorizada. " +
-                   "Intenta nuevamente.";
-        }
-
-        if (error.Contains("failed-precondition"))
-        {
-            return "La base de datos no está configurada " +
-                   "correctamente para esta operación.";
-        }
-
-        if (error.Contains("already-exists") ||
-            error.Contains("already exists"))
-        {
-            return "Este registro ya existe.";
-        }
-
-        if (error.Contains("cancelled") ||
-            error.Contains("canceled"))
-        {
-            return "La operación fue cancelada.";
-        }
-
-        if (error.Contains("not-found") ||
-            error.Contains("not found"))
-        {
-            return "No se encontró la información solicitada.";
-        }
-
-        return "No fue posible completar la operación. " +
-               "Intenta nuevamente.";
     }
 
     // =====================================================
@@ -330,9 +273,7 @@ public class RegistroEstudiante : MonoBehaviour
     private async void CambiarDeEscena()
     {
         if (cambiandoEscena)
-        {
             return;
-        }
 
         cambiandoEscena = true;
 
@@ -345,9 +286,7 @@ public class RegistroEstudiante : MonoBehaviour
 
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.ChangeScene(
-                nombreEscenaSiguiente
-            );
+            GameManager.Instance.ChangeScene(nombreEscenaSiguiente);
         }
         else
         {
@@ -365,6 +304,8 @@ public class RegistroEstudiante : MonoBehaviour
 
     private void MostrarErrorRegistro(string mensaje)
     {
+        AudioManager.Instance?.PlayUI(UIEvent.Error);
+
         if (mensajeErrorRegistro != null)
         {
             mensajeErrorRegistro.text = mensaje;
@@ -387,6 +328,8 @@ public class RegistroEstudiante : MonoBehaviour
 
     private void MostrarErrorLogin(string mensaje)
     {
+        AudioManager.Instance?.PlayUI(UIEvent.Error);
+
         if (mensajeErrorLogin != null)
         {
             mensajeErrorLogin.text = mensaje;

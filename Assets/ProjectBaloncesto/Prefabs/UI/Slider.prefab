@@ -121,6 +121,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1634406155509239788}
   - component: {fileID: 8122543426429431465}
+  - component: {fileID: 1855952602285030146}
   m_Layer: 0
   m_Name: Slider
   m_TagString: Untagged
@@ -147,7 +148,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: 0.9826, y: -0.00000025331974}
+  m_AnchoredPosition: {x: 0.982605, y: -0.00000025331974}
   m_SizeDelta: {x: 116.397, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &8122543426429431465
@@ -201,6 +202,20 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1855952602285030146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3615814129316355188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 439840f07412bf94d8e5c4df78495a85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  channel: 0
+  soundInterval: 0.08
 --- !u!1 &4362861354809510739
 GameObject:
   m_ObjectHideFlags: 0

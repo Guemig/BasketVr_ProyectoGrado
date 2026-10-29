@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -7,11 +8,6 @@ public class AudioSettingsManager : MonoBehaviour
 
     [Header("Audio Mixer")]
     [SerializeField] private AudioMixer audioMixer;
-
-    [Header("Slider Sound")]
-    [SerializeField] private float sliderSoundInterval = 0.15f;
-
-    private float nextSliderSoundTime;
 
     public enum AudioChannel
     {
@@ -30,24 +26,15 @@ public class AudioSettingsManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
 
         LoadVolumeSettings();
     }
 
-    private void PlaySliderSound()
-    {
-        if (Time.unscaledTime < nextSliderSoundTime)
-            return;
-
-        AudioManager.Instance?.PlayUI(UIEvent.Slider);
-
-        nextSliderSoundTime =
-            Time.unscaledTime + sliderSoundInterval;
-    }
     public void SetVolume(AudioChannel channel, float value)
     {
         string parameter = GetMixerParameter(channel);
+
+        value = Mathf.Clamp01(value);
 
         float dB;
 
@@ -60,7 +47,6 @@ public class AudioSettingsManager : MonoBehaviour
             dB = Mathf.Lerp(0f, 10f, (value - 0.8f) / 0.2f);
         }
 
-        PlaySliderSound();
         audioMixer.SetFloat(parameter, dB);
 
         PlayerPrefs.SetFloat(parameter, value);
@@ -128,7 +114,9 @@ public class AudioSettingsManager : MonoBehaviour
 
         float value = PlayerPrefs.GetFloat(parameter, 1f);
 
-        float dB = Mathf.Log10(Mathf.Clamp(value, 0.0001f, 1f)) * 20f;
+        float dB = Mathf.Log10(
+            Mathf.Clamp(value, 0.0001f, 1f)
+        ) * 20f;
 
         audioMixer.SetFloat(parameter, dB);
     }

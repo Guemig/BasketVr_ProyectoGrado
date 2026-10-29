@@ -30,7 +30,8 @@ public enum SFXEvent
     Incorrect,
     LevelStart,
     LevelComplete,
-    ExerciseComplete
+    ExerciseComplete,
+    StartGame,
 }
 
 public enum BackgroundContext
