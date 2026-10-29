@@ -45,7 +45,7 @@ public enum BackgroundContext
     Results
 }
 
-[RequireComponent(typeof(AudioSource))]
+
 public class AudioIdentifier : MonoBehaviour
 {
     [Header("Identificación")]
