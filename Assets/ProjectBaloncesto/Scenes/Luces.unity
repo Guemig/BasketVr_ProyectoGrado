@@ -23151,7 +23151,7 @@ MonoBehaviour:
   level1Group: {fileID: 1907123188}
   level2Group: {fileID: 1177208136}
   level3Group: {fileID: 1795210442}
-  reactionsRequiredByLevel: 0a0000000f0000001e000000
+  reactionsRequiredByLevel: 0a000000140000001e000000
   totalTimeByLevel:
   - 1.5
   - 0.95
