@@ -6499,7 +6499,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   steps:
-  - text: Bienvenido al ejercicion de reaccion por luces
+  - text: "\xA1Bienvenido al ejercicio Sigue la Luz! En esta actividad pondr\xE1s
+      a prueba tu velocidad de reacci\xF3n y tu capacidad para responder a diferentes
+      est\xEDmulos visuales."
     audio: {fileID: 0}
     advanceType: 0
     targetSelection: 0
@@ -6509,8 +6511,8 @@ MonoBehaviour:
     interactionTimeoutSeconds: 0
     errorDemonstrations: 0
     errorTimeoutSeconds: 0
-  - text: La idea de este ejercicio sera que oprimas las luces cuando se activen
-      antes que se acabe el tiempo
+  - text: "Mantente atento a las luces que te rodean y al panel de indicaciones frente
+      a ti. Observa cu\xE1ndo se activan para saber d\xF3nde debes reaccionar."
     audio: {fileID: 0}
     advanceType: 0
     targetSelection: 0
@@ -6520,7 +6522,8 @@ MonoBehaviour:
     interactionTimeoutSeconds: 0
     errorDemonstrations: 0
     errorTimeoutSeconds: 0
-  - text: Oprime la luz que aparece al frente tuyo antes que se acabe el tiempo
+  - text: "Cuando la luz frente a ti se active, ac\xE9rcate y t\xF3cala con tu mano
+      para completar la interacci\xF3n."
     audio: {fileID: 0}
     advanceType: 1
     targetSelection: 0
@@ -6530,8 +6533,9 @@ MonoBehaviour:
     interactionTimeoutSeconds: 1.5
     errorDemonstrations: 0
     errorTimeoutSeconds: 0
-  - text: Perfecto ahora durante ejercicio te puede aparecer mas de un en diferentes
-      direcciones , por lo que apoyate del indicador frente a ti
+  - text: "\xA1Muy bien! Ahora las luces podr\xE1n activarse en diferentes direcciones.
+      Utiliza el panel de indicaciones frente a ti para identificar cu\xE1l debes
+      tocar y reacciona ante cada activaci\xF3n."
     audio: {fileID: 0}
     advanceType: 1
     targetSelection: 1
@@ -6541,7 +6545,7 @@ MonoBehaviour:
     interactionTimeoutSeconds: 1.5
     errorDemonstrations: 0
     errorTimeoutSeconds: 0
-  - text: Ahora toca aprender como te puedes equivocar
+  - text: "Ahora aprender\xE1s qu\xE9 sucede cuando no reaccionas a tiempo."
     audio: {fileID: 0}
     advanceType: 0
     targetSelection: 0
@@ -6551,8 +6555,8 @@ MonoBehaviour:
     interactionTimeoutSeconds: 0.1
     errorDemonstrations: 0
     errorTimeoutSeconds: 0
-  - text: La forma que te puedes equivocar es por medio de no tocar la luz antes
-      que se acabe el tiempo.
+  - text: "\xA1Cuidado! Si no tocas la luz antes de que termine el tiempo disponible,
+      la oportunidad de reaccionar finalizar\xE1 y cometer\xE1s un error. "
     audio: {fileID: 0}
     advanceType: 2
     targetSelection: 1
@@ -6562,7 +6566,8 @@ MonoBehaviour:
     interactionTimeoutSeconds: 0.1
     errorDemonstrations: 3
     errorTimeoutSeconds: 0.6
-  - text: 'Felicidades acabas de terminar el tutorial '
+  - text: "\xA1Felicidades! Has completado el tutorial de Sigue la Luz. Ahora est\xE1s
+      listo para comenzar tu entrenamiento y poner a prueba tu velocidad de reacci\xF3n."
     audio: {fileID: 0}
     advanceType: 0
     targetSelection: 1
@@ -11347,7 +11352,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1.62, y: 0.37}
+  m_SizeDelta: {x: 1.68, y: 0.37}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &868774627
 CanvasRenderer:
@@ -11377,8 +11382,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Perfecto ahora durante ejercicio te puede aparecer mas de un en diferentes
-    direcciones , por lo que apoyate del indicador frente a ti
+  m_text: "\xA1Cuidado! Si no tocas la luz antes de que termine el tiempo disponible,
+    la oportunidad de reaccionar finalizar\xE1 y cometer\xE1s un error. "
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

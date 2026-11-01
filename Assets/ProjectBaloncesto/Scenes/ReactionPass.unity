@@ -5604,45 +5604,52 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   steps:
-  - text: 'BIenvenido al ejercicio de pases , aqui se entrenara tu capacidad de reaccion
-      a doble mano , '
+  - text: "\xA1Bienvenido al ejercicio Captura Selectiva! Aqu\xED pondr\xE1s a prueba
+      tus reflejos y tu capacidad para identificar los balones correctos."
     audio: {fileID: 0}
     stepType: 0
     expectedResult: 0
     requiredCorrectBalls: 1
     requiredErrors: 1
-  - text: Junta las manos donde las palmas se miren de frente para activar la zona
-      de agarre
+  - text: Junta tus manos con las palmas enfrentadas y mantenlas cerca para activar
+      la zona de agarre.
     audio: {fileID: 0}
     stepType: 0
     expectedResult: 0
     requiredCorrectBalls: 1
     requiredErrors: 1
-  - text: agarra los balones amarillos usando la zona de agarre
+  - text: "Utiliza la zona de agarre para atrapar los balones se\xF1alados. Hazlo
+      dos veces para practicar."
     audio: {fileID: 0}
     stepType: 1
     expectedResult: 0
     requiredCorrectBalls: 2
     requiredErrors: 0
-  - text: Dejar pasar los balones amarillos ocasiona una equivocacion
+  - text: "Ahora cometer\xE1s un error intencionalmente. Deja pasar un bal\xF3n que
+      deb\xEDas atrapar. Repite esta acci\xF3n dos veces para reconocer este tipo
+      de error."
     audio: {fileID: 0}
     stepType: 1
     expectedResult: 1
     requiredCorrectBalls: 0
     requiredErrors: 2
-  - text: Dejar pasar los balones morados es una accion correcta
+  - text: "Ahora deja pasar los balones se\xF1alados para no ser capturados. Repite
+      esta acci\xF3n dos veces."
     audio: {fileID: 0}
     stepType: 1
     expectedResult: 2
     requiredCorrectBalls: 2
     requiredErrors: 0
-  - text: Agarrar los balones morados es una penalizacion
+  - text: "Ahora cometer\xE1s otro error intencionalmente. Atrapa un bal\xF3n que
+      deb\xEDas dejar pasar. Repite esta acci\xF3n dos veces para reconocer este
+      tipo de error."
     audio: {fileID: 0}
     stepType: 1
     expectedResult: 3
     requiredCorrectBalls: 0
     requiredErrors: 2
-  - text: Recuerda apoyarte de cualquier elemento de la interfaz y tutorial terminado
+  - text: "\xA1Felicidades! Has completado el tutorial de Captura Selectiva. \xA1Ahora
+      est\xE1s listo para comenzar tu entrenamiento!"
     audio: {fileID: 0}
     stepType: 0
     expectedResult: 1
@@ -16245,8 +16252,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Perfecto ahora durante ejercicio te puede aparecer mas de un en diferentes
-    direcciones , por lo que apoyate del indicador frente a ti
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
