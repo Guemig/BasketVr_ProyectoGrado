@@ -3,7 +3,17 @@ guid: 26980cfd060b4734fa77647e17a620bb
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Luz_LamparaTecho
+    second: {fileID: 2100000, guid: a8eb7abebfafbc743a233363b9e7ae33, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Metal_LamparaTecho
+    second: {fileID: 2100000, guid: b82b7ec40e4bbd141a07f167858369c4, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

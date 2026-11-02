@@ -3,7 +3,17 @@ guid: 366011fea2f1d994683d63dcf040eb68
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material_Malla
+    second: {fileID: 2100000, guid: 94b734475c964ab479ca1aafbf6e5507, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Metal_Aro
+    second: {fileID: 2100000, guid: b700bf228d77bfb4a9d9e4346cea3592, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
