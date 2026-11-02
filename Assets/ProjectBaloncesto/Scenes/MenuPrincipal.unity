@@ -1824,10 +1824,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac78976aeb24a734db9b4d95cca9c187, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalVolume: {fileID: 440089101}
   lightingSlider: {fileID: 1823903287}
-  brightnessSlider: {fileID: 985618509}
-  visualIntensitySlider: {fileID: 312494343}
+  temperatureSlider: {fileID: 985618509}
+  shadowsSlider: {fileID: 312494343}
+  sceneLight: {fileID: 593431122}
 --- !u!224 &260797227 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4221563039158920579, guid: 45d00b5e326d8a143bff5d77d73afea6, type: 3}
@@ -1903,7 +1903,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1634406155509239788, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 1.083
+      value: 0.99
       objectReference: {fileID: 0}
     - target: {fileID: 1634406155509239788, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -1931,7 +1931,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3615814129316355188, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_Name
-      value: Slider
+      value: SliderSombras
+      objectReference: {fileID: 0}
+    - target: {fileID: 8122543426429431465, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
+      propertyPath: m_Value
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9073358544258185465, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_AnchorMax.x
@@ -2619,7 +2623,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -0.07}
+  m_AnchoredPosition: {x: -0.23, y: -0.07}
   m_SizeDelta: {x: 4.8, y: 1.89}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &402559200
@@ -2896,55 +2900,6 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.35537156, y: -1.9075825, z: -0.69350785}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &440089100
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 440089102}
-  - component: {fileID: 440089101}
-  m_Layer: 0
-  m_Name: Global Volume
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &440089101
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 440089100}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_IsGlobal: 1
-  priority: 0
-  blendDistance: 0
-  weight: 1
-  sharedProfile: {fileID: 11400000, guid: c28bc4cc21047d947a71da6d09050bf4, type: 2}
---- !u!4 &440089102
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 440089100}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.3826466, y: -0.37245387, z: -4.0656557}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3804,7 +3759,7 @@ Light:
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
-  m_ColorTemperature: 4724
+  m_ColorTemperature: 2933
   m_UseColorTemperature: 1
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
@@ -5508,7 +5463,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Intensidad visual
+  m_text: Sombras
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -6781,7 +6736,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1634406155509239788, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0.9826
+      value: 0.99
       objectReference: {fileID: 0}
     - target: {fileID: 1634406155509239788, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -6809,7 +6764,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3615814129316355188, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_Name
-      value: Slider
+      value: SliderTemperatura
+      objectReference: {fileID: 0}
+    - target: {fileID: 8122543426429431465, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
+      propertyPath: m_Value
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9073358544258185465, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_AnchorMax.x
@@ -10270,7 +10229,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 1
+  m_RenderPostProcessing: 0
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -12088,7 +12047,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1634406155509239788, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0.9826
+      value: 0.99
       objectReference: {fileID: 0}
     - target: {fileID: 1634406155509239788, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -12116,7 +12075,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3615814129316355188, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_Name
-      value: Slider
+      value: SliderIluminacion
+      objectReference: {fileID: 0}
+    - target: {fileID: 8122543426429431465, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
+      propertyPath: m_Value
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9073358544258185465, guid: ce14f720fd6c00e4e9e4bbc01af51402, type: 3}
       propertyPath: m_AnchorMax.x
@@ -12885,8 +12848,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: 0.311, y: 0}
-  m_SizeDelta: {x: 0.47389996, y: 0.12}
+  m_AnchoredPosition: {x: 0.25, y: 0}
+  m_SizeDelta: {x: 0.62, y: 0.12}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2063242372
 MonoBehaviour:
@@ -12908,7 +12871,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Brillo
+  m_text: Temperatura
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -13760,4 +13723,3 @@ SceneRoots:
   - {fileID: 6005974743572473474}
   - {fileID: 938279056}
   - {fileID: 1687210384}
-  - {fileID: 440089102}

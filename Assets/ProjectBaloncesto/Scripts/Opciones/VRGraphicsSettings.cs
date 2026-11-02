@@ -1,80 +1,69 @@
-
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 
 public class VRGraphicsSettings : MonoBehaviour
 {
-    [Header("Global Volume")]
-    [SerializeField] private Volume globalVolume;
-
     [Header("Sliders")]
     [SerializeField] private Slider lightingSlider;
-    [SerializeField] private Slider brightnessSlider;
-    [SerializeField] private Slider visualIntensitySlider;
+    [SerializeField] private Slider temperatureSlider;
+    [SerializeField] private Slider shadowsSlider;
 
-    private ColorAdjustments colorAdjustments;
-    private Bloom bloom;
-
-    private const string LightingKey = "VR_Lighting";
-    private const string BrightnessKey = "VR_Brightness";
-    private const string VisualIntensityKey = "VR_VisualIntensity";
+    [Header("Scene Light")]
+    [SerializeField] private Light sceneLight;
 
     private void Awake()
     {
-        if (globalVolume == null)
-        {
-            Debug.LogError("VRGraphicsSettings: Global Volume no asignado.");
-            enabled = false;
-            return;
-        }
-
-        VolumeProfile profile = globalVolume.profile;
-
-        if (!profile.TryGet(out colorAdjustments))
-        {
-            Debug.LogError("VRGraphicsSettings: Falta Color Adjustments.");
-            enabled = false;
-            return;
-        }
-
-        if (!profile.TryGet(out bloom))
-        {
-            Debug.LogError("VRGraphicsSettings: Falta Bloom.");
-            enabled = false;
-            return;
-        }
-
         if (lightingSlider == null ||
-            brightnessSlider == null ||
-            visualIntensitySlider == null)
+            temperatureSlider == null ||
+            shadowsSlider == null ||
+            sceneLight == null)
         {
-            Debug.LogError("VRGraphicsSettings: Faltan sliders.");
+            Debug.LogError("VRGraphicsSettings: Faltan referencias.");
             enabled = false;
             return;
         }
 
         ConfigureSlider(lightingSlider);
-        ConfigureSlider(brightnessSlider);
-        ConfigureSlider(visualIntensitySlider);
+        ConfigureSlider(temperatureSlider);
+        ConfigureSlider(shadowsSlider);
 
-        lightingSlider.SetValueWithoutNotify(
-            PlayerPrefs.GetFloat(LightingKey, 0.6f));
+        lightingSlider.SetValueWithoutNotify(1f);
+        temperatureSlider.SetValueWithoutNotify(1f);
+        shadowsSlider.SetValueWithoutNotify(1f);
 
-        brightnessSlider.SetValueWithoutNotify(
-            PlayerPrefs.GetFloat(BrightnessKey, 0.6f));
+        RenderSettings.ambientMode = AmbientMode.Skybox;
 
-        visualIntensitySlider.SetValueWithoutNotify(
-            PlayerPrefs.GetFloat(VisualIntensityKey, 0.75f));
+        sceneLight.useColorTemperature = true;
+        sceneLight.color = Color.white;
 
-        ApplyLighting(lightingSlider.value);
-        ApplyBrightness(brightnessSlider.value);
-        ApplyVisualIntensity(visualIntensitySlider.value);
+        ApplyLighting(1f);
+        ApplyTemperature(1f);
+        ApplyShadows(1f);
+    }
 
-        lightingSlider.onValueChanged.AddListener(OnLightingChanged);
-        brightnessSlider.onValueChanged.AddListener(OnBrightnessChanged);
-        visualIntensitySlider.onValueChanged.AddListener(OnVisualIntensityChanged);
+    private void OnEnable()
+    {
+        if (lightingSlider != null)
+            lightingSlider.onValueChanged.AddListener(ApplyLighting);
+
+        if (temperatureSlider != null)
+            temperatureSlider.onValueChanged.AddListener(ApplyTemperature);
+
+        if (shadowsSlider != null)
+            shadowsSlider.onValueChanged.AddListener(ApplyShadows);
+    }
+
+    private void OnDisable()
+    {
+        if (lightingSlider != null)
+            lightingSlider.onValueChanged.RemoveListener(ApplyLighting);
+
+        if (temperatureSlider != null)
+            temperatureSlider.onValueChanged.RemoveListener(ApplyTemperature);
+
+        if (shadowsSlider != null)
+            shadowsSlider.onValueChanged.RemoveListener(ApplyShadows);
     }
 
     private void ConfigureSlider(Slider slider)
@@ -84,60 +73,33 @@ public class VRGraphicsSettings : MonoBehaviour
         slider.wholeNumbers = false;
     }
 
-    private void OnLightingChanged(float value)
-    {
-        ApplyLighting(value);
-        PlayerPrefs.SetFloat(LightingKey, value);
-        PlayerPrefs.Save();
-    }
-
-    private void OnBrightnessChanged(float value)
-    {
-        ApplyBrightness(value);
-        PlayerPrefs.SetFloat(BrightnessKey, value);
-        PlayerPrefs.Save();
-    }
-
-    private void OnVisualIntensityChanged(float value)
-    {
-        ApplyVisualIntensity(value);
-        PlayerPrefs.SetFloat(VisualIntensityKey, value);
-        PlayerPrefs.Save();
-    }
-
     private void ApplyLighting(float value)
     {
-        bloom.intensity.Override(
-            Mathf.Lerp(0f, 0.20f, value));
-
-        bloom.scatter.Override(
-            Mathf.Lerp(0.3f, 0.7f, value));
+        RenderSettings.ambientIntensity =
+            Mathf.Lerp(0f, 2f, Mathf.Clamp01(value));
     }
 
-    private void ApplyBrightness(float value)
+    private void ApplyTemperature(float value)
     {
-        colorAdjustments.postExposure.Override(
-            Mathf.Lerp(-0.5f, 0.5f, value));
+        if (sceneLight == null)
+            return;
+
+        float temperature = Mathf.Lerp(
+            1700f,
+            3945f,
+            Mathf.Clamp01(value));
+
+        sceneLight.useColorTemperature = true;
+        sceneLight.color = Color.white;
+        sceneLight.colorTemperature = temperature;
     }
 
-    private void ApplyVisualIntensity(float value)
+    private void ApplyShadows(float value)
     {
-        colorAdjustments.contrast.Override(
-            Mathf.Lerp(0f, 30f, value));
+        if (sceneLight == null)
+            return;
 
-        colorAdjustments.saturation.Override(
-            Mathf.Lerp(0f, 20f, value));
-    }
-
-    private void OnDestroy()
-    {
-        if (lightingSlider != null)
-            lightingSlider.onValueChanged.RemoveListener(OnLightingChanged);
-
-        if (brightnessSlider != null)
-            brightnessSlider.onValueChanged.RemoveListener(OnBrightnessChanged);
-
-        if (visualIntensitySlider != null)
-            visualIntensitySlider.onValueChanged.RemoveListener(OnVisualIntensityChanged);
+        sceneLight.shadowStrength =
+            Mathf.Lerp(0.1f, 0.7f, Mathf.Clamp01(value));
     }
 }
