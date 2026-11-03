@@ -14622,7 +14622,7 @@ MonoBehaviour:
   - text: "\xA1Bienvenido a Alcance Reactivo! En esta actividad pondr\xE1s a prueba
       tus reflejos y tu capacidad para responder r\xE1pidamente ante los movimientos
       de un oponente."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 187c938fadf7405469f82b48e78df709, type: 3}
     advanceType: 0
     expectedHand: 0
     requiredCorrectTouches: 0
@@ -14631,7 +14631,7 @@ MonoBehaviour:
     interactionTimeoutSeconds: 0
   - text: "Presta atenci\xF3n a los movimientos del maniqu\xED y mantente atento
       a sus acciones durante el ejercicio."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 25ac68c7ff18336448e4df1f12133784, type: 3}
     advanceType: 0
     expectedHand: 0
     requiredCorrectTouches: 0
@@ -14640,7 +14640,7 @@ MonoBehaviour:
     interactionTimeoutSeconds: 0
   - text: "Cuando el maniqu\xED extienda uno de sus brazos, acerca tu mano al bal\xF3n
       del mismo lado y t\xF3calo para realizar la interacci\xF3n."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: a353ea186f45b234fb796c969ba4aa88, type: 3}
     advanceType: 1
     expectedHand: 0
     requiredCorrectTouches: 1
@@ -14649,7 +14649,7 @@ MonoBehaviour:
     interactionTimeoutSeconds: 0
   - text: "Ahora deja que el maniqu\xED retire su brazo sin tocar el bal\xF3n. Repite
       esta acci\xF3n 3 veces para observar qu\xE9 sucede cuando no reaccionas a tiempo."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: e5bfa460575fc39418fcd6fb7d30b6ba, type: 3}
     advanceType: 2
     expectedHand: 0
     requiredCorrectTouches: 0
@@ -14659,7 +14659,7 @@ MonoBehaviour:
   - text: "\xA1No te adelantes! Tocar el bal\xF3n antes de que el maniqu\xED extienda
       su brazo se considera un error. Recuerda esperar a que aparezca el est\xEDmulo
       antes de reaccionar."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: b611df32c702c3649905381da41ed97e, type: 3}
     advanceType: 0
     expectedHand: 0
     requiredCorrectTouches: 0
@@ -14668,7 +14668,7 @@ MonoBehaviour:
     interactionTimeoutSeconds: 3
   - text: "Cuando el maniqu\xED extienda uno de sus brazos, toca intencionalmente
       el bal\xF3n del lado contrario. "
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: a0ace1b152fb83b44bad275268378784, type: 3}
     advanceType: 2
     expectedHand: 1
     requiredCorrectTouches: 0
@@ -14677,7 +14677,7 @@ MonoBehaviour:
     interactionTimeoutSeconds: 3
   - text: "\xA1Felicidades! Has completado el tutorial del ejercicio de Alcance Reactivo.
       Ahora est\xE1s listo para comenzar tu entrenamiento y poner a prueba tus reflejos."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 539edf5383e6ce346b4d0185c798a048, type: 3}
     advanceType: 0
     expectedHand: 0
     requiredCorrectTouches: 0

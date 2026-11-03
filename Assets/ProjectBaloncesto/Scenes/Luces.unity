@@ -7936,7 +7936,7 @@ MonoBehaviour:
   - text: "\xA1Bienvenido al ejercicio Sigue la Luz! En esta actividad pondr\xE1s
       a prueba tu velocidad de reacci\xF3n y tu capacidad para responder a diferentes
       est\xEDmulos visuales."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 92f8451637ddaf440a31316ce7cff1b1, type: 3}
     advanceType: 0
     targetSelection: 0
     fixedTarget: {fileID: 0}
@@ -7947,7 +7947,7 @@ MonoBehaviour:
     errorTimeoutSeconds: 0
   - text: "Mantente atento a las luces que te rodean y al panel de indicaciones frente
       a ti. Observa cu\xE1ndo se activan para saber d\xF3nde debes reaccionar."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 2c5b40585901a4241a1d8529f8c2bf3a, type: 3}
     advanceType: 0
     targetSelection: 0
     fixedTarget: {fileID: 0}
@@ -7958,7 +7958,7 @@ MonoBehaviour:
     errorTimeoutSeconds: 0
   - text: "Cuando la luz frente a ti se active, ac\xE9rcate y t\xF3cala con tu mano
       para completar la interacci\xF3n."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 1d5e1c3f78cb419409267c7f55655656, type: 3}
     advanceType: 1
     targetSelection: 0
     fixedTarget: {fileID: 1232184111}
@@ -7970,7 +7970,7 @@ MonoBehaviour:
   - text: "\xA1Muy bien! Ahora las luces podr\xE1n activarse en diferentes direcciones.
       Utiliza el panel de indicaciones frente a ti para identificar cu\xE1l debes
       tocar y reacciona ante cada activaci\xF3n."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 6fc23bbcb2bbeae45841806b6b1f1241, type: 3}
     advanceType: 1
     targetSelection: 1
     fixedTarget: {fileID: 1232184111}
@@ -7980,7 +7980,7 @@ MonoBehaviour:
     errorDemonstrations: 0
     errorTimeoutSeconds: 0
   - text: "Ahora aprender\xE1s qu\xE9 sucede cuando no reaccionas a tiempo."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: e7e1dac6cfd7df34eb5f8f77f2547ea0, type: 3}
     advanceType: 0
     targetSelection: 0
     fixedTarget: {fileID: 0}
@@ -7991,7 +7991,7 @@ MonoBehaviour:
     errorTimeoutSeconds: 0
   - text: "\xA1Cuidado! Si no tocas la luz antes de que termine el tiempo disponible,
       la oportunidad de reaccionar finalizar\xE1 y cometer\xE1s un error. "
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 81bcb3a54e7e85f4e9003476187869dd, type: 3}
     advanceType: 2
     targetSelection: 1
     fixedTarget: {fileID: 1232184111}
@@ -8002,7 +8002,7 @@ MonoBehaviour:
     errorTimeoutSeconds: 0.6
   - text: "\xA1Felicidades! Has completado el tutorial de Sigue la Luz. Ahora est\xE1s
       listo para comenzar tu entrenamiento y poner a prueba tu velocidad de reacci\xF3n."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 954b055b0294c694691e4aecc328714b, type: 3}
     advanceType: 0
     targetSelection: 1
     fixedTarget: {fileID: 1232184111}

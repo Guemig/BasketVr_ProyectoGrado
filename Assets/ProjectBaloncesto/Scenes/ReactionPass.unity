@@ -6213,21 +6213,21 @@ MonoBehaviour:
   steps:
   - text: "\xA1Bienvenido al ejercicio Captura Selectiva! Aqu\xED pondr\xE1s a prueba
       tus reflejos y tu capacidad para identificar los balones correctos."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: de8a008213460e34a995c64ed5a1600b, type: 3}
     stepType: 0
     expectedResult: 0
     requiredCorrectBalls: 1
     requiredErrors: 1
   - text: Junta tus manos con las palmas enfrentadas y mantenlas cerca para activar
       la zona de agarre.
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: ac138ed026baf2b45b36f764a9ad2603, type: 3}
     stepType: 0
     expectedResult: 0
     requiredCorrectBalls: 1
     requiredErrors: 1
   - text: "Utiliza la zona de agarre para atrapar los balones se\xF1alados. Hazlo
       dos veces para practicar."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 3b753352ab53e924196a901d468c0f9d, type: 3}
     stepType: 1
     expectedResult: 0
     requiredCorrectBalls: 2
@@ -6235,14 +6235,14 @@ MonoBehaviour:
   - text: "Ahora cometer\xE1s un error intencionalmente. Deja pasar un bal\xF3n que
       deb\xEDas atrapar. Repite esta acci\xF3n dos veces para reconocer este tipo
       de error."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 41c69f36489e06f4a94dbb52a5be7317, type: 3}
     stepType: 1
     expectedResult: 1
     requiredCorrectBalls: 0
     requiredErrors: 2
   - text: "Ahora deja pasar los balones se\xF1alados para no ser capturados. Repite
       esta acci\xF3n dos veces."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: fed1327e5f4346e4394f9b8b021188fe, type: 3}
     stepType: 1
     expectedResult: 2
     requiredCorrectBalls: 2
@@ -6250,14 +6250,14 @@ MonoBehaviour:
   - text: "Ahora cometer\xE1s otro error intencionalmente. Atrapa un bal\xF3n que
       deb\xEDas dejar pasar. Repite esta acci\xF3n dos veces para reconocer este
       tipo de error."
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: e08e12cf1db62d1479a21f0d608b2c83, type: 3}
     stepType: 1
     expectedResult: 3
     requiredCorrectBalls: 0
     requiredErrors: 2
   - text: "\xA1Felicidades! Has completado el tutorial de Captura Selectiva. \xA1Ahora
       est\xE1s listo para comenzar tu entrenamiento!"
-    audio: {fileID: 0}
+    audio: {fileID: 8300000, guid: 8d92396bb75528844a027b3d1ac652e7, type: 3}
     stepType: 0
     expectedResult: 1
     requiredCorrectBalls: 0

@@ -6634,14 +6634,14 @@ MonoBehaviour:
   nextButton: {fileID: 464467108}
   typingDelay: 0.03
   dialogueAudioSource: {fileID: 500504660}
-  step1Audio: {fileID: 0}
-  step2Audio: {fileID: 0}
-  step3Audio: {fileID: 0}
-  step4Audio: {fileID: 0}
-  step5Audio: {fileID: 0}
-  step6Audio: {fileID: 0}
-  step7Audio: {fileID: 0}
-  step8Audio: {fileID: 0}
+  step1Audio: {fileID: 8300000, guid: 5bed94b58bae3544caa44ff59970e8b0, type: 3}
+  step2Audio: {fileID: 8300000, guid: 51202771b1068a04690be312b41a9a77, type: 3}
+  step3Audio: {fileID: 8300000, guid: 153ec56f42ab9164c859887d093d6d1a, type: 3}
+  step4Audio: {fileID: 8300000, guid: 7d4fdba6092f5d94a968247d0b708b85, type: 3}
+  step5Audio: {fileID: 8300000, guid: 2efce57460e35fd438ef130ebf997836, type: 3}
+  step6Audio: {fileID: 8300000, guid: b78b8adb16828154bafcc20e64001e74, type: 3}
+  step7Audio: {fileID: 8300000, guid: 1181f873772e35d47a935e3cd143edc8, type: 3}
+  step8Audio: {fileID: 8300000, guid: f410642a2cf6628499e7df6dc603819c, type: 3}
   completionAudioSource: {fileID: 500504660}
   stepCompleteSound: {fileID: 8300000, guid: 1a64ff7dc284e0140b7bbef9c7d684a0, type: 3}
   transitionDelay: 1
@@ -6649,8 +6649,8 @@ MonoBehaviour:
   step2Text: "La idea de este ejercicio ser\xE1 que oprimas las placas encendidas
     en el piso antes de que se acabe el tiempo."
   step3Text: "Primero agarra el bal\xF3n y su\xE9ltalo para que drible, luego mant\xE9n
-    ese dribling durante 3 segundos, si pierdes el control del bal\xF3n volvera a
-    aparecer frente a ti."
+    ese dribling durante 3 segundos, si pierdes el control del bal\xF3n volver\xE1
+    a aparecer frente a ti."
   step4Text: "Ahora dribla el bal\xF3n encima de la placa verde que se encuentra
     frente a ti."
   step5Text: "Puedes cambiar el bal\xF3n de mano. Imp\xFAlsalo hacia tu otra mano
@@ -6694,7 +6694,7 @@ AudioSource:
   m_GameObject: {fileID: 500504654}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: -5338112476700497589, guid: 719dbf1bc47f3964993aed3b14ad108d, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
