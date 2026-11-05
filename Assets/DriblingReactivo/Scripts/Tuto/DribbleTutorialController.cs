@@ -1,3 +1,4 @@
+
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -15,7 +16,7 @@ public class DribbleTutorialController : MonoBehaviour
     [SerializeField] private GameObject tutorialCanvas;
     [SerializeField] private GameObject startCanvas;
     [SerializeField] private TMP_Text dialogueText;
-    [SerializeField] private GameObject nextButtonObject;
+    [SerializeField] private GameObject nextButtonPanel;
     [SerializeField] private Button nextButton;
 
     [Header("Typing")]
@@ -41,35 +42,43 @@ public class DribbleTutorialController : MonoBehaviour
 
     [Header("Textos")]
     [TextArea(2, 5)]
-    [SerializeField] private string step1Text =
+    [SerializeField]
+    private string step1Text =
         "Bienvenido al ejercicio de Dribling.";
 
     [TextArea(2, 5)]
-    [SerializeField] private string step2Text =
+    [SerializeField]
+    private string step2Text =
         "La idea de este ejercicio será que oprimas las placas encendidas en el piso antes de que se acabe el tiempo.";
 
     [TextArea(2, 5)]
-    [SerializeField] private string step3Text =
+    [SerializeField]
+    private string step3Text =
         "Primero agarra el balón y suéltalo para que drible. El balón seguirá tu mano. Mantén el dribling durante 3 segundos.";
 
     [TextArea(2, 5)]
-    [SerializeField] private string step4Text =
+    [SerializeField]
+    private string step4Text =
         "Ahora recoge el balón y dríbalo encima de la placa encendida frente a ti.";
 
     [TextArea(2, 5)]
-    [SerializeField] private string step5Text =
+    [SerializeField]
+    private string step5Text =
         "Puedes cambiar el balón de mano. Impúlsalo hacia tu otra mano y recíbelo para volver a tener el control. Hazlo 3 veces.";
 
     [TextArea(2, 5)]
-    [SerializeField] private string step6Text =
+    [SerializeField]
+    private string step6Text =
         "Ahora aprenderás cómo te puedes equivocar. Tocar una placa naranja te resta un punto. Toca tres placas naranjas para continuar.";
 
     [TextArea(2, 5)]
-    [SerializeField] private string step7Text =
+    [SerializeField]
+    private string step7Text =
         "Ahora cambia de mano, toca las placas verdes y deja pasar las naranjas. Consigue tres puntos para continuar.";
 
     [TextArea(2, 5)]
-    [SerializeField] private string step8Text =
+    [SerializeField]
+    private string step8Text =
         "¡Felicidades! Acabas de terminar el tutorial.";
 
     private int currentStep;
@@ -86,8 +95,8 @@ public class DribbleTutorialController : MonoBehaviour
         if (startCanvas != null)
             startCanvas.SetActive(false);
 
-        if (nextButtonObject != null)
-            nextButtonObject.SetActive(false);
+        if (nextButtonPanel != null)
+            nextButtonPanel.SetActive(false);
 
         if (indicatorUI != null)
             indicatorUI.HideIndicator();
@@ -110,6 +119,11 @@ public class DribbleTutorialController : MonoBehaviour
 
             if (startCanvas != null)
                 startCanvas.SetActive(true);
+
+            // Música mientras espera que el usuario inicie.
+            AudioManager.Instance?.PlayBackground(
+                BackgroundContext.Tutorial
+            );
         }
     }
 
@@ -139,6 +153,10 @@ public class DribbleTutorialController : MonoBehaviour
 
         waitingForInteraction = false;
         transitioning = false;
+
+        AudioManager.Instance?.PlayBackground(
+            BackgroundContext.Tutorial
+        );
 
         if (tutorialCanvas != null)
             tutorialCanvas.SetActive(true);
@@ -357,8 +375,8 @@ public class DribbleTutorialController : MonoBehaviour
 
         PlayDialogue(clip);
 
-        if (nextButtonObject != null)
-            nextButtonObject.SetActive(true);
+        if (nextButtonPanel != null)
+            nextButtonPanel.SetActive(true);
 
         if (nextButton != null)
             nextButton.interactable = true;
@@ -374,8 +392,8 @@ public class DribbleTutorialController : MonoBehaviour
 
         PlayDialogue(clip);
 
-        if (nextButtonObject != null)
-            nextButtonObject.SetActive(false);
+        if (nextButtonPanel != null)
+            nextButtonPanel.SetActive(false);
 
         waitingForInteraction = true;
 
@@ -408,13 +426,11 @@ public class DribbleTutorialController : MonoBehaviour
 
         foreach (char character in text)
         {
-            dialogueText.text +=
-                character;
+            dialogueText.text += character;
 
-            yield return
-                new WaitForSecondsRealtime(
-                    typingDelay
-                );
+            yield return new WaitForSecondsRealtime(
+                typingDelay
+            );
         }
 
         typingCoroutine = null;

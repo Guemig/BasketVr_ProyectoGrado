@@ -4946,7 +4946,7 @@ AudioSource:
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
-  Priority: 128
+  Priority: 29
   DopplerLevel: 1
   MinDistance: 1
   MaxDistance: 500
@@ -10494,7 +10494,7 @@ AudioSource:
   m_audioClip: {fileID: 8300000, guid: 6492ff3e5cfdbeb4ea55d101b0833641, type: 3}
   m_Resource: {fileID: 8300000, guid: 6492ff3e5cfdbeb4ea55d101b0833641, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.717
+  m_Volume: 0.566
   m_Pitch: 1
   Loop: 1
   Mute: 0

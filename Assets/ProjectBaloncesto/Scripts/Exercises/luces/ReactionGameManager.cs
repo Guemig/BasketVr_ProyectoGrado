@@ -671,7 +671,6 @@ BackgroundContext.Tutorial
         DeactivateTargetList(activeTargets);
         DeactivateAllGroups();
 
-        DebugLevelStats();
 
         if (currentLevel < 3)
         {
@@ -709,20 +708,6 @@ BackgroundContext.Tutorial
 
         // Cambiar a la música de resultados.
         PlayResultsMusic();
-
-        Debug.Log("EJERCICIO FINALIZADO");
-        Debug.Log("ACIERTOS TOTALES: " + TotalHits);
-        Debug.Log("FALLOS TOTALES: " + TotalMisses);
-
-        Debug.Log(
-            "PRECISIÓN TOTAL: " +
-            TotalPrecision.ToString("F1") + "%"
-        );
-
-        Debug.Log(
-            "PROMEDIO TOTAL: " +
-            TotalAverageReactionTime.ToString("F3") + " s"
-        );
 
         SaveLightsResults();
     }
@@ -958,37 +943,4 @@ BackgroundContext.Tutorial
     // DEBUG ESTADÍSTICAS
     // =========================================================
 
-    private void DebugLevelStats()
-    {
-        ReactionLightGameStats.LevelStats stats = GetCurrentStats();
-
-        if (stats == null)
-            return;
-
-        Debug.Log("NIVEL " + currentLevel + " TERMINADO");
-        Debug.Log("Reacciones resueltas: " + reactionsResolved);
-        Debug.Log("Aciertos: " + stats.hits);
-        Debug.Log("Fallos: " + stats.misses);
-
-        Debug.Log(
-            "Precisión: " + stats.Precision.ToString("F1") + "%"
-        );
-
-        Debug.Log(
-            "Promedio: " + stats.averageReactionTime.ToString("F3") + " s"
-        );
-
-        Debug.Log(
-            "Mejor: " + stats.bestReactionTime.ToString("F3") + " s"
-        );
-
-        Debug.Log(
-            "Peor: " + stats.worstReactionTime.ToString("F3") + " s"
-        );
-
-        Debug.Log(
-            "Tiempo total reacción: " +
-            stats.totalReactionTime.ToString("F3") + " s"
-        );
-    }
 }

@@ -215,7 +215,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   channel: 0
-  soundInterval: 0.08
+  soundInterval: 0.5
 --- !u!1 &4362861354809510739
 GameObject:
   m_ObjectHideFlags: 0

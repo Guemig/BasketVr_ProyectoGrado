@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 public class DribbleTrainingManager : MonoBehaviour
@@ -45,43 +46,25 @@ public class DribbleTrainingManager : MonoBehaviour
     private void OnEnable()
     {
         if (level1 != null)
-        {
-            level1.OnLevelCompleted +=
-                Level1Completed;
-        }
+            level1.OnLevelCompleted += Level1Completed;
 
         if (level2 != null)
-        {
-            level2.OnLevelCompleted +=
-                Level2Completed;
-        }
+            level2.OnLevelCompleted += Level2Completed;
 
         if (level3 != null)
-        {
-            level3.OnLevelCompleted +=
-                Level3Completed;
-        }
+            level3.OnLevelCompleted += Level3Completed;
     }
 
     private void OnDisable()
     {
         if (level1 != null)
-        {
-            level1.OnLevelCompleted -=
-                Level1Completed;
-        }
+            level1.OnLevelCompleted -= Level1Completed;
 
         if (level2 != null)
-        {
-            level2.OnLevelCompleted -=
-                Level2Completed;
-        }
+            level2.OnLevelCompleted -= Level2Completed;
 
         if (level3 != null)
-        {
-            level3.OnLevelCompleted -=
-                Level3Completed;
-        }
+            level3.OnLevelCompleted -= Level3Completed;
     }
 
     public void StartTraining()
@@ -117,13 +100,8 @@ public class DribbleTrainingManager : MonoBehaviour
 
         if (levelTransition != null)
         {
-            levelTransition.SetLevelLabel(
-                "NIVEL 1"
-            );
-
-            levelTransition.PlayTransition(
-                StartLevel1
-            );
+            levelTransition.SetLevelLabel("NIVEL 1");
+            levelTransition.PlayTransition(StartLevel1);
         }
         else
         {
@@ -135,6 +113,11 @@ public class DribbleTrainingManager : MonoBehaviour
     {
         if (!trainingActive)
             return;
+
+        // AUDIO FONDO: Música del nivel 1
+        AudioManager.Instance?.PlayBackground(
+            BackgroundContext.Level1
+        );
 
         if (ballRespawn != null)
             ballRespawn.RespawnNow();
@@ -164,13 +147,8 @@ public class DribbleTrainingManager : MonoBehaviour
 
         if (levelTransition != null)
         {
-            levelTransition.SetLevelLabel(
-                "NIVEL 2"
-            );
-
-            levelTransition.PlayTransition(
-                StartLevel2
-            );
+            levelTransition.SetLevelLabel("NIVEL 2");
+            levelTransition.PlayTransition(StartLevel2);
         }
         else
         {
@@ -182,6 +160,11 @@ public class DribbleTrainingManager : MonoBehaviour
     {
         if (!trainingActive)
             return;
+
+        // AUDIO FONDO: Música del nivel 2
+        AudioManager.Instance?.PlayBackground(
+            BackgroundContext.Level2
+        );
 
         if (ballRespawn != null)
             ballRespawn.RespawnNow();
@@ -211,13 +194,8 @@ public class DribbleTrainingManager : MonoBehaviour
 
         if (levelTransition != null)
         {
-            levelTransition.SetLevelLabel(
-                "NIVEL 3"
-            );
-
-            levelTransition.PlayTransition(
-                StartLevel3
-            );
+            levelTransition.SetLevelLabel("NIVEL 3");
+            levelTransition.PlayTransition(StartLevel3);
         }
         else
         {
@@ -229,6 +207,11 @@ public class DribbleTrainingManager : MonoBehaviour
     {
         if (!trainingActive)
             return;
+
+        // AUDIO FONDO: Música del nivel 3
+        AudioManager.Instance?.PlayBackground(
+            BackgroundContext.Level3
+        );
 
         if (ballRespawn != null)
             ballRespawn.RespawnNow();
@@ -273,10 +256,7 @@ public class DribbleTrainingManager : MonoBehaviour
             return;
 
         levelStartAudioSource.Stop();
-
-        levelStartAudioSource.PlayOneShot(
-            levelStartSound
-        );
+        levelStartAudioSource.PlayOneShot(levelStartSound);
     }
 
     private void FinishTraining()
@@ -288,6 +268,11 @@ public class DribbleTrainingManager : MonoBehaviour
 
         if (levelStartAudioSource != null)
             levelStartAudioSource.Stop();
+
+        // AUDIO FONDO: Música de resultados
+        AudioManager.Instance?.PlayBackground(
+            BackgroundContext.Results
+        );
 
         if (indicatorUI != null)
             indicatorUI.HideIndicator();
