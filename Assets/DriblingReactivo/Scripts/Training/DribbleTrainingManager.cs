@@ -1,4 +1,6 @@
 
+using System;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class DribbleTrainingManager : MonoBehaviour
@@ -27,6 +29,9 @@ public class DribbleTrainingManager : MonoBehaviour
 
     private int currentLevel;
     private bool trainingActive;
+
+    // Evita guardar dos veces el mismo entrenamiento.
+    private bool firebaseSaveStarted;
 
     public int CurrentLevel =>
         currentLevel;
@@ -67,12 +72,19 @@ public class DribbleTrainingManager : MonoBehaviour
             level3.OnLevelCompleted -= Level3Completed;
     }
 
+    // =========================================================
+    // START TRAINING
+    // =========================================================
+
     public void StartTraining()
     {
         StopAllLevels();
 
         currentLevel = 0;
         trainingActive = true;
+
+        // Permite guardar un nuevo intento.
+        firebaseSaveStarted = false;
 
         if (stats != null)
             stats.ResetAll();
@@ -91,6 +103,10 @@ public class DribbleTrainingManager : MonoBehaviour
 
         PrepareLevel1();
     }
+
+    // =========================================================
+    // LEVEL 1
+    // =========================================================
 
     private void PrepareLevel1()
     {
@@ -114,7 +130,6 @@ public class DribbleTrainingManager : MonoBehaviour
         if (!trainingActive)
             return;
 
-        // AUDIO FONDO: Música del nivel 1
         AudioManager.Instance?.PlayBackground(
             BackgroundContext.Level1
         );
@@ -139,6 +154,10 @@ public class DribbleTrainingManager : MonoBehaviour
         PrepareLevel2();
     }
 
+    // =========================================================
+    // LEVEL 2
+    // =========================================================
+
     private void PrepareLevel2()
     {
         currentLevel = 2;
@@ -161,7 +180,6 @@ public class DribbleTrainingManager : MonoBehaviour
         if (!trainingActive)
             return;
 
-        // AUDIO FONDO: Música del nivel 2
         AudioManager.Instance?.PlayBackground(
             BackgroundContext.Level2
         );
@@ -186,6 +204,10 @@ public class DribbleTrainingManager : MonoBehaviour
         PrepareLevel3();
     }
 
+    // =========================================================
+    // LEVEL 3
+    // =========================================================
+
     private void PrepareLevel3()
     {
         currentLevel = 3;
@@ -208,7 +230,6 @@ public class DribbleTrainingManager : MonoBehaviour
         if (!trainingActive)
             return;
 
-        // AUDIO FONDO: Música del nivel 3
         AudioManager.Instance?.PlayBackground(
             BackgroundContext.Level3
         );
@@ -232,6 +253,10 @@ public class DribbleTrainingManager : MonoBehaviour
 
         FinishTraining();
     }
+
+    // =========================================================
+    // TRANSITION
+    // =========================================================
 
     private void PrepareTransition()
     {
@@ -259,6 +284,10 @@ public class DribbleTrainingManager : MonoBehaviour
         levelStartAudioSource.PlayOneShot(levelStartSound);
     }
 
+    // =========================================================
+    // FINISH TRAINING
+    // =========================================================
+
     private void FinishTraining()
     {
         trainingActive = false;
@@ -269,7 +298,7 @@ public class DribbleTrainingManager : MonoBehaviour
         if (levelStartAudioSource != null)
             levelStartAudioSource.Stop();
 
-        // AUDIO FONDO: Música de resultados
+        // Música de resultados.
         AudioManager.Instance?.PlayBackground(
             BackgroundContext.Results
         );
@@ -280,12 +309,145 @@ public class DribbleTrainingManager : MonoBehaviour
         if (ballRespawn != null)
             ballRespawn.RespawnNow();
 
+        // Actualiza las estadísticas visuales.
         if (resultsUI != null)
             resultsUI.RefreshResults();
 
+        // Primero muestra los resultados.
         if (finalCanvas != null)
             finalCanvas.SetActive(true);
+
+        // Después inicia el guardado en Firebase.
+        _ = SaveDribbleResultsToFirebase();
     }
+
+    // =========================================================
+    // FIREBASE - SAVE DRIBBLE RESULTS
+    // =========================================================
+
+    private async Task SaveDribbleResultsToFirebase()
+    {
+        // Evita múltiples guardados del mismo intento.
+        if (firebaseSaveStarted)
+            return;
+
+        firebaseSaveStarted = true;
+
+        try
+        {
+            // Verificar estadísticas.
+            if (stats == null)
+            {
+                Debug.LogError(
+                    "[DRIBBLE FIREBASE] No se encontró DribbleTrainingStats."
+                );
+                return;
+            }
+
+            // Verificar Firestore.
+            if (FirestoreService.Instance == null)
+            {
+                Debug.LogError(
+                    "[DRIBBLE FIREBASE] FirestoreService no está disponible."
+                );
+                return;
+            }
+
+            // Verificar estudiante registrado.
+            string studentCode =
+                FirestoreService.Instance.CurrentStudentCode;
+
+            if (string.IsNullOrEmpty(studentCode))
+            {
+                Debug.LogError(
+                    "[DRIBBLE FIREBASE] No hay un estudiante activo."
+                );
+                return;
+            }
+
+            // Crear sesión.
+            FirestoreService.DribbleSession session =
+                FirestoreService.Instance.CreateDribbleSession();
+
+            // Registrar nivel 1.
+            session = AddDribbleLevel(
+                session,
+                stats.level1
+            );
+
+            // Registrar nivel 2.
+            session = AddDribbleLevel(
+                session,
+                stats.level2
+            );
+
+            // Registrar nivel 3.
+            session = AddDribbleLevel(
+                session,
+                stats.level3
+            );
+
+            // Guardar los tres niveles en un único intento.
+            string attemptId =
+                await FirestoreService.Instance.SaveDribbleAttempt(
+                    studentCode,
+                    session
+                );
+
+            Debug.Log(
+                "[DRIBBLE FIREBASE] Entrenamiento guardado correctamente."
+            );
+
+            Debug.Log(
+                "[DRIBBLE FIREBASE] Estudiante: " + studentCode
+            );
+
+            Debug.Log(
+                "[DRIBBLE FIREBASE] ID del intento: " + attemptId
+            );
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError(
+                "[DRIBBLE FIREBASE] Error al guardar el entrenamiento: " +
+                exception.Message
+            );
+        }
+    }
+
+    // =========================================================
+    // FIREBASE - CONVERT LEVEL STATS
+    // =========================================================
+
+    private FirestoreService.DribbleSession AddDribbleLevel(
+        FirestoreService.DribbleSession session,
+        DribbleTrainingStats.LevelStats levelStats)
+    {
+        if (levelStats == null)
+        {
+            throw new Exception(
+                "No se encontraron estadísticas de uno de los niveles."
+            );
+        }
+
+        FirestoreService.DribbleLevel levelData =
+            new FirestoreService.DribbleLevel
+            {
+                correctAnswers = levelStats.hits,
+                totalAttempts = levelStats.TotalAttempts,
+                accuracy = levelStats.Accuracy,
+                averageReaction = levelStats.AverageReactionTime
+            };
+
+        return FirestoreService.Instance.AddDribbleLevelToSession(
+            session,
+            levelData
+        );
+    }
+
+    // =========================================================
+    // STOP LEVELS
+    // =========================================================
 
     private void StopAllLevels()
     {

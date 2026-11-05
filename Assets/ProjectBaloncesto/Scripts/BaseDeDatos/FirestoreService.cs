@@ -15,6 +15,7 @@ public class FirestoreService : MonoBehaviour
     private const string MOVEMENT_EXERCISE_ID = "reaction-movement";
     private const string LIGHTS_EXERCISE_ID = "reaction-lights";
     private const string PASSES_EXERCISE_ID = "reaction-passes";
+    private const string DRIBBLE_EXERCISE_ID = "reaction-dribble";
 
     // =========================================================
     // CURRENT STUDENT
@@ -481,6 +482,137 @@ public class FirestoreService : MonoBehaviour
     }
 
     // =========================================================
+    // DRIBBLE SESSION
+    // =========================================================
+
+    public DribbleSession CreateDribbleSession()
+    {
+        return new DribbleSession
+        {
+            exerciseId = DRIBBLE_EXERCISE_ID,
+            levels = new List<DribbleLevel>()
+        };
+    }
+
+    public DribbleSession AddDribbleLevelToSession(
+        DribbleSession session,
+        DribbleLevel levelData)
+    {
+        if (session == null ||
+            (session.exerciseId != DRIBBLE_EXERCISE_ID &&
+             session.exerciseId != "dribbling" &&
+             session.exerciseId != "drible"))
+        {
+            throw new Exception(
+                "La sesión de drible no es válida."
+            );
+        }
+
+        if (session.levels == null)
+            session.levels = new List<DribbleLevel>();
+
+        if (session.levels.Count >= 3)
+        {
+            throw new Exception(
+                "La sesión ya tiene los tres niveles registrados."
+            );
+        }
+
+        if (levelData == null)
+        {
+            throw new Exception(
+                "Los datos del nivel no pueden ser nulos."
+            );
+        }
+
+        levelData.level = session.levels.Count + 1;
+
+        ValidateDribbleLevel(levelData);
+
+        session.levels.Add(levelData);
+
+        return session;
+    }
+
+    // =========================================================
+    // SAVE DRIBBLE ATTEMPT
+    // =========================================================
+
+    public async Task<string> SaveDribbleAttempt(
+        string studentCode,
+        DribbleSession session)
+    {
+        string normalizedCode = NormalizeStudentCode(studentCode);
+
+        if (session == null ||
+            (session.exerciseId != DRIBBLE_EXERCISE_ID &&
+             session.exerciseId != "dribbling" &&
+             session.exerciseId != "drible"))
+        {
+            throw new Exception(
+                "La sesión no corresponde a reaction-dribble."
+            );
+        }
+
+        if (session.levels == null || session.levels.Count != 3)
+        {
+            throw new Exception(
+                "La sesión debe tener exactamente tres niveles."
+            );
+        }
+
+        List<Dictionary<string, object>> levelsData =
+            new List<Dictionary<string, object>>();
+
+        foreach (DribbleLevel level in session.levels)
+        {
+            if (level == null || level.level < 1 || level.level > 3)
+            {
+                throw new Exception(
+                    "Se encontró un nivel de drible inválido."
+                );
+            }
+
+            ValidateDribbleLevel(level);
+
+            Dictionary<string, object> levelData =
+                new Dictionary<string, object>
+                {
+                    { "level", level.level },
+                    { "correctAnswers", level.correctAnswers },
+                    { "totalAttempts", level.totalAttempts },
+                    { "accuracy", level.accuracy },
+                    { "averageReaction", level.averageReaction }
+                };
+
+            levelsData.Add(levelData);
+        }
+
+        DocumentReference attemptRef =
+            db.Collection(STUDENTS_COLLECTION)
+              .Document(normalizedCode)
+              .Collection("attempts")
+              .Document();
+
+        Dictionary<string, object> data =
+            new Dictionary<string, object>
+            {
+                { "exerciseId", DRIBBLE_EXERCISE_ID },
+                { "completedAt", Timestamp.GetCurrentTimestamp() },
+                { "levels", levelsData }
+            };
+
+        await attemptRef.SetAsync(data);
+
+        Debug.Log(
+            "[FIRESTORE] Intento de Drible guardado. ID: " +
+            attemptRef.Id
+        );
+
+        return attemptRef.Id;
+    }
+
+    // =========================================================
     // SAVE MOVEMENT ATTEMPT
     // =========================================================
 
@@ -561,7 +693,21 @@ public class FirestoreService : MonoBehaviour
                 if (!data.ContainsKey("exerciseId"))
                     continue;
 
-                if (data["exerciseId"].ToString() != exerciseId)
+                string storedExerciseId = data["exerciseId"].ToString();
+
+                bool matches =
+                    storedExerciseId == exerciseId ||
+                    (exerciseId == DRIBBLE_EXERCISE_ID &&
+                     (storedExerciseId == "dribbling" ||
+                      storedExerciseId == "drible")) ||
+                    (exerciseId == PASSES_EXERCISE_ID &&
+                     storedExerciseId == "passes") ||
+                    (exerciseId == LIGHTS_EXERCISE_ID &&
+                     storedExerciseId == "lights") ||
+                    (exerciseId == MOVEMENT_EXERCISE_ID &&
+                     storedExerciseId == "movement");
+
+                if (!matches)
                     continue;
             }
 
@@ -668,6 +814,51 @@ public class FirestoreService : MonoBehaviour
                 ValidateReaction(reactionTime);
             }
         }
+    }
+
+    // =========================================================
+    // VALIDATION - DRIBBLE
+    // =========================================================
+
+    private void ValidateDribbleLevel(DribbleLevel level)
+    {
+        if (level == null)
+        {
+            throw new Exception(
+                "Los datos del nivel de drible no pueden ser nulos."
+            );
+        }
+
+        if (level.level < 1 || level.level > 3)
+        {
+            throw new Exception(
+                "El nivel de drible debe ser 1, 2 o 3."
+            );
+        }
+
+        if (level.correctAnswers < 0)
+        {
+            throw new Exception(
+                "Los aciertos de drible no pueden ser negativos."
+            );
+        }
+
+        if (level.totalAttempts < 0)
+        {
+            throw new Exception(
+                "El total de reacciones no puede ser negativo."
+            );
+        }
+
+        if (level.correctAnswers > level.totalAttempts)
+        {
+            throw new Exception(
+                "Los aciertos no pueden superar el total de reacciones."
+            );
+        }
+
+        ValidateAccuracy(level.accuracy);
+        ValidateReaction(level.averageReaction);
     }
 
     private void ValidateAccuracy(float accuracy)
@@ -830,24 +1021,45 @@ public class FirestoreService : MonoBehaviour
     {
         public int level;
 
-        // Estadísticas generales
         public int correctAnswers;
         public int totalAttempts;
         public float accuracy;
         public float averageReaction;
 
-        // Estadísticas específicas de pases y atrapes
         public int caught;
         public int missed;
         public int wrongCaught;
         public int correctPasses;
 
-        // Reacciones mínima y máxima
         public float fastestReaction;
         public float slowestReaction;
 
-        // Tiempos de reacción individuales, en segundos
         public List<float> reactionTimes =
             new List<float>();
+    }
+
+    // =========================================================
+    // DATA CLASSES - DRIBBLE
+    // =========================================================
+
+    [Serializable]
+    public class DribbleSession
+    {
+        public string exerciseId;
+
+        public List<DribbleLevel> levels =
+            new List<DribbleLevel>();
+    }
+
+    [Serializable]
+    public class DribbleLevel
+    {
+        public int level;
+
+        public int correctAnswers;
+        public int totalAttempts;
+
+        public float accuracy;
+        public float averageReaction;
     }
 }

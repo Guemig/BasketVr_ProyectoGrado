@@ -16259,7 +16259,7 @@ MonoBehaviour:
   handAudioSource: {fileID: 1093746122}
   leftHandSound: {fileID: 8300000, guid: 9bcd74f87ace9f846a996902a4c120cf, type: 3}
   rightHandSound: {fileID: 8300000, guid: 809262f804bd0894dabeae696234f11c, type: 3}
-  levelDuration: 30
+  levelDuration: 70
   greenTargetTime: 5
   orangeTargetTime: 3
   delayBetweenTargets: 0.4
@@ -16286,7 +16286,7 @@ MonoBehaviour:
   audioSource: {fileID: 1093746122}
   checkSound: {fileID: 8300000, guid: 868f29350b6b1c34692cd5f7d1a86dd1, type: 3}
   errorSound: {fileID: 8300000, guid: 0850940b88fa51a48bdafef94495a5b2, type: 3}
-  levelDuration: 30
+  levelDuration: 60
   greenTargetTime: 4
   orangeTargetTime: 3
   delayBetweenTargets: 0.4
@@ -16311,7 +16311,7 @@ MonoBehaviour:
   audioSource: {fileID: 1093746122}
   checkSound: {fileID: 8300000, guid: 868f29350b6b1c34692cd5f7d1a86dd1, type: 3}
   errorSound: {fileID: 8300000, guid: 0850940b88fa51a48bdafef94495a5b2, type: 3}
-  levelDuration: 30
+  levelDuration: 50
   greenTargetTime: 3.5
   orangeTargetTime: 3
   delayBetweenTargets: 0.5
