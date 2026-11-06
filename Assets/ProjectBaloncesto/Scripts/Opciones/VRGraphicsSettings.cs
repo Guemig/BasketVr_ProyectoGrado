@@ -1,105 +1,178 @@
+
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 public class VRGraphicsSettings : MonoBehaviour
 {
+    public static VRGraphicsSettings Instance { get; private set; }
+
     [Header("Sliders")]
     [SerializeField] private Slider lightingSlider;
     [SerializeField] private Slider temperatureSlider;
     [SerializeField] private Slider shadowsSlider;
 
-    [Header("Scene Light")]
-    [SerializeField] private Light sceneLight;
+    private Light sceneLight;
+
+    private float lightingValue = 1f;
+    private float temperatureValue = 1f;
+    private float shadowsValue = 1f;
 
     private void Awake()
     {
-        if (lightingSlider == null ||
-            temperatureSlider == null ||
-            shadowsSlider == null ||
-            sceneLight == null)
+        if (Instance != null && Instance != this)
         {
-            Debug.LogError("VRGraphicsSettings: Faltan referencias.");
-            enabled = false;
+            Destroy(gameObject);
             return;
         }
 
-        ConfigureSlider(lightingSlider);
-        ConfigureSlider(temperatureSlider);
-        ConfigureSlider(shadowsSlider);
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
 
-        lightingSlider.SetValueWithoutNotify(1f);
-        temperatureSlider.SetValueWithoutNotify(1f);
-        shadowsSlider.SetValueWithoutNotify(1f);
+        // Valores máximos al iniciar la aplicación
+        lightingValue = 1f;
+        temperatureValue = 1f;
+        shadowsValue = 1f;
 
-        RenderSettings.ambientMode = AmbientMode.Skybox;
+        ConfigureSliders();
 
-        sceneLight.useColorTemperature = true;
-        sceneLight.color = Color.white;
+        SceneManager.sceneLoaded += OnSceneLoaded;
 
-        ApplyLighting(1f);
-        ApplyTemperature(1f);
-        ApplyShadows(1f);
+        FindSceneLight();
+        ApplyAllSettings();
     }
 
-    private void OnEnable()
+    private void ConfigureSliders()
     {
-        if (lightingSlider != null)
-            lightingSlider.onValueChanged.AddListener(ApplyLighting);
-
-        if (temperatureSlider != null)
-            temperatureSlider.onValueChanged.AddListener(ApplyTemperature);
-
-        if (shadowsSlider != null)
-            shadowsSlider.onValueChanged.AddListener(ApplyShadows);
+        SetupSlider(lightingSlider, lightingValue, SetLighting);
+        SetupSlider(temperatureSlider, temperatureValue, SetTemperature);
+        SetupSlider(shadowsSlider, shadowsValue, SetShadows);
     }
 
-    private void OnDisable()
+    private void SetupSlider(
+        Slider slider,
+        float value,
+        UnityEngine.Events.UnityAction<float> callback)
     {
-        if (lightingSlider != null)
-            lightingSlider.onValueChanged.RemoveListener(ApplyLighting);
+        if (slider == null)
+            return;
 
-        if (temperatureSlider != null)
-            temperatureSlider.onValueChanged.RemoveListener(ApplyTemperature);
-
-        if (shadowsSlider != null)
-            shadowsSlider.onValueChanged.RemoveListener(ApplyShadows);
-    }
-
-    private void ConfigureSlider(Slider slider)
-    {
         slider.minValue = 0f;
         slider.maxValue = 1f;
         slider.wholeNumbers = false;
+
+        slider.SetValueWithoutNotify(value);
+        slider.onValueChanged.RemoveListener(callback);
+        slider.onValueChanged.AddListener(callback);
     }
 
-    private void ApplyLighting(float value)
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        RenderSettings.ambientIntensity =
-            Mathf.Lerp(0f, 2f, Mathf.Clamp01(value));
+        FindSceneLight();
+        ApplyAllSettings();
+
+        // Rebuscar sliders si pertenecen a la nueva escena
+        if (lightingSlider == null ||
+            temperatureSlider == null ||
+            shadowsSlider == null)
+        {
+            Debug.Log(
+                "VRGraphicsSettings: Reconecta los sliders de esta escena si hay un menú nuevo.");
+        }
     }
 
-    private void ApplyTemperature(float value)
+    private void FindSceneLight()
+    {
+        sceneLight = null;
+
+        // Buscar la luz direccional principal
+        Light[] lights = FindObjectsByType<Light>(
+            FindObjectsSortMode.None);
+
+        foreach (Light light in lights)
+        {
+            if (light.type == LightType.Directional)
+            {
+                sceneLight = light;
+                break;
+            }
+        }
+
+        if (sceneLight == null)
+            Debug.LogWarning(
+                "VRGraphicsSettings: No se encontró Directional Light.");
+    }
+
+    public void SetLighting(float value)
+    {
+        lightingValue = Mathf.Clamp01(value);
+        ApplyLighting();
+    }
+
+    public void SetTemperature(float value)
+    {
+        temperatureValue = Mathf.Clamp01(value);
+        ApplyTemperature();
+    }
+
+    public void SetShadows(float value)
+    {
+        shadowsValue = Mathf.Clamp01(value);
+        ApplyShadows();
+    }
+
+    private void ApplyAllSettings()
+    {
+        ApplyLighting();
+        ApplyTemperature();
+        ApplyShadows();
+    }
+
+    private void ApplyLighting()
+    {
+        RenderSettings.ambientMode = AmbientMode.Skybox;
+        RenderSettings.ambientIntensity =
+            Mathf.Lerp(0f, 2f, lightingValue);
+    }
+
+    private void ApplyTemperature()
     {
         if (sceneLight == null)
             return;
 
-        float temperature = Mathf.Lerp(
-            1700f,
-            3945f,
-            Mathf.Clamp01(value));
-
         sceneLight.useColorTemperature = true;
         sceneLight.color = Color.white;
-        sceneLight.colorTemperature = temperature;
+
+        sceneLight.colorTemperature =
+            Mathf.Lerp(1700f, 3945f, temperatureValue);
     }
 
-    private void ApplyShadows(float value)
+    private void ApplyShadows()
     {
         if (sceneLight == null)
             return;
 
         sceneLight.shadowStrength =
-            Mathf.Lerp(0.1f, 0.7f, Mathf.Clamp01(value));
+            Mathf.Lerp(0.1f, 0.7f, shadowsValue);
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance != this)
+            return;
+
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+
+        if (lightingSlider != null)
+            lightingSlider.onValueChanged.RemoveListener(SetLighting);
+
+        if (temperatureSlider != null)
+            temperatureSlider.onValueChanged.RemoveListener(SetTemperature);
+
+        if (shadowsSlider != null)
+            shadowsSlider.onValueChanged.RemoveListener(SetShadows);
+
+        Instance = null;
     }
 }
