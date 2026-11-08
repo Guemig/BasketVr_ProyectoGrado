@@ -1,5 +1,5 @@
 using UnityEngine;
-using TMPro;
+using UnityEngine.UI;
 
 [System.Serializable]
 public class CreditData
@@ -7,9 +7,8 @@ public class CreditData
     [Header("Container")]
     public GameObject container;
 
-    [Header("Text")]
-    [TextArea(2, 5)]
-    public string text;
+    [Header("Image")]
+    public Sprite image;
 }
 
 public class CreditsManager : MonoBehaviour
@@ -18,7 +17,7 @@ public class CreditsManager : MonoBehaviour
     [SerializeField] private CreditData[] credits;
 
     [Header("UI")]
-    [SerializeField] private TextMeshProUGUI creditText;
+    [SerializeField] private Image creditImage;
 
     private int currentIndex = 0;
 
@@ -55,13 +54,16 @@ public class CreditsManager : MonoBehaviour
 
     private void ShowCurrent()
     {
+        if (credits.Length == 0)
+            return;
+
         for (int i = 0; i < credits.Length; i++)
         {
             if (credits[i].container != null)
                 credits[i].container.SetActive(i == currentIndex);
         }
 
-        if (creditText != null)
-            creditText.text = credits[currentIndex].text;
+        if (creditImage != null)
+            creditImage.sprite = credits[currentIndex].image;
     }
 }

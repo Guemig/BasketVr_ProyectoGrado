@@ -20,6 +20,23 @@ public class ReactionHoopsInicio : MonoBehaviour
 
     private void Start()
     {
+        // Comprobar si las advertencias ya fueron mostradas.
+        if (GameManager.advertenciasMostradas)
+        {
+            canvasAdvertencias.gameObject.SetActive(false);
+            canvasPrincipal.SetActive(true);
+
+            if (audioAdvertencias != null)
+            {
+                audioAdvertencias.Stop();
+            }
+
+            return;
+        }
+
+        // Registrar que las advertencias ya se van a mostrar.
+        GameManager.advertenciasMostradas = true;
+
         canvasAdvertencias.gameObject.SetActive(true);
         canvasAdvertencias.alpha = 0f;
         canvasAdvertencias.interactable = false;

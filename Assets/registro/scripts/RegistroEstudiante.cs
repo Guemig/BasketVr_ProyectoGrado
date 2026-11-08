@@ -21,8 +21,6 @@ public class RegistroEstudiante : MonoBehaviour
     [Header("Error Inicio de sesión")]
     public TMP_Text mensajeErrorLogin;
 
-    [Header("Diagnóstico técnico Firebase")]
-    [SerializeField] private TMP_Text mensajeErrorTecnico;
 
     [Header("Modo Test")]
     [SerializeField] private bool modoTest = false;
@@ -51,7 +49,6 @@ public class RegistroEstudiante : MonoBehaviour
 
         LimpiarErrorRegistro();
         LimpiarErrorLogin();
-        LimpiarErrorTecnico();
 
         if (modoTest)
             RellenarCamposTest();
@@ -83,8 +80,6 @@ public class RegistroEstudiante : MonoBehaviour
             return;
 
         LimpiarErrorRegistro();
-        LimpiarErrorTecnico();
-
         string nombre = inputNombre != null
             ? inputNombre.text.Trim()
             : string.Empty;
@@ -111,10 +106,6 @@ public class RegistroEstudiante : MonoBehaviour
 
         if (FirestoreService.Instance == null)
         {
-            MostrarErrorTecnico(
-                "ERROR TÉCNICO: FirestoreService.Instance es NULL.\n\n" +
-                "El servicio de Firebase no está disponible o no fue inicializado."
-            );
             return;
         }
 
@@ -157,8 +148,6 @@ public class RegistroEstudiante : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError("[REGISTRO] ERROR TÉCNICO COMPLETO:\n" + e);
-
-            MostrarErrorTecnico(e.ToString());
         }
         finally
         {
@@ -176,7 +165,6 @@ public class RegistroEstudiante : MonoBehaviour
             return;
 
         LimpiarErrorLogin();
-        LimpiarErrorTecnico();
 
         string codigo = inputCodigoLogin != null
             ? inputCodigoLogin.text.Trim()
@@ -194,10 +182,6 @@ public class RegistroEstudiante : MonoBehaviour
 
         if (FirestoreService.Instance == null)
         {
-            MostrarErrorTecnico(
-                "ERROR TÉCNICO: FirestoreService.Instance es NULL.\n\n" +
-                "El servicio de Firebase no está disponible o no fue inicializado."
-            );
             return;
         }
 
@@ -226,43 +210,10 @@ public class RegistroEstudiante : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError("[LOGIN] ERROR TÉCNICO COMPLETO:\n" + e);
-
-            MostrarErrorTecnico(e.ToString());
         }
         finally
         {
             procesandoSolicitud = false;
-        }
-    }
-
-    // =====================================================
-    // DIAGNÓSTICO TÉCNICO
-    // =====================================================
-
-    private void MostrarErrorTecnico(string detalle)
-    {
-        AudioManager.Instance?.PlayUI(UIEvent.Error);
-
-        if (mensajeErrorTecnico != null)
-        {
-            mensajeErrorTecnico.text = detalle;
-            mensajeErrorTecnico.gameObject.SetActive(true);
-        }
-        else
-        {
-            Debug.LogError(
-                "[DIAGNÓSTICO] No hay TMP_Text asignado para errores técnicos.\n" +
-                detalle
-            );
-        }
-    }
-
-    private void LimpiarErrorTecnico()
-    {
-        if (mensajeErrorTecnico != null)
-        {
-            mensajeErrorTecnico.text = string.Empty;
-            mensajeErrorTecnico.gameObject.SetActive(false);
         }
     }
 

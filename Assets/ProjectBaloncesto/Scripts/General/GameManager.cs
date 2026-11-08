@@ -6,6 +6,9 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
     public static bool isPaused = false;
 
+    public static bool advertenciasMostradas = false;
+
+
     [SerializeField] private TransitionSceneController transitionSceneController;
 
     private void Awake()
