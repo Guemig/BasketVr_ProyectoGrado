@@ -628,9 +628,6 @@ public class LightsTutoController : MonoBehaviour
             );
         }
 
-        Debug.Log("Tutorial de luces finalizado.");
-
-        Debug.Log("Tutorial de luces finalizado.");
     }
 
     // =====================================================
