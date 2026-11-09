@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "VRanteproyecto.sln"
+    "dotnet.defaultSolution": "VRanteproyecto.slnx"
 }
