@@ -176,12 +176,6 @@ public class PassMachineManager : MonoBehaviour
 
         levelConfigured = true;
 
-        Debug.Log(
-            $"[PASS MACHINES] Nivel {level} configurado. " +
-            $"Máquinas activas: {machineCount}.",
-            this
-        );
-
         return true;
     }
 
@@ -264,14 +258,6 @@ public class PassMachineManager : MonoBehaviour
             actionSequence[i] = actionSequence[randomIndex];
             actionSequence[randomIndex] = temp;
         }
-
-        Debug.Log(
-            $"[PASS MACHINES] Secuencia del nivel {level}: " +
-            $"{catchCount} balones para atrapar y " +
-            $"{letPassCount} para dejar pasar. " +
-            $"Total: {actionSequence.Count}.",
-            this
-        );
 
         return true;
     }
@@ -445,14 +431,6 @@ public class PassMachineManager : MonoBehaviour
 
         lastMachineIndex = selectedIndex;
 
-        Debug.Log(
-            $"[PASS MACHINES] Nivel {currentLevel}: " +
-            $"máquina seleccionada {selectedIndex + 1}" +
-            (currentLevel == 3
-                ? $". Repeticiones consecutivas: {consecutiveLevel3Shots}"
-                : ""),
-            this
-        );
 
         return selectedLauncher;
     }

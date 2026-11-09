@@ -105,16 +105,10 @@ public class ReactionTransition : MonoBehaviour
     private IEnumerator TransitionCoroutine(
         Action onComplete)
     {
-        Debug.Log(
-            "[TRANSITION] Starting level transition."
-        );
 
 
         if (playerCamera == null)
         {
-            Debug.LogWarning(
-                "[TRANSITION] Player Camera is missing."
-            );
 
             onComplete?.Invoke();
 
@@ -181,9 +175,6 @@ public class ReactionTransition : MonoBehaviour
         );
 
 
-        Debug.Log(
-            "[TRANSITION] Transition completed."
-        );
 
 
         isTransitioning = false;

@@ -95,10 +95,6 @@ public class PassReactionUIManager : MonoBehaviour
 
         SetIndicatorVisible(false);
 
-        Debug.Log(
-            "[PASSES] Tutorial finalizado. " +
-            "Menú de entrenamiento disponible."
-        );
     }
 
     // =====================================================

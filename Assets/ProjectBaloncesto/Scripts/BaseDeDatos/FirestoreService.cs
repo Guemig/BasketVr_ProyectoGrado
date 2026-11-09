@@ -54,17 +54,13 @@ public class FirestoreService : MonoBehaviour
     {
         currentStudentCode = NormalizeStudentCode(studentCode);
 
-        Debug.Log(
-            "[FIRESTORE] Current student set: " +
-            currentStudentCode
-        );
+
     }
 
     public void ClearCurrentStudent()
     {
         currentStudentCode = null;
 
-        Debug.Log("[FIRESTORE] Current student cleared.");
     }
 
     // =========================================================
@@ -137,9 +133,6 @@ public class FirestoreService : MonoBehaviour
 
         await studentRef.SetAsync(data);
 
-        Debug.Log(
-            "[FIRESTORE] Student created: " + normalizedCode
-        );
 
         return true;
     }
@@ -339,10 +332,6 @@ public class FirestoreService : MonoBehaviour
 
         await attemptRef.SetAsync(data);
 
-        Debug.Log(
-            "[FIRESTORE] Intento de luces guardado. ID: " +
-            attemptRef.Id
-        );
 
         return attemptRef.Id;
     }
@@ -473,10 +462,7 @@ public class FirestoreService : MonoBehaviour
 
         await attemptRef.SetAsync(data);
 
-        Debug.Log(
-            "[FIRESTORE] Intento de Pases y Reacción guardado. ID: " +
-            attemptRef.Id
-        );
+
 
         return attemptRef.Id;
     }
@@ -604,10 +590,6 @@ public class FirestoreService : MonoBehaviour
 
         await attemptRef.SetAsync(data);
 
-        Debug.Log(
-            "[FIRESTORE] Intento de Drible guardado. ID: " +
-            attemptRef.Id
-        );
 
         return attemptRef.Id;
     }
@@ -653,9 +635,6 @@ public class FirestoreService : MonoBehaviour
 
         await attemptsRef.SetAsync(data);
 
-        Debug.Log(
-            "[FIRESTORE] Intento guardado. ID: " + attemptsRef.Id
-        );
 
         return attemptsRef.Id;
     }

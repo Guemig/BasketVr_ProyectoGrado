@@ -319,12 +319,6 @@ public class PassReactionGameManager : MonoBehaviour
 
         OnLevelStarted?.Invoke(currentLevel);
 
-        Debug.Log(
-            $"[PASSES] Nivel {currentLevel} iniciado. " +
-            $"Lanzamientos previstos: {GetCurrentLevelShots()}.",
-            this
-        );
-
         LaunchNextBall();
     }
 
@@ -385,14 +379,6 @@ public class PassReactionGameManager : MonoBehaviour
 
         PlayIncorrectSound();
 
-        Debug.Log(
-            $"[PASSES] Atrapada incorrecta registrada. " +
-            $"Tiempo de reacción: {reactionTime:F3} s. " +
-            $"Resultados: {statsManager.TotalBalls}/" +
-            $"{GetCurrentLevelShots()}",
-            this
-        );
-
         BallFinished();
     }
 
@@ -412,13 +398,6 @@ public class PassReactionGameManager : MonoBehaviour
         statsManager.RegisterCorrectPass();
 
         PlayCorrectSound();
-
-        Debug.Log(
-            $"[PASSES] Pase correcto registrado. " +
-            $"Resultados: {statsManager.TotalBalls}/" +
-            $"{GetCurrentLevelShots()}",
-            this
-        );
 
         BallFinished();
     }
@@ -501,14 +480,6 @@ public class PassReactionGameManager : MonoBehaviour
 
         shotsLaunched++;
 
-        Debug.Log(
-            $"[PASSES] Disparo {shotsLaunched}/" +
-            $"{GetCurrentLevelShots()} del nivel {currentLevel}. " +
-            $"Máquina: {selectedLauncher.name}. " +
-            $"Acción: {action}.",
-            this
-        );
-
         selectedLauncher.LaunchBall(action);
     }
 
@@ -531,13 +502,6 @@ public class PassReactionGameManager : MonoBehaviour
         if (!machineManager.ConfigureLevel(level))
             return false;
 
-        /*
-        if (machineIndicator != null)
-        {
-            machineIndicator.BindMachines(machineManager);
-            machineIndicator.SetLevel(level);
-        }
-        */
 
         return true;
     }
@@ -658,10 +622,6 @@ public class PassReactionGameManager : MonoBehaviour
 
         OnLevelFinished?.Invoke(currentLevel);
 
-        Debug.Log(
-            $"[PASSES] Nivel {currentLevel} finalizado.",
-            this
-        );
 
         if (currentLevel >= 3)
         {

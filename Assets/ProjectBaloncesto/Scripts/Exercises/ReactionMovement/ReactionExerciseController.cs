@@ -86,17 +86,17 @@ public class ReactionExerciseController : MonoBehaviour
                 }
 
                 AudioManager.Instance?.PlayBackground(
-    BackgroundContext.Tutorial
-);
+                    BackgroundContext.Tutorial
+                );
+
                 tutorialController.StartTutorial();
             }
         }
-        else {
-
+        else
+        {
             AudioManager.Instance?.PlayBackground(
-BackgroundContext.Tutorial
-);
-
+                BackgroundContext.Tutorial
+            );
         }
     }
 
@@ -109,21 +109,27 @@ BackgroundContext.Tutorial
         switch (levelController.CurrentLevel)
         {
             case ReactionLevelController.ReactionLevel.Level1:
+
                 AudioManager.Instance?.PlayBackground(
                     BackgroundContext.Level1
                 );
+
                 break;
 
             case ReactionLevelController.ReactionLevel.Level2:
+
                 AudioManager.Instance?.PlayBackground(
                     BackgroundContext.Level2
                 );
+
                 break;
 
             case ReactionLevelController.ReactionLevel.Level3:
+
                 AudioManager.Instance?.PlayBackground(
                     BackgroundContext.Level3
                 );
+
                 break;
         }
     }
@@ -136,18 +142,14 @@ BackgroundContext.Tutorial
 
         // La música comienza junto con la transición inicial.
         PlayLevelMusic();
+
         AudioManager.Instance?.PlaySFX(
-    SFXEvent.StartGame
-);
+            SFXEvent.StartGame
+        );
 
         if (transition != null)
         {
-            if (levelController != null)
-            {
-                transition.SetLevelLabel(
-                    levelController.CurrentLevel.ToString()
-                );
-            }
+            SetTransitionLevelLabel();
 
             transition.PlayTransition(
                 StartCurrentLevel
@@ -161,10 +163,6 @@ BackgroundContext.Tutorial
 
     private void StartCurrentLevel()
     {
-        Debug.Log(
-            $"[EXERCISE] Starting " +
-            $"{levelController.CurrentLevel}"
-        );
 
         sequence.CreateSequence();
 
@@ -185,9 +183,6 @@ BackgroundContext.Tutorial
         pauseStartRealtime =
             Time.realtimeSinceStartup;
 
-        Debug.Log(
-            "[EXERCISE] Paused."
-        );
     }
 
     public void ResumeExercise()
@@ -206,9 +201,6 @@ BackgroundContext.Tutorial
 
         isPaused = false;
 
-        Debug.Log(
-            "[EXERCISE] Resumed."
-        );
     }
 
     // =====================================================
@@ -228,10 +220,6 @@ BackgroundContext.Tutorial
             sequence.GetNext();
 
         reactionInProgress = true;
-
-        Debug.Log(
-            $"[REACTION] STARTING {currentHand}"
-        );
 
         interaction.StartReaction(
             currentHand
@@ -255,9 +243,6 @@ BackgroundContext.Tutorial
         if (IsPaused)
             return;
 
-        Debug.Log(
-            $"[REACTION] ACTIVE {currentHand}"
-        );
 
         interaction.ActivateReaction();
 
@@ -280,6 +265,7 @@ BackgroundContext.Tutorial
                 if (leftHandInteractable != null)
                 {
                     leftHandInteractable.StartReaction();
+
                     AudioManager.Instance?.PlaySFX(
                         SFXEvent.Stimulus
                     );
@@ -292,6 +278,7 @@ BackgroundContext.Tutorial
                 if (rightHandInteractable != null)
                 {
                     rightHandInteractable.StartReaction();
+
                     AudioManager.Instance?.PlaySFX(
                         SFXEvent.Stimulus
                     );
@@ -380,11 +367,6 @@ BackgroundContext.Tutorial
 
         DisableAllInteractables();
 
-        Debug.Log(
-            $"[LEVEL] Completed: " +
-            $"{levelController.CurrentLevel}"
-        );
-
         if (levelController.HasNextLevel())
         {
             StartLevelTransition();
@@ -401,9 +383,7 @@ BackgroundContext.Tutorial
 
     private void StartLevelTransition()
     {
-        Debug.Log(
-            "[EXERCISE] Preparing next level."
-        );
+
 
         levelController.TryAdvanceLevel();
 
@@ -412,12 +392,7 @@ BackgroundContext.Tutorial
 
         if (transition != null)
         {
-            if (levelController != null)
-            {
-                transition.SetLevelLabel(
-                    levelController.CurrentLevel.ToString()
-                );
-            }
+            SetTransitionLevelLabel();
 
             transition.PlayTransition(
                 StartCurrentLevel
@@ -430,16 +405,34 @@ BackgroundContext.Tutorial
     }
 
     // =====================================================
+    // TRANSITION LABEL
+    // =====================================================
+
+    private void SetTransitionLevelLabel()
+    {
+        if (transition == null ||
+            levelController == null)
+        {
+            return;
+        }
+
+        string levelNumber =
+            levelController.CurrentLevel
+                .ToString()
+                .Replace("Level", "");
+
+        transition.SetLevelLabel(
+            "NIVEL " + levelNumber
+        );
+    }
+
+    // =====================================================
     // EXERCISE COMPLETE
     // =====================================================
 
     private async void CompleteExercise()
     {
         reactionInProgress = false;
-
-        Debug.Log(
-            "[EXERCISE] Exercise completed."
-        );
 
         // =================================================
         // SAVE TO FIRESTORE
@@ -477,11 +470,6 @@ BackgroundContext.Tutorial
                                 session
                             );
 
-                    Debug.Log(
-                        "[FIRESTORE] Attempt saved successfully. " +
-                        $"Student: {studentCode} | " +
-                        $"Attempt: {attemptId}"
-                    );
                 }
                 catch (Exception e)
                 {
@@ -499,13 +487,12 @@ BackgroundContext.Tutorial
 
         if (menuController != null)
         {
-
             menuController.ShowEndMenu();
         }
 
         AudioManager.Instance?.PlayBackground(
-BackgroundContext.Results
-);
+            BackgroundContext.Results
+        );
 
         if (resultsUI != null)
         {

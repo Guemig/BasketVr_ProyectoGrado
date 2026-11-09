@@ -41,9 +41,6 @@ public class ReactionInteraction : MonoBehaviour
 
         SetResultNormal(hand);
 
-        Debug.Log(
-            $"[INTERACTION] Waiting for {hand}"
-        );
     }
 
 
@@ -68,9 +65,6 @@ public class ReactionInteraction : MonoBehaviour
         activationTimeNormalized =
             Time.realtimeSinceStartup - ReactionExerciseController.TotalPausedTime;
 
-        Debug.Log(
-            $"[INTERACTION] Active - Expected: {expectedHand}"
-        );
     }
 
 
@@ -81,22 +75,16 @@ public class ReactionInteraction : MonoBehaviour
     public void OnHandHover(
         ReactionExerciseController.Hand hand)
     {
-        Debug.Log(
-            $"[INTERACTION] Hover received: {hand}"
-        );
+
 
         // No procesar entradas durante pausa
         if (ReactionExerciseController.IsPaused)
         {
-            Debug.Log("[INTERACTION] Ignored: exercise paused.");
             return;
         }
 
         if (!reactionInProgress)
         {
-            Debug.Log(
-                "[INTERACTION] Ignored: no reaction in progress."
-            );
 
             return;
         }
@@ -104,9 +92,6 @@ public class ReactionInteraction : MonoBehaviour
 
         if (reactionResolved)
         {
-            Debug.Log(
-                "[INTERACTION] Ignored: reaction already resolved."
-            );
 
             return;
         }
@@ -115,10 +100,6 @@ public class ReactionInteraction : MonoBehaviour
         // Tocó antes de que la reacción estuviera activa.
         if (!reactionActive)
         {
-            Debug.Log(
-                $"[INTERACTION] WRONG: " +
-                $"{hand} touched before activation."
-            );
 
             HandleWrongReaction(
                 $"Touched {hand} before activation."
@@ -192,10 +173,6 @@ public class ReactionInteraction : MonoBehaviour
 
         reactionResolved = true;
 
-        Debug.Log(
-            $"[INTERACTION] CORRECT: {expectedHand}"
-        );
-
         SetResultCorrect(expectedHand);
 
         ReactionResolved?.Invoke(true, reactionTime);
@@ -213,10 +190,6 @@ public class ReactionInteraction : MonoBehaviour
             : 0f;
 
         reactionResolved = true;
-
-        Debug.Log(
-            $"[INTERACTION] WRONG: {reason}"
-        );
 
         SetResultWrong(expectedHand);
 

@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
@@ -13,11 +12,18 @@ public class VRGraphicsSettings : MonoBehaviour
     [SerializeField] private Slider temperatureSlider;
     [SerializeField] private Slider shadowsSlider;
 
+    [Header("Slider Sound")]
+    [SerializeField] private float soundInterval = 0.08f;
+
     private Light sceneLight;
 
     private float lightingValue = 1f;
     private float temperatureValue = 1f;
     private float shadowsValue = 1f;
+
+    private float lastLightingSoundTime = -999f;
+    private float lastTemperatureSoundTime = -999f;
+    private float lastShadowsSoundTime = -999f;
 
     private void Awake()
     {
@@ -104,23 +110,56 @@ public class VRGraphicsSettings : MonoBehaviour
                 "VRGraphicsSettings: No se encontró Directional Light.");
     }
 
+    // =====================================================
+    // GRAPHICS SETTINGS
+    // =====================================================
+
     public void SetLighting(float value)
     {
         lightingValue = Mathf.Clamp01(value);
+
         ApplyLighting();
+
+        PlaySliderSound(ref lastLightingSoundTime);
     }
 
     public void SetTemperature(float value)
     {
         temperatureValue = Mathf.Clamp01(value);
+
         ApplyTemperature();
+
+        PlaySliderSound(ref lastTemperatureSoundTime);
     }
 
     public void SetShadows(float value)
     {
         shadowsValue = Mathf.Clamp01(value);
+
         ApplyShadows();
+
+        PlaySliderSound(ref lastShadowsSoundTime);
     }
+
+    // =====================================================
+    // SLIDER SOUND
+    // =====================================================
+
+    private void PlaySliderSound(ref float lastSoundTime)
+    {
+        if (Time.unscaledTime - lastSoundTime < soundInterval)
+            return;
+
+        lastSoundTime = Time.unscaledTime;
+
+        AudioManager.Instance?.PlayUI(
+            UIEvent.Slider
+        );
+    }
+
+    // =====================================================
+    // APPLY SETTINGS
+    // =====================================================
 
     private void ApplyAllSettings()
     {
@@ -132,6 +171,7 @@ public class VRGraphicsSettings : MonoBehaviour
     private void ApplyLighting()
     {
         RenderSettings.ambientMode = AmbientMode.Skybox;
+
         RenderSettings.ambientIntensity =
             Mathf.Lerp(0f, 2f, lightingValue);
     }
@@ -156,6 +196,10 @@ public class VRGraphicsSettings : MonoBehaviour
         sceneLight.shadowStrength =
             Mathf.Lerp(0.1f, 0.7f, shadowsValue);
     }
+
+    // =====================================================
+    // CLEANUP
+    // =====================================================
 
     private void OnDestroy()
     {

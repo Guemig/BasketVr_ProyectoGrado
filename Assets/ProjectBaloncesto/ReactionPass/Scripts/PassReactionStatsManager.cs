@@ -230,14 +230,7 @@ public class PassReactionStatsManager : MonoBehaviour
                 break;
         }
 
-        Debug.Log(
-            $"[PASES] Nivel {level} guardado. " +
-            $"Total: {stats.Total}, " +
-            $"Correctas: {stats.CorrectDecisions}, " +
-            $"Precisión: {stats.accuracy:F1}%, " +
-            $"Reacción promedio: {stats.averageReaction:F3}s",
-            this
-        );
+
     }
 
     // =====================================================
@@ -304,13 +297,7 @@ public class PassReactionStatsManager : MonoBehaviour
             ? reactionSum / reactionCount
             : 0f;
 
-        Debug.Log(
-            $"[PASES] Estadísticas generales calculadas. " +
-            $"Total: {totalPasses}, " +
-            $"Precisión: {totalAccuracy:F1}%, " +
-            $"Reacción promedio: {globalAverageReaction:F3}s",
-            this
-        );
+
     }
 
     private void AddReactionTimes(
@@ -349,9 +336,5 @@ public class PassReactionStatsManager : MonoBehaviour
 
         BeginLevel();
 
-        Debug.Log(
-            "[PASES] Todas las estadísticas se reiniciaron.",
-            this
-        );
     }
 }

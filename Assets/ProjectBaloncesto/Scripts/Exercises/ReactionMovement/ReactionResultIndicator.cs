@@ -25,29 +25,18 @@ public class ReactionResultIndicator : MonoBehaviour
             case Result.Normal:
                 targetRenderer.material = normalMaterial;
 
-                Debug.Log(
-                    $"[ReactionResultIndicator] {hand} -> Normal"
-                );
                 break;
 
             case Result.Correct:
                 targetRenderer.material = correctMaterial;
 
                 PlaySFX(SFXEvent.Correct);
-
-                Debug.Log(
-                    $"[ReactionResultIndicator] {hand} -> CORRECT"
-                );
                 break;
 
             case Result.Wrong:
                 targetRenderer.material = wrongMaterial;
 
                 PlaySFX(SFXEvent.Incorrect);
-
-                Debug.Log(
-                    $"[ReactionResultIndicator] {hand} -> WRONG"
-                );
                 break;
         }
     }

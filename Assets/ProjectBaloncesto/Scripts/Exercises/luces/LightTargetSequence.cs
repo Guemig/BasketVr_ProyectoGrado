@@ -125,11 +125,6 @@ public class LightTargetSequence : MonoBehaviour
 
         float warningTime = gameManager.GetWarningTime();
 
-        Debug.Log(
-            "NIVEL " + gameManager.CurrentLevel +
-            " | AVISO | " + target.TargetDirection +
-            " | " + warningTime.ToString("F3") + " s"
-        );
 
         yield return new WaitForSeconds(warningTime);
 
@@ -146,10 +141,6 @@ public class LightTargetSequence : MonoBehaviour
         // El tiempo de reacción comienza exactamente al activar el target.
         targetActivationTime = Time.time;
 
-        Debug.Log(
-            "NIVEL " + gameManager.CurrentLevel +
-            " | TARGET ACTIVADO"
-        );
 
         targetTimeoutCoroutine = StartCoroutine(TargetTimeout(target));
     }

@@ -118,13 +118,6 @@ public class PassTutorialReaction : MonoBehaviour
 
         currentLauncher.LaunchBall(currentAction);
 
-        Debug.Log(
-            $"[PASS TUTORIAL] Solicitando balón. " +
-            $"Acción: {currentAction}. " +
-            $"Aciertos: {successfulBalls}/{requiredCorrect}. " +
-            $"Errores: {errorsCount}/{requiredErrors}.",
-            this
-        );
     }
 
     private void OnTutorialBallSpawned(ILaunchableBall ball)
@@ -136,10 +129,6 @@ public class PassTutorialReaction : MonoBehaviour
 
         if (ball is not DoubleHandPassBall passBall)
         {
-            Debug.LogError(
-                "[PASS TUTORIAL] El objeto lanzado no es DoubleHandPassBall.",
-                this
-            );
 
             StopTutorialReaction();
             return;
@@ -202,20 +191,6 @@ public class PassTutorialReaction : MonoBehaviour
             {
                 errorsCount++;
 
-                Debug.Log(
-                    $"[PASS TUTORIAL] Error esperado realizado: {actualResult}. " +
-                    $"Progreso: {errorsCount}/{requiredErrors}.",
-                    this
-                );
-            }
-            else
-            {
-                Debug.Log(
-                    $"[PASS TUTORIAL] Resultado recibido: {actualResult}. " +
-                    $"Se esperaba: {expectedResult}. " +
-                    "Este resultado no completa el objetivo.",
-                    this
-                );
             }
 
             if (errorsCount >= Mathf.Max(1, requiredErrors))
@@ -230,21 +205,8 @@ public class PassTutorialReaction : MonoBehaviour
             if (matchesExpected)
             {
                 successfulBalls++;
+            }
 
-                Debug.Log(
-                    $"[PASS TUTORIAL] Respuesta correcta: {actualResult}. " +
-                    $"Progreso: {successfulBalls}/{requiredCorrect}.",
-                    this
-                );
-            }
-            else
-            {
-                Debug.Log(
-                    $"[PASS TUTORIAL] Resultado incorrecto: {actualResult}. " +
-                    $"Se esperaba: {expectedResult}.",
-                    this
-                );
-            }
 
             if (successfulBalls >= Mathf.Max(1, requiredCorrect))
             {

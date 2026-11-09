@@ -287,18 +287,6 @@ public class PassTutoController : MonoBehaviour
         SetNextButtonVisible(false);
         demonstrationRunning = true;
 
-        Debug.Log(
-            "[PASS TUTORIAL] Iniciando paso " +
-            (currentStepIndex + 1) +
-            ". Resultado esperado: " + step.expectedResult +
-            ". Acción: " + GetBallAction(step.expectedResult) +
-            ". Cantidad requerida: " +
-            (isErrorObjective
-                ? step.requiredErrors
-                : step.requiredCorrectBalls),
-            this
-        );
-
         tutorialReaction.StartDemonstration(
             GetBallAction(step.expectedResult),
             step.expectedResult,
@@ -327,13 +315,6 @@ public class PassTutoController : MonoBehaviour
         demonstrationCompleted = true;
 
         SetNextButtonVisible(false);
-
-        Debug.Log(
-            "[PASS TUTORIAL] Paso " +
-            (currentStepIndex + 1) +
-            " completado. Avanzando al siguiente paso.",
-            this
-        );
 
         continueDemoCoroutine =
             StartCoroutine(AdvanceAfterCompletionText());
@@ -483,11 +464,6 @@ public class PassTutoController : MonoBehaviour
 
         if (tutorialCanvas != null)
             tutorialCanvas.SetActive(false);
-
-        Debug.Log(
-            "[PASS TUTORIAL] Tutorial finalizado.",
-            this
-        );
 
         OnTutorialFinished?.Invoke();
     }

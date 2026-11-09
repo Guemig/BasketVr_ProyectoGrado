@@ -58,29 +58,17 @@ public class ReactionHandInteractable : MonoBehaviour
     {
         SetReactionState();
 
-        Debug.Log(
-            $"[ReactionHandInteractable] {hand} -> ACTIVE"
-        );
     }
 
 
     public void EndReaction()
     {
         SetNormalState();
-
-        Debug.Log(
-            $"[ReactionHandInteractable] {hand} -> NORMAL"
-        );
     }
 
 
     public void OnHoverReaction()
     {
-        Debug.Log(
-            $"[ReactionHandInteractable] " +
-            $"Hover -> {hand}"
-        );
-
 
         if (reactionInteraction == null)
         {

@@ -273,10 +273,6 @@ BackgroundContext.Tutorial
         List<LightTargetReaction> targetList =
             new List<LightTargetReaction>(targets);
 
-        Debug.Log(
-            "Grupo '" + group.name +
-            "' | Targets encontrados: " + targetList.Count
-        );
 
         return targetList;
     }
@@ -546,10 +542,6 @@ BackgroundContext.Tutorial
         reactionsResolved = 0;
         gameRunning = true;
 
-        Debug.Log(
-            "INICIANDO NIVEL " + currentLevel +
-            " | Reacciones requeridas: " + RequiredReactions
-        );
 
         targetSequence.StartSequence(activeTargets);
     }
@@ -580,11 +572,6 @@ BackgroundContext.Tutorial
 
         statsController.RegisterHit(currentLevel, reactionTime);
 
-        Debug.Log(
-            "NIVEL " + currentLevel +
-            " | ACIERTO | " + reactionTime.ToString("F3") + " s"
-        );
-
         touchedTarget.ShowResult(true);
     }
 
@@ -604,7 +591,6 @@ BackgroundContext.Tutorial
         if (targetSequence != null)
             targetSequence.ClearCurrentTarget(target);
 
-        Debug.Log("NIVEL " + currentLevel + " | FALLO");
 
         if (target != null)
         {
@@ -643,12 +629,6 @@ BackgroundContext.Tutorial
             return;
 
         reactionsResolved++;
-
-        Debug.Log(
-            "PROGRESO NIVEL " + currentLevel +
-            " | " + reactionsResolved +
-            "/" + RequiredReactions
-        );
 
         if (reactionsResolved >= RequiredReactions)
             EndLevel();
@@ -780,10 +760,6 @@ BackgroundContext.Tutorial
                 session
             );
 
-            Debug.Log(
-                "[LIGHTS FIREBASE] Intento guardado correctamente. " +
-                "ID: " + attemptId
-            );
         }
         catch (Exception exception)
         {

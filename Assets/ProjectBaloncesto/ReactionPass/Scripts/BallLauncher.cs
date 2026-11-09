@@ -312,12 +312,6 @@ public class BallLauncher : MonoBehaviour
         {
             // Permite lanzar aunque el lanzador se haya detenido antes.
             launchAllowed = true;
-
-            Debug.Log(
-                "[BallLauncher] Modo tutorial activado. " +
-                "Lanzamientos habilitados: " + launchAllowed,
-                this
-            );
         }
     }
     private void SubscribeBallEvents(DoubleHandPassBall ball)

@@ -35,10 +35,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void testeoGame()
-    {
-        Debug.Log("GameManager is working!");
-    }
     // ----------------- Change current scene and reset game state ------------------
     public void ChangeScene(string sceneName)
     {
@@ -53,7 +49,6 @@ public class GameManager : MonoBehaviour
     // ----------------- Quit the application ------------------
     public void QuitGame()
     {
-        Debug.Log("Quitting game...");
         Application.Quit();
     }
 

@@ -56,10 +56,6 @@ public class LightMenuController : MonoBehaviour
             endPanel.SetActive(false);
 
         SetIndicatorVisible(false);
-
-        Debug.Log(
-            "Tutorial finalizado. Menú de entrenamiento disponible."
-        );
     }
 
     // =====================================================

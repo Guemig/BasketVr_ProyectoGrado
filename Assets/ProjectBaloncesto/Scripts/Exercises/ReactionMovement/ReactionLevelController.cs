@@ -35,9 +35,6 @@ public class ReactionLevelController : MonoBehaviour
         currentLevel =
             level;
 
-        Debug.Log(
-            $"[LEVEL] Changed to {currentLevel}"
-        );
     }
 
 
@@ -52,20 +49,13 @@ public class ReactionLevelController : MonoBehaviour
     {
         if (!HasNextLevel())
         {
-            Debug.Log(
-                "[LEVEL] No more levels."
-            );
+
 
             return false;
         }
 
 
         currentLevel++;
-
-
-        Debug.Log(
-            $"[LEVEL] Advanced to {currentLevel}"
-        );
 
 
         return true;

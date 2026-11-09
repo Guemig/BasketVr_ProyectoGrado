@@ -66,8 +66,6 @@ public class ReactionGameUI : MonoBehaviour
             level3PrecisionText,
             level3AverageText
         );
-
-        Debug.Log("ReactionGameUI: resultados finales actualizados.");
     }
 
     // =========================================================

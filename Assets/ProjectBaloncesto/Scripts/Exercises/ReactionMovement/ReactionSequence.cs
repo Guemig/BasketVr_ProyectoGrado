@@ -39,14 +39,6 @@ public class ReactionSequence : MonoBehaviour
 
         currentIndex = 0;
 
-
-        Debug.Log(
-            $"[SEQUENCE] Created with {totalReactions} reactions."
-        );
-
-        Debug.Log(
-            $"[SEQUENCE] {string.Join(", ", sequence)}"
-        );
     }
 
 
